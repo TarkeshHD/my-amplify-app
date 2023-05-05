@@ -1,0 +1,87 @@
+{
+  "extends": ["airbnb", "plugin:prettier/recommended", "plugin:jsx-a11y/recommended", "plugin:react-hooks/recommended"],
+  "env": {
+    "browser": true,
+    "commonjs": true,
+    "es6": true,
+    "jest": true,
+    "node": true
+  },
+  "rules": {
+    "jsx-a11y/href-no-hash": ["off"],
+    "jsx-a11y/no-noninteractive-element-interactions": [
+      0,
+      {
+        "handlers": ["onClick"]
+      }
+    ],
+    "jsx-a11y/click-events-have-key-events": 0,
+    "prettier/prettier": "warn",
+    "max-len": [
+      "warn",
+      {
+        "code": 120,
+        "tabWidth": 2,
+        "comments": 120,
+        "ignoreComments": true,
+        "ignoreTrailingComments": true,
+        "ignoreUrls": true,
+        "ignoreStrings": true,
+        "ignoreTemplateLiterals": true,
+        "ignoreRegExpLiterals": true
+      }
+    ],
+    "import": 0,
+    "no-alert": 0,
+    "no-shadow": 0,
+    "no-console": 0,
+    "comma-dangle": 0,
+    "react/jsx-key": 1,
+    "import/no-cycle": 0,
+    "no-return-assign": 0,
+    "arrow-body-style": 1,
+    "react/prop-types": 1,
+    "consistent-return": 1,
+    "no-param-reassign": 0,
+    "react/display-name": 0,
+    "no-use-before-define": 0,
+    "no-underscore-dangle": 0,
+    "react/button-has-type": 1,
+    "react/no-children-prop": 0,
+    "react/forbid-prop-types": 0,
+    "jsx-a11y/anchor-is-valid": 0,
+    "react/react-in-jsx-scope": 0,
+    "react/no-array-index-key": 0,
+    "react/no-unused-prop-types": 1,
+    "react-hooks/rules-of-hooks": 2,
+    "react/require-default-props": 0,
+    "react/no-unescaped-entities": 0,
+    "import/prefer-default-export": 0,
+    "react/jsx-props-no-spreading": 0,
+    "react/jsx-filename-extension": 0,
+    "react/jsx-curly-brace-presence": 0,
+    "react/destructuring-assignment": 0,
+    "import/no-extraneous-dependencies": 0,
+    "react/no-unknown-property": 0,
+    "react/function-component-definition": 0,
+    "react/jsx-no-bind": 1,
+    "jsx-a11y/label-has-associated-control": 1,
+    "no-unused-vars": [
+      1,
+      {
+        "ignoreRestSiblings": false
+      }
+    ],
+    "prefer-destructuring": [
+      1,
+      {
+        "object": true,
+        "array": false
+      }
+    ]
+  },
+  "parserOptions": {
+    "ecmaVersion": 2020
+  }
+  // "plugins": ["only-warn"]
+}
