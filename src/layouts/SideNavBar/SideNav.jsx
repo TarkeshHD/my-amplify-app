@@ -3,10 +3,11 @@ import PropTypes from 'prop-types';
 
 import { Link, useLocation } from 'react-router-dom';
 import { ArrowOutwardRounded, ChevronRightRounded } from '@mui/icons-material';
-import { Scrollbar } from '../components/Scrollbar';
-import Logo from '../components/Logo';
+import { Scrollbar } from '../../components/Scrollbar';
+import Logo from '../../components/Logo';
 import { SideNavItem } from './SideNavItem';
 import { items } from './config';
+import { NAVBAR } from '../../config';
 
 export const SideNav = (props) => {
   const { open, onClose } = props;
@@ -160,7 +161,7 @@ export const SideNav = (props) => {
           sx: {
             backgroundColor: 'neutral.800',
             color: 'common.white',
-            width: 280,
+            width: NAVBAR.DASHBOARD_WIDTH,
           },
         }}
         variant="permanent"
@@ -179,7 +180,7 @@ export const SideNav = (props) => {
         sx: {
           backgroundColor: 'neutral.800',
           color: 'common.white',
-          width: 280,
+          width: NAVBAR.DASHBOARD_WIDTH,
         },
       }}
       sx={{ zIndex: (theme) => theme.zIndex.appBar + 100 }}
