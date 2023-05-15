@@ -4,6 +4,8 @@ import { Avatar, Badge, Box, IconButton, Stack, SvgIcon, Tooltip, useMediaQuery 
 import { alpha } from '@mui/material/styles';
 import { HEADER, NAVBAR } from '../../config';
 
+import logo from '../../assets/account-icon.jpg';
+
 const SIDE_NAV_WIDTH = NAVBAR.DASHBOARD_WIDTH;
 const TOP_NAV_HEIGHT = HEADER.MOBILE_HEIGHT;
 
@@ -64,14 +66,15 @@ export const TopNav = (props) => {
                 </Badge>
               </IconButton>
             </Tooltip>
-            {/* <Avatar
+            <Avatar
               sx={{
                 cursor: 'pointer',
                 height: 40,
                 width: 40,
               }}
-              src="/assets/avatars/avatar-anika-visser.png"
-            /> */}
+              // src="/assets/account-icon.jpg"
+              src={logo}
+            />
           </Stack>
         </Stack>
       </Box>
