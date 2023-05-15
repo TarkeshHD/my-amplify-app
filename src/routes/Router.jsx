@@ -1,10 +1,18 @@
 import React from 'react';
 import { Route, Routes } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
+import AuthShield from '../shield/AuthShield';
 
 const Router = () => (
   <Routes>
-    <Route path="/" element={<DashboardLayout />}>
+    <Route
+      path="/"
+      element={
+        <AuthShield>
+          <DashboardLayout />
+        </AuthShield>
+      }
+    >
       <Route index path="" element={<div>Dashboard</div>} />
     </Route>
     <Route path="auth">

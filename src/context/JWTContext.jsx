@@ -29,6 +29,7 @@ function AuthProvider({ children }) {
     const initialize = async () => {
       try {
         const token = localStorage.getItem('accessToken');
+
         if (token && isTokenValid(token)) {
           // Make Login/Authentication API call to check token if we have token
 
