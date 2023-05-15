@@ -18,6 +18,7 @@ import { ChevronLeftOutlined, ChevronRightOutlined, InboxOutlined, MailOutlined 
 import { Outlet } from 'react-router-dom';
 import { HEADER, NAVBAR } from '../config';
 import { SideNav } from './SideNavBar/SideNav';
+import { TopNav } from './SideNavBar/TopNav';
 
 const MainStyle = styled('main', {
   shouldForwardProp: (prop) => prop !== 'collapseClick',
@@ -31,7 +32,7 @@ const MainStyle = styled('main', {
     paddingTop: HEADER.DASHBOARD_DESKTOP_HEIGHT + 24,
     paddingBottom: HEADER.DASHBOARD_DESKTOP_HEIGHT + 24,
     width: `calc(100% - ${NAVBAR.DASHBOARD_WIDTH}px)`,
-    // marginLeft: NAVBAR.DASHBOARD_COLLAPSE_WIDTH,
+    marginLeft: NAVBAR.DASHBOARD_WIDTH,
     transition: theme.transitions.create('margin-left', {
       duration: theme.transitions.duration.shorter,
     }),
@@ -43,8 +44,8 @@ const MainStyle = styled('main', {
     marginLeft: 0,
   },
   [theme.breakpoints.down('md')]: {
+    paddingTop: HEADER.MOBILE_HEIGHT,
     marginLeft: 0,
-    paddingTop: HEADER.DASHBOARD_DESKTOP_HEIGHT + 54,
   },
 }));
 
@@ -59,7 +60,8 @@ const DashboardLayout = () => {
     setOpen(false);
   };
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box>
+      <TopNav onNavOpen={handleDrawerOpen} />
       <SideNav onClose={handleDrawerClose} open={open} />
       <MainStyle>
         <Outlet />
