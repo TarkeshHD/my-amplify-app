@@ -2,6 +2,7 @@ import React from 'react';
 import { Route, Routes } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
 import AuthShield from '../shield/AuthShield';
+import ErrorPage from '../pages/404';
 
 const Router = () => (
   <Routes>
@@ -19,6 +20,7 @@ const Router = () => (
       <Route path="login" element={<div>Login</div>} />
       <Route path="register" element={<div>Register</div>} />
     </Route>
+    <Route path="*" element={<ErrorPage />} />
   </Routes>
 );
 

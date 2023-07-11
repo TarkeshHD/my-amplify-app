@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 const AuthShield = ({ children }) => {
   const { isAuthenticated } = useAuth();
   if (!isAuthenticated) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/auth/login" />;
   }
   return children;
 };
