@@ -10,30 +10,32 @@ import { AuthProvider } from './context/JWTContext';
 import reactLogo from './assets/react.svg';
 
 import './App.css';
+import { ConfigProvider } from './context/ConfigurationContext';
 
 function App() {
-  const [count, setCount] = useState(0);
   const theme = createTheme();
   return (
     <HelmetProvider>
-      <ThemeProvider theme={theme}>
-        <AuthProvider>
-          <ToastContainer
-            position="top-right"
-            autoClose={5000}
-            hideProgressBar={false}
-            newestOnTop={false}
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-            theme="dark"
-            style={{ textAlign: 'start' }}
-          />
-          <Router />
-        </AuthProvider>
-      </ThemeProvider>
+      <ConfigProvider>
+        <ThemeProvider theme={theme}>
+          <AuthProvider>
+            <ToastContainer
+              position="top-right"
+              autoClose={5000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="dark"
+              style={{ textAlign: 'start' }}
+            />
+            <Router />
+          </AuthProvider>
+        </ThemeProvider>
+      </ConfigProvider>
     </HelmetProvider>
   );
 }
