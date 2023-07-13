@@ -29,7 +29,9 @@ function ConfigProvider({ children }) {
   const getConfiguration = async () => {
     try {
       // Use some method of authorization to fetch this configuration ??
-      const response = JSON.parse(BaseConfig);
+
+      const response = BaseConfig;
+
       // Make API call and set Response
 
       setState((prev) => ({ ...prev, isConfigfileFetched: true, data: response }));

@@ -13,7 +13,7 @@
   "features": {
     "auth": {
       "state": "on",
-      "types": ["TwoFactorAuth", "SimpleAuth-Device", "DomainAuth"]
+      "types": ["BasicAuth"]
     },
     "logs": {
       "state": "on"

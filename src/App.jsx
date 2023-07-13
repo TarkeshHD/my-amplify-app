@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import { HelmetProvider } from 'react-helmet-async';
-import { Button } from '@mui/material';
+import { Button, CssBaseline } from '@mui/material';
 import { ThemeProvider } from '@emotion/react';
 
 import { createTheme } from './theme';
@@ -18,6 +18,7 @@ function App() {
     <HelmetProvider>
       <ConfigProvider>
         <ThemeProvider theme={theme}>
+          <CssBaseline />
           <AuthProvider>
             <ToastContainer
               position="top-right"
