@@ -1,6 +1,7 @@
 import { createContext, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { isTokenValid, setSession } from '../utils/jwt';
+import axios from '../utils/axios';
 
 const initialState = {
   isAuthenticated: false,
@@ -29,23 +30,22 @@ function AuthProvider({ children }) {
     const initialize = async () => {
       try {
         const token = localStorage.getItem('accessToken');
-
+        setSession(token);
         if (token && isTokenValid(token)) {
           // Make Login/Authentication API call to check token if we have token
+          let response = {};
 
-          const response = {
-            name: 'New Login',
-            email: 'Autovrse@SomeMail',
-          };
+          const res = await axios.post('/auth/login/token', {});
+          response = res.data.details;
 
-          setState((prev) => ({ ...prev, isAuthenticated: true, user: response }));
+          console.log('State updated on intitalise', response);
+          setState((prev) => ({ ...prev, isAuthenticated: true, isInitialized: true, user: response.user }));
         } else {
-          throw Error('Token is expired or invalid');
+          setSession(null);
+          setState((prev) => ({ ...prev, isAuthenticated: false, isInitialized: true, user: null }));
         }
-
-        console.log('initialize');
       } catch (error) {
-        setState((prev) => ({ ...prev, isAuthenticated: false, user: null }));
+        setState((prev) => ({ ...prev, isAuthenticated: false, isInitialized: true, user: null }));
         console.log(error);
       }
     };
@@ -53,21 +53,25 @@ function AuthProvider({ children }) {
     initialize();
   }, []);
 
-  const login = async (data) => {
+  // Type -> Pass what type of authentication API needs to be called!
+  const login = async (data, type = 'BasicAuth') => {
     try {
-      const response = {
-        name: 'New Login',
-        email: 'Autovrse@SomeMail',
-      };
       // Make Login API call
 
-      setSession(`Token`);
-      setState((prev) => ({ ...prev, isAuthenticated: true, user: response }));
+      let response = {};
+      if (type === 'BasicAuth') {
+        const res = await axios.post('/auth/login/basic', data);
+        response = res.data.details;
+      }
+
+      setSession(response.token);
+      setState((prev) => ({ ...prev, isAuthenticated: true, isInitialized: true, user: response.user }));
 
       console.log('Login');
     } catch (error) {
-      setState((prev) => ({ ...prev, isAuthenticated: false, user: null }));
-      console.log(error);
+      setState((prev) => ({ ...prev, isAuthenticated: false, isInitialized: true, user: null }));
+      console.log(error.message);
+      throw error;
     }
   };
 
@@ -92,10 +96,10 @@ function AuthProvider({ children }) {
     try {
       // Remove session
       setSession(null);
-      setState((prev) => ({ ...prev, isAuthenticated: false, user: null }));
+      setState((prev) => ({ ...prev, isAuthenticated: false, isInitialized: true, user: null }));
       console.log('logout');
     } catch (error) {
-      setState((prev) => ({ ...prev, isAuthenticated: false, user: null }));
+      setState((prev) => ({ ...prev, isAuthenticated: false, isInitialized: true, user: null }));
       console.log(error);
     }
   };

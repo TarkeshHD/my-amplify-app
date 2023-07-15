@@ -1,7 +1,7 @@
 import { useFormik } from 'formik';
 import React from 'react';
 import * as Yup from 'yup';
-
+import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { LoadingButton } from '@mui/lab';
 import { Alert, Button, FormHelperText, Stack, TextField, Typography } from '@mui/material';
@@ -22,10 +22,12 @@ const BasicLoginForm = () => {
     }),
     onSubmit: async (values, helpers) => {
       try {
-        await login(values.email, values.password);
+        await login(values);
 
         navigate('/');
       } catch (err) {
+        console.log('Inside on submit error', err);
+        toast.error(err.message);
         helpers.setStatus({ success: false });
         helpers.setErrors({ submit: err.message });
         helpers.setSubmitting(false);

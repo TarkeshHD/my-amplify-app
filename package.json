@@ -16,6 +16,7 @@
     "@mui/lab": "^5.0.0-alpha.135",
     "@mui/material": "^5.12.3",
     "@mui/system": "^5.12.3",
+    "axios": "^1.4.0",
     "formik": "^2.4.2",
     "jwt-decode": "^3.1.2",
     "prop-types": "^15.8.1",
