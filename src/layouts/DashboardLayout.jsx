@@ -26,9 +26,9 @@ const MainStyle = styled('main', {
   flexGrow: 1,
   paddingTop: HEADER.MOBILE_HEIGHT + 24,
   paddingBottom: HEADER.MOBILE_HEIGHT + 24,
-  [theme.breakpoints.up('md')]: {
-    paddingLeft: 16,
-    paddingRight: 16,
+  [theme.breakpoints.up('lg')]: {
+    paddingLeft: 4,
+    paddingRight: 4,
     paddingTop: HEADER.DASHBOARD_DESKTOP_HEIGHT + 24,
     paddingBottom: HEADER.DASHBOARD_DESKTOP_HEIGHT + 24,
     width: `calc(100% - ${NAVBAR.DASHBOARD_WIDTH}px)`,

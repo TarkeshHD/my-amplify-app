@@ -5,6 +5,8 @@ import { alpha } from '@mui/material/styles';
 import { HEADER, NAVBAR } from '../../config';
 
 import logo from '../../assets/account-icon.jpg';
+import { AccountPopover } from '../../components/AccountPopover';
+import { usePopover } from '../../hooks/usePopover';
 
 const SIDE_NAV_WIDTH = NAVBAR.DASHBOARD_WIDTH;
 const TOP_NAV_HEIGHT = HEADER.MOBILE_HEIGHT;
@@ -12,7 +14,7 @@ const TOP_NAV_HEIGHT = HEADER.MOBILE_HEIGHT;
 export const TopNav = (props) => {
   const { onNavOpen } = props;
   const lgUp = useMediaQuery((theme) => theme.breakpoints.up('lg'));
-
+  const accountPopover = usePopover();
   return (
     <>
       <Box
@@ -67,6 +69,8 @@ export const TopNav = (props) => {
               </IconButton>
             </Tooltip>
             <Avatar
+              onClick={accountPopover.handleOpen}
+              ref={accountPopover.anchorRef}
               sx={{
                 cursor: 'pointer',
                 height: 40,
@@ -78,6 +82,11 @@ export const TopNav = (props) => {
           </Stack>
         </Stack>
       </Box>
+      <AccountPopover
+        anchorEl={accountPopover.anchorRef.current}
+        open={accountPopover.open}
+        onClose={accountPopover.handleClose}
+      />
     </>
   );
 };
