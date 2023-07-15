@@ -21,8 +21,8 @@ export const items = [
     ),
   },
   {
-    title: 'Customers',
-    path: '/customers',
+    title: 'Users',
+    path: '/users',
     icon: (
       <SvgIcon fontSize="small">
         <GroupRounded />
