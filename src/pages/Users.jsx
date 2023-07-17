@@ -16,11 +16,8 @@ const useUserIDsMemo = (users) => useMemo(() => users.map((user) => user._id), [
 
 const Page = () => {
   const [page, setPage] = useState(0);
-
   const [rowsPerPage, setRowsPerPage] = useState(5);
-
   const [data, setData] = useState([]);
-
   const users = useUserMemo(page, rowsPerPage, data);
   const usersIds = useUserIDsMemo(users);
   const usersSelection = useSelection(usersIds);

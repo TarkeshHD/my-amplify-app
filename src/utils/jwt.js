@@ -23,7 +23,7 @@ const handleTokenExpired = async (exp) => {
   const timeLeft = exp * 1000 - currentTime;
 
   setTimeout(() => {
-    alert('Your session is expired.');
+    // alert('Your session is expired.');
     // Run logout code
     localStorage.removeItem('accessToken');
     window.location.reload();
