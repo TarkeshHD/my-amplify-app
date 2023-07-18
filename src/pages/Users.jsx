@@ -13,42 +13,27 @@ import CustomDialog from '../components/CustomDialog';
 import AdminForm from '../components/users/AdminForm';
 import TraineeForm from '../components/users/TraineeForm';
 
-const useUserMemo = (page, rowsPerPage, data) =>
-  useMemo(() => applyPagination(data, page, rowsPerPage), [page, rowsPerPage, data]);
-
-const useUserIDsMemo = (users) => useMemo(() => users.map((user) => user._id), [users]);
-
 const Page = () => {
   const [openAdminForm, setOpenAdminForm] = useState(false);
   const [openTraineeForm, setOpenTraineeForm] = useState(false);
-
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [fetchingData, setFetchingData] = useState(false);
   const [data, setData] = useState([]);
-  const users = useUserMemo(page, rowsPerPage, data);
-  const usersIds = useUserIDsMemo(users);
-  const usersSelection = useSelection(usersIds);
 
   const getUsers = async () => {
     try {
+      setFetchingData(true);
       const response = await axios.get('/user/all');
       setData(response?.data?.details?.users);
     } catch (error) {
       toast.error(error.message || 'Failed to fetch users');
       console.log(error);
+    } finally {
+      setFetchingData(false);
     }
   };
 
   useEffect(() => {
     getUsers();
-  }, []);
-
-  const handlePageChange = useCallback((event, value) => {
-    setPage(value);
-  }, []);
-
-  const handleRowsPerPageChange = useCallback((event) => {
-    setRowsPerPage(event.target.value);
   }, []);
 
   const { user } = useAuth();
@@ -120,19 +105,7 @@ const Page = () => {
           </Stack>
           <SearchBar />
 
-          <UsersTable
-            count={data.length}
-            items={users}
-            onDeselectAll={usersSelection.handleDeselectAll}
-            onDeselectOne={usersSelection.handleDeselectOne}
-            onPageChange={handlePageChange}
-            onRowsPerPageChange={handleRowsPerPageChange}
-            onSelectAll={usersSelection.handleSelectAll}
-            onSelectOne={usersSelection.handleSelectOne}
-            page={page}
-            rowsPerPage={rowsPerPage}
-            selected={usersSelection.selected}
-          />
+          <UsersTable fetchingData={fetchingData} count={data.length} items={data} />
           {/* ADMIN FORM */}
           <CustomDialog
             onClose={() => {
