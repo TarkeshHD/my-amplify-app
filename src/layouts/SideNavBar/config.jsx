@@ -7,6 +7,7 @@ import {
   PersonRounded,
   SettingsRounded,
   Shop2Rounded,
+  Domain,
 } from '@mui/icons-material';
 import { SvgIcon } from '@mui/material';
 
@@ -30,11 +31,11 @@ export const items = [
     ),
   },
   {
-    title: 'Companies',
-    path: '/companies',
+    title: 'Domains',
+    path: '/domains',
     icon: (
       <SvgIcon fontSize="small">
-        <Shop2Rounded />
+        <Domain />
       </SvgIcon>
     ),
   },
