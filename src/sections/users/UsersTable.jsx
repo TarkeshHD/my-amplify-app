@@ -1,10 +1,13 @@
 import PropTypes from 'prop-types';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { MaterialReactTable } from 'material-react-table';
-import { Avatar, Box, Card, Typography } from '@mui/material';
+import { Avatar, Box, Card, IconButton, MenuItem, Stack, Typography } from '@mui/material';
+import { Delete, Edit } from '@mui/icons-material';
 import { Scrollbar } from '../../components/Scrollbar';
 import { getInitials } from '../../utils/utils';
 import SearchNotFound from '../../components/SearchNotFound';
+import CustomDialog from '../../components/CustomDialog';
+import EditPasswordForm from '../../components/users/EditPasswordForm';
 
 export const UsersTable = ({ count = 0, items = [], fetchingData }) => {
   const columns = useMemo(
@@ -33,23 +36,86 @@ export const UsersTable = ({ count = 0, items = [], fetchingData }) => {
     [],
   );
 
+  // Set below flag as well as use it as 'Row' Object to be passed inside forms
+  const [openEditPassForm, setOpenEditPass] = useState(null);
+
   return (
-    <Card>
-      <MaterialReactTable
-        columns={columns}
-        data={items}
-        enableRowSelection // enable some features
-        enableColumnOrdering
-        enableGlobalFilter={false} // turn off a feature
-        state={{
-          isLoading: fetchingData,
+    <>
+      <Card>
+        <MaterialReactTable
+          renderRowActionMenuItems={({ row, closeMenu, table }) => [
+            <MenuItem
+              key={0}
+              onClick={() => {
+                // onDeleteRow();
+                closeMenu();
+              }}
+              sx={{ color: 'error.main' }}
+            >
+              <Stack spacing={2} direction={'row'}>
+                <Delete />
+                <Typography>Delete</Typography>
+              </Stack>
+            </MenuItem>,
+            <MenuItem
+              key={1}
+              onClick={() => {
+                // onEditRow();
+                closeMenu();
+              }}
+            >
+              <Stack spacing={2} direction={'row'}>
+                <Edit />
+                <Typography>Edit</Typography>
+              </Stack>
+            </MenuItem>,
+            <MenuItem
+              key={3}
+              onClick={() => {
+                // onEditRow();
+                setOpenEditPass(row);
+                closeMenu();
+              }}
+            >
+              <Stack spacing={2} direction={'row'}>
+                <Edit />
+                <Typography>Edit Password</Typography>
+              </Stack>
+            </MenuItem>,
+          ]}
+          enableRowActions
+          displayColumnDefOptions={{
+            'mrt-row-actions': {
+              header: null,
+            },
+          }}
+          positionActionsColumn="last"
+          columns={columns}
+          data={items}
+          enableRowSelection // enable some features
+          enableColumnOrdering
+          enableGlobalFilter={false} // turn off a feature
+          state={{
+            isLoading: fetchingData,
+          }}
+          initialState={{ pagination: { pageSize: 5 } }}
+          muiTablePaginationProps={{
+            rowsPerPageOptions: [5, 10, 15, 20, 25],
+          }}
+        />
+      </Card>
+
+      {/* Edit Password Form */}
+      <CustomDialog
+        onClose={() => {
+          setOpenEditPass(false);
         }}
-        initialState={{ pagination: { pageSize: 5 } }}
-        muiTablePaginationProps={{
-          rowsPerPageOptions: [5, 10, 15, 20, 25],
-        }}
-      />
-    </Card>
+        open={Boolean(openEditPassForm)}
+        title={<Typography variant="h5">Edit Password</Typography>}
+      >
+        <EditPasswordForm user={openEditPassForm?.original} />
+      </CustomDialog>
+    </>
   );
 };
 
