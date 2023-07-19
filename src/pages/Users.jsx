@@ -18,11 +18,13 @@ const Page = () => {
   const [openTraineeForm, setOpenTraineeForm] = useState(false);
   const [fetchingData, setFetchingData] = useState(false);
   const [data, setData] = useState([]);
+  const [domains, setDomains] = useState([]);
 
   const getUsers = async () => {
     try {
       setFetchingData(true);
       const response = await axios.get('/user/all');
+      console.log(response.data);
       setData(response?.data?.details?.users);
     } catch (error) {
       toast.error(error.message || 'Failed to fetch users');
@@ -31,6 +33,20 @@ const Page = () => {
       setFetchingData(false);
     }
   };
+  const getDomains = async () => {
+    try {
+      const response = await axios.get('/domain/all');
+
+      setDomains(response?.data?.details);
+    } catch (error) {
+      toast.error(error.message || 'Failed to fetch users');
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    getDomains();
+  }, []);
 
   useEffect(() => {
     getUsers();
@@ -114,7 +130,7 @@ const Page = () => {
             open={openAdminForm}
             title={<Typography variant="h5">Add User</Typography>}
           >
-            <AdminForm />
+            <AdminForm domains={domains} />
           </CustomDialog>
 
           {/* TRAINEE FORM */}

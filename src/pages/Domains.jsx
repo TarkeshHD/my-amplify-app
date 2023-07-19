@@ -19,11 +19,12 @@ const Page = () => {
 
   const [fetchingData, setFetchingData] = useState(false);
   const [data, setData] = useState([]);
+  const [flatDomains, setFlatDomains] = useState([]);
 
-  const getDomains = async () => {
+  const getDomainsTree = async () => {
     try {
       setFetchingData(true);
-      const response = await axios.get('/domain/all');
+      const response = await axios.get('/domain/tree');
       console.log(response.data);
       setData(response?.data?.details);
     } catch (error) {
@@ -34,8 +35,22 @@ const Page = () => {
     }
   };
 
+  const getDomains = async () => {
+    try {
+      const response = await axios.get('/domain/all');
+      console.log(response.data);
+      setFlatDomains(response?.data?.details);
+    } catch (error) {
+      toast.error(error.message || 'Failed to fetch users');
+      console.log(error);
+    }
+  };
+
   useEffect(() => {
     getDomains();
+  }, []);
+  useEffect(() => {
+    getDomainsTree();
   }, []);
 
   const { user } = useAuth();
@@ -81,7 +96,7 @@ const Page = () => {
             open={openDomainForm}
             title={<>Add Domain</>}
           >
-            <DomainForm domains={data} />
+            <DomainForm domains={flatDomains} />
           </CustomDialog>
         </Stack>
       </Container>

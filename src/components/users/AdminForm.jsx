@@ -12,6 +12,7 @@ import { Box, Grid, Stack, Switch, Typography, FormControlLabel } from '@mui/mat
 
 import { FormProvider, RHFSelect, RHFSwitch, RHFTextField } from '../hook-form';
 import RHFAutocomplete from '../hook-form/RHFAutocomplete';
+import axios from '../../utils/axios';
 
 // ----------------------------------------------------------------------
 
@@ -20,14 +21,16 @@ AdminForm.propTypes = {
   currentUser: PropTypes.object,
 };
 
-export default function AdminForm({ isEdit, currentUser }) {
+export default function AdminForm({ isEdit, currentUser, domains }) {
   const navigate = useNavigate();
 
   const NewUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     username: Yup.string().required('Username is required'),
     password: Yup.string().required('Password is required'),
-    domain: Yup.string().required('Domain is required'),
+    domain: Yup.string(),
+    domainId: Yup.string(),
+    role: Yup.string().required(),
   });
 
   const defaultValues = useMemo(
@@ -35,7 +38,9 @@ export default function AdminForm({ isEdit, currentUser }) {
       username: currentUser?.username || '',
       name: currentUser?.name || '',
       password: currentUser?.password || '',
-      domain: currentUser?.domain || '',
+      domain: currentUser?.domain || 'None',
+      domainId: currentUser?.domainId || 'None',
+      role: 'admin',
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [currentUser],
@@ -67,13 +72,15 @@ export default function AdminForm({ isEdit, currentUser }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEdit, currentUser]);
 
-  const onSubmit = async () => {
+  const onSubmit = async (values) => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      reset();
+      console.log('Values', values);
+      if (values.domainId === 'None') {
+        delete values.domainId;
+      }
+      const response = await axios.post('/user/register', values);
       toast.success(!isEdit ? 'Create success!' : 'Update success!');
-
-      navigate('/users');
+      navigate(0);
     } catch (error) {
       console.error(error);
       toast.error(error.message || 'Something went wrong!');
@@ -114,10 +121,22 @@ export default function AdminForm({ isEdit, currentUser }) {
               <RHFTextField name="password" label="Password" />
 
               <RHFAutocomplete
-                name="doamin"
+                name="domain"
                 label="Domain"
                 placeholder="Domain"
-                options={['Domain1', 'Domain2', 'Domain3']}
+                options={[...domains, 'None']}
+                getOptionLabel={(option) => {
+                  if (typeof option === 'string') {
+                    return option;
+                  }
+                  return option?.name || '';
+                }}
+                onChangeCustom={(value) => {
+                  console.log('Custom Change', value);
+                  setValue('domainName', value);
+                  setValue('domainId', value?._id);
+                }}
+                renderOption={(props, option) => <li {...props}>{option?.name}</li>}
               />
             </Box>
 

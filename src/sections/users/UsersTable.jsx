@@ -22,11 +22,11 @@ export const UsersTable = ({ count = 0, items = [], fetchingData }) => {
         header: 'Role',
       },
       {
-        accessorKey: 'domain', // simple recommended way to define a column
+        accessorFn: (row) => row?.domainId?.name || 'NA', // simple recommended way to define a column
         header: 'Domain',
       },
       {
-        accessorKey: 'department', // simple recommended way to define a column
+        accessorFn: (row) => row?.departmentId?.name || 'NA', // simple recommended way to define a column
         header: 'Department',
       },
     ],
