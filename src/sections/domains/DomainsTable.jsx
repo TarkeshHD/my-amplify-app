@@ -32,6 +32,8 @@ export const DomainsTable = ({ count = 0, items = [], fetchingData }) => {
         muiTablePaginationProps={{
           rowsPerPageOptions: [5, 10, 15, 20, 25],
         }}
+        enableExpanding
+        getSubRows={(row) => row.nestedDomains}
       />
     </Card>
   );

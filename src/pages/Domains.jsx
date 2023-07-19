@@ -20,11 +20,12 @@ const Page = () => {
   const [fetchingData, setFetchingData] = useState(false);
   const [data, setData] = useState([]);
 
-  const getUsers = async () => {
+  const getDomains = async () => {
     try {
       setFetchingData(true);
-      const response = await axios.get('/user/all');
-      setData(response?.data?.details?.users);
+      const response = await axios.get('/domain/all');
+      console.log(response.data);
+      setData(response?.data?.details);
     } catch (error) {
       toast.error(error.message || 'Failed to fetch users');
       console.log(error);
@@ -34,7 +35,7 @@ const Page = () => {
   };
 
   useEffect(() => {
-    getUsers();
+    getDomains();
   }, []);
 
   const { user } = useAuth();
@@ -78,9 +79,9 @@ const Page = () => {
               setOpenDomainForm(false);
             }}
             open={openDomainForm}
-            title={<Typography variant="h5">Add Domain</Typography>}
+            title={<>Add Domain</>}
           >
-            <DomainForm />
+            <DomainForm domains={data} />
           </CustomDialog>
         </Stack>
       </Container>

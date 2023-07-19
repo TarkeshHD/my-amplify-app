@@ -12,6 +12,7 @@ import { Box, Grid, Stack, Switch, Typography, FormControlLabel } from '@mui/mat
 
 import { FormProvider, RHFSelect, RHFSwitch, RHFTextField } from '../hook-form';
 import RHFAutocomplete from '../hook-form/RHFAutocomplete';
+import axios from '../../utils/axios';
 
 // ----------------------------------------------------------------------
 
@@ -20,13 +21,14 @@ DomainForm.propTypes = {
   currentDomain: PropTypes.object,
 };
 
-export default function DomainForm({ isEdit, currentDomain }) {
+export default function DomainForm({ isEdit, currentDomain, domains }) {
   const navigate = useNavigate();
 
   const NewDomainSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     domainPassword: Yup.string().required('Password is required'),
     parentId: Yup.string(), // Required while creating subdomains
+    parentDomain: Yup.string(),
   });
 
   const defaultValues = useMemo(
@@ -34,6 +36,7 @@ export default function DomainForm({ isEdit, currentDomain }) {
       name: currentDomain?.name || '',
       domainPassword: currentDomain?.domainPassword || '',
       parentId: currentDomain?.parentId || '',
+      parentDomain: currentDomain?.parentId || 'None',
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [currentDomain],
@@ -65,34 +68,20 @@ export default function DomainForm({ isEdit, currentDomain }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEdit, currentDomain]);
 
-  const onSubmit = async () => {
+  const onSubmit = async (values) => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      reset();
+      console.log('Values', values);
+      if (values.parentId === 'None') {
+        delete values.parentId;
+      }
+      const response = await axios.post('/domain/register', values);
       toast.success(!isEdit ? 'Create success!' : 'Update success!');
-
-      navigate('/admins');
+      navigate(0);
     } catch (error) {
       console.error(error);
       toast.error(error.message || 'Something went wrong!');
     }
   };
-
-  const handleDrop = useCallback(
-    (acceptedFiles) => {
-      const file = acceptedFiles[0];
-
-      if (file) {
-        setValue(
-          'avatarUrl',
-          Object.assign(file, {
-            preview: URL.createObjectURL(file),
-          }),
-        );
-      }
-    },
-    [setValue],
-  );
 
   return (
     <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
@@ -113,10 +102,22 @@ export default function DomainForm({ isEdit, currentDomain }) {
 
               {/* List of all domains, disabled and prefilled for Admin */}
               <RHFAutocomplete
-                name="parentId"
+                name="parentDomain"
                 label="Parent Domain"
                 placeholder="Parent Domain"
-                options={['Domain1', 'Domain2', 'Domain3']}
+                options={[...domains, 'None']}
+                getOptionLabel={(option) => {
+                  if (typeof option === 'string') {
+                    return option;
+                  }
+                  return option?.name || '';
+                }}
+                onChangeCustom={(value) => {
+                  console.log('Custom Change', value);
+                  setValue('domainName', value);
+                  setValue('parentId', value?._id);
+                }}
+                renderOption={(props, option) => <li {...props}>{option?.name}</li>}
               />
             </Box>
 

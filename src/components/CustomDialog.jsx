@@ -50,7 +50,7 @@ export default function CustomDialog({ open = false, title = 'Title', onClose, c
       {...other}
     >
       <Stack sx={{ mt: 2 }} direction={'row'} justifyContent={'space-between'} alignItems={'center'}>
-        <DialogTitle>{title}</DialogTitle>
+        <DialogTitle variant="h5">{title}</DialogTitle>
         <DialogActions>
           <Tooltip title="Close">
             <IconButton color="inherit" onClick={onClose}>
