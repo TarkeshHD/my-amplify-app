@@ -24,16 +24,22 @@ export const DomainsTable = ({ count = 0, items = [], fetchingData }) => {
         data={items}
         enableRowSelection // enable some features
         enableColumnOrdering
-        enableGlobalFilter={false} // turn off a feature
         state={{
           isLoading: fetchingData,
         }}
-        initialState={{ pagination: { pageSize: 5 } }}
+        initialState={{ pagination: { pageSize: 5 }, showGlobalFilter: true }}
         muiTablePaginationProps={{
           rowsPerPageOptions: [5, 10, 15, 20, 25],
         }}
         enableExpanding
         getSubRows={(row) => row.nestedDomains}
+        enableGlobalFilterModes
+        positionGlobalFilter="left"
+        muiSearchTextFieldProps={{
+          placeholder: `Search ${items.length} rows`,
+          sx: { minWidth: '300px' },
+          variant: 'outlined',
+        }}
       />
     </Card>
   );

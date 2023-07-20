@@ -85,7 +85,6 @@ const Page = () => {
               )}
             </Stack>
           </Stack>
-          <SearchBar />
 
           <DomainsTable count={data.length} items={data} fetchingData={fetchingData} />
           {/* ADD DOMAIN */}

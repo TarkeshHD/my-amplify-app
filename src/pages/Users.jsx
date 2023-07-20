@@ -135,7 +135,7 @@ const Page = () => {
               )}
             </Stack>
           </Stack>
-          <SearchBar />
+          {/* <SearchBar /> */}
 
           <UsersTable fetchingData={fetchingData} count={data.length} items={data} />
           {/* ADMIN FORM */}
