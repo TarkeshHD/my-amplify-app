@@ -21,14 +21,14 @@ AdminForm.propTypes = {
   currentUser: PropTypes.object,
 };
 
-export default function AdminForm({ isEdit, currentUser, domains }) {
+export default function AdminForm({ isEdit, currentUser, domains = [] }) {
   const navigate = useNavigate();
 
   const NewUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     username: Yup.string().required('Username is required'),
     password: Yup.string().required('Password is required'),
-    domain: Yup.string(),
+    domain: Yup.string().required('Domain is required').notOneOf(['None'], 'Select one domain'),
     domainId: Yup.string(),
     role: Yup.string().required(),
   });
@@ -86,22 +86,6 @@ export default function AdminForm({ isEdit, currentUser, domains }) {
       toast.error(error.message || 'Something went wrong!');
     }
   };
-
-  const handleDrop = useCallback(
-    (acceptedFiles) => {
-      const file = acceptedFiles[0];
-
-      if (file) {
-        setValue(
-          'avatarUrl',
-          Object.assign(file, {
-            preview: URL.createObjectURL(file),
-          }),
-        );
-      }
-    },
-    [setValue],
-  );
 
   return (
     <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>

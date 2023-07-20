@@ -12,6 +12,7 @@ import { Box, Grid, Stack, Switch, Typography, FormControlLabel } from '@mui/mat
 
 import { FormProvider, RHFSelect, RHFSwitch, RHFTextField } from '../hook-form';
 import RHFAutocomplete from '../hook-form/RHFAutocomplete';
+import axios from '../../utils/axios';
 
 // ----------------------------------------------------------------------
 
@@ -20,14 +21,18 @@ TraineeForm.propTypes = {
   currentUser: PropTypes.object,
 };
 
-export default function TraineeForm({ isEdit, currentUser }) {
+export default function TraineeForm({ isEdit, currentUser, domains = [], departments = [] }) {
   const navigate = useNavigate();
 
   const NewUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     username: Yup.string().required('Username is required'),
     password: Yup.string().required('Password is required'),
-    domain: Yup.string().required('Domain is required'),
+    domain: Yup.string().required('Domain is required').notOneOf(['None'], 'Select one domain'),
+    domainId: Yup.string(),
+    department: Yup.string(),
+    departmentId: Yup.string(),
+    role: Yup.string().required(),
   });
 
   const defaultValues = useMemo(
@@ -35,8 +40,11 @@ export default function TraineeForm({ isEdit, currentUser }) {
       username: currentUser?.username || '',
       name: currentUser?.name || '',
       password: currentUser?.password || '',
-      domain: currentUser?.domain || '',
-      department: currentUser?.department || '',
+      domain: currentUser?.domain || 'None',
+      domainId: currentUser?.domainId || 'None',
+      department: currentUser?.department || 'None',
+      departmentId: currentUser?.departmentId || 'None',
+      role: 'user',
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [currentUser],
@@ -68,34 +76,23 @@ export default function TraineeForm({ isEdit, currentUser }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEdit, currentUser]);
 
-  const onSubmit = async () => {
+  const onSubmit = async (values) => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      reset();
+      console.log('Values', values);
+      if (values.domainId === 'None') {
+        delete values.domainId;
+      }
+      if (values.departmentId === 'None') {
+        delete values.domainId;
+      }
+      const response = await axios.post('/user/register', values);
       toast.success(!isEdit ? 'Create success!' : 'Update success!');
-
-      navigate('/users');
+      navigate(0);
     } catch (error) {
       console.error(error);
       toast.error(error.message || 'Something went wrong!');
     }
   };
-
-  const handleDrop = useCallback(
-    (acceptedFiles) => {
-      const file = acceptedFiles[0];
-
-      if (file) {
-        setValue(
-          'avatarUrl',
-          Object.assign(file, {
-            preview: URL.createObjectURL(file),
-          }),
-        );
-      }
-    },
-    [setValue],
-  );
 
   return (
     <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
@@ -115,16 +112,41 @@ export default function TraineeForm({ isEdit, currentUser }) {
               <RHFTextField name="password" label="Password" />
 
               <RHFAutocomplete
-                name="doamin"
+                name="domain"
                 label="Domain"
                 placeholder="Domain"
-                options={['Domain1', 'Domain2', 'Domain3']}
+                options={[...domains, 'None']}
+                getOptionLabel={(option) => {
+                  if (typeof option === 'string') {
+                    return option;
+                  }
+                  return option?.name || '';
+                }}
+                onChangeCustom={(value) => {
+                  console.log('Custom Change', value);
+                  setValue('domainName', value);
+                  setValue('domainId', value?._id);
+                }}
+                renderOption={(props, option) => <li {...props}>{option?.name}</li>}
               />
+
               <RHFAutocomplete
                 name="department"
                 label="Department"
                 placeholder="Department"
-                options={['Domain1', 'Domain2', 'Domain3']}
+                options={[...departments, 'None']}
+                getOptionLabel={(option) => {
+                  if (typeof option === 'string') {
+                    return option;
+                  }
+                  return option?.name || '';
+                }}
+                onChangeCustom={(value) => {
+                  console.log('Custom Change', value);
+                  setValue('departmentName', value);
+                  setValue('departmentId', value?._id);
+                }}
+                renderOption={(props, option) => <li {...props}>{option?.name}</li>}
               />
             </Box>
 

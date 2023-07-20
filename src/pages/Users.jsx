@@ -128,7 +128,7 @@ const Page = () => {
               setOpenAdminForm(false);
             }}
             open={openAdminForm}
-            title={<Typography variant="h5">Add User</Typography>}
+            title={<Typography variant="h5">Add Admin</Typography>}
           >
             <AdminForm domains={domains} />
           </CustomDialog>
@@ -139,7 +139,7 @@ const Page = () => {
               setOpenTraineeForm(false);
             }}
             open={openTraineeForm}
-            title={<Typography variant="h5">Add User</Typography>}
+            title={<Typography variant="h5">Add Trainee</Typography>}
           >
             <TraineeForm />
           </CustomDialog>
