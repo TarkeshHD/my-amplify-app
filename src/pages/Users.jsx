@@ -19,6 +19,7 @@ const Page = () => {
   const [fetchingData, setFetchingData] = useState(false);
   const [data, setData] = useState([]);
   const [domains, setDomains] = useState([]);
+  const [departments, setDepartments] = useState([]);
 
   const getUsers = async () => {
     try {
@@ -43,6 +44,21 @@ const Page = () => {
       console.log(error);
     }
   };
+
+  const getDepartments = async () => {
+    try {
+      const response = await axios.get('/department/all');
+
+      setDepartments(response?.data?.details);
+    } catch (error) {
+      toast.error(error.message || 'Failed to fetch users');
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    getDepartments();
+  }, []);
 
   useEffect(() => {
     getDomains();
@@ -141,7 +157,7 @@ const Page = () => {
             open={openTraineeForm}
             title={<Typography variant="h5">Add Trainee</Typography>}
           >
-            <TraineeForm />
+            <TraineeForm domains={domains} departments={departments} />
           </CustomDialog>
         </Stack>
       </Container>

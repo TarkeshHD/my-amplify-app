@@ -16,38 +16,32 @@ import axios from '../../utils/axios';
 
 // ----------------------------------------------------------------------
 
-AdminForm.propTypes = {
+DepartmentForm.propTypes = {
   isEdit: PropTypes.bool,
-  currentUser: PropTypes.object,
+  currentDepartment: PropTypes.object,
 };
 
-export default function AdminForm({ isEdit, currentUser, domains = [] }) {
+export default function DepartmentForm({ isEdit, currentDepartment, domains = [] }) {
   const navigate = useNavigate();
 
-  const NewUserSchema = Yup.object().shape({
+  const NewDepartmentSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
-    username: Yup.string().required('Username is required'),
-    password: Yup.string().required('Password is required'),
-    domain: Yup.string().required('Domain is required').notOneOf(['None'], 'Select one domain'),
     domainId: Yup.string(),
-    role: Yup.string().required(),
+    domain: Yup.string().required('Domain is required').notOneOf(['None'], 'Select one domain'),
   });
 
   const defaultValues = useMemo(
     () => ({
-      username: currentUser?.username || '',
-      name: currentUser?.name || '',
-      password: currentUser?.password || '',
-      domain: currentUser?.domain || 'None',
-      domainId: currentUser?.domainId || 'None',
-      role: 'admin',
+      name: currentDepartment?.name || '',
+      domainId: currentDepartment?.domainId?._id || 'None',
+      domain: currentDepartment?.domainId?.name || 'None',
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [currentUser],
+    [currentDepartment],
   );
 
   const methods = useForm({
-    resolver: yupResolver(NewUserSchema),
+    resolver: yupResolver(NewDepartmentSchema),
     defaultValues,
   });
 
@@ -63,14 +57,14 @@ export default function AdminForm({ isEdit, currentUser, domains = [] }) {
   const values = watch();
 
   useEffect(() => {
-    if (isEdit && currentUser) {
+    if (isEdit && currentDepartment) {
       reset(defaultValues);
     }
     if (!isEdit) {
       reset(defaultValues);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEdit, currentUser]);
+  }, [isEdit, currentDepartment]);
 
   const onSubmit = async (values) => {
     try {
@@ -78,7 +72,7 @@ export default function AdminForm({ isEdit, currentUser, domains = [] }) {
       if (values.domainId === 'None') {
         delete values.domainId;
       }
-      const response = await axios.post('/user/register', values);
+      const response = await axios.post('/department/register', values);
       toast.success(!isEdit ? 'Create success!' : 'Update success!');
       navigate(0);
     } catch (error) {
@@ -100,10 +94,9 @@ export default function AdminForm({ isEdit, currentUser, domains = [] }) {
                 gridTemplateColumns: { xs: 'repeat(1, 1fr)' }, // Add sm: 'repeat(2, 1fr)'  for two Fields in line
               }}
             >
-              <RHFTextField name="name" label="Display Name" />
-              <RHFTextField name="username" label="Username" />
-              <RHFTextField name="password" label="Password" />
+              <RHFTextField name="name" label="Department Name" />
 
+              {/* List of all domains, disabled and prefilled for Admin */}
               <RHFAutocomplete
                 name="domain"
                 label="Domain"
@@ -126,7 +119,7 @@ export default function AdminForm({ isEdit, currentUser, domains = [] }) {
 
             <Stack alignItems="flex-end" sx={{ mt: 3 }}>
               <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
-                {!isEdit ? 'Create User' : 'Save Changes'}
+                {!isEdit ? 'Create Domain' : 'Save Changes'}
               </LoadingButton>
             </Stack>
           </Box>

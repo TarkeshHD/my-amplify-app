@@ -30,7 +30,7 @@ export default function TraineeForm({ isEdit, currentUser, domains = [], departm
     password: Yup.string().required('Password is required'),
     domain: Yup.string().required('Domain is required').notOneOf(['None'], 'Select one domain'),
     domainId: Yup.string(),
-    department: Yup.string(),
+    department: Yup.string().required('Department is required').notOneOf(['None'], 'Select one department'),
     departmentId: Yup.string(),
     role: Yup.string().required(),
   });
@@ -124,7 +124,7 @@ export default function TraineeForm({ isEdit, currentUser, domains = [], departm
                 }}
                 onChangeCustom={(value) => {
                   console.log('Custom Change', value);
-                  setValue('domainName', value);
+                  setValue('domain', value?.name);
                   setValue('domainId', value?._id);
                 }}
                 renderOption={(props, option) => <li {...props}>{option?.name}</li>}
@@ -143,7 +143,7 @@ export default function TraineeForm({ isEdit, currentUser, domains = [], departm
                 }}
                 onChangeCustom={(value) => {
                   console.log('Custom Change', value);
-                  setValue('departmentName', value);
+                  setValue('department', value?.name);
                   setValue('departmentId', value?._id);
                 }}
                 renderOption={(props, option) => <li {...props}>{option?.name}</li>}

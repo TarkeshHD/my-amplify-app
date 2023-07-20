@@ -33,6 +33,7 @@ const Router = () => (
       <Route index path="" element={<Dashboard />} />
       <Route path="users" element={<Users />} />
       <Route path="domains" element={<Domains />} />
+      <Route path="departments" element={<Departments />} />
     </Route>
     <Route path="auth">
       <Route path="login" element={<Login />} />
@@ -44,6 +45,7 @@ const Router = () => (
 
 // Pages Import
 
+const Departments = Loadable(lazy(() => import('../pages/Departments')));
 const Domains = Loadable(lazy(() => import('../pages/Domains')));
 const Users = Loadable(lazy(() => import('../pages/Users')));
 const Dashboard = Loadable(lazy(() => import('../pages/Dashboard')));

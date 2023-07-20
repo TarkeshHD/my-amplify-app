@@ -21,7 +21,7 @@ DomainForm.propTypes = {
   currentDomain: PropTypes.object,
 };
 
-export default function DomainForm({ isEdit, currentDomain, domains }) {
+export default function DomainForm({ isEdit, currentDomain, domains = [] }) {
   const navigate = useNavigate();
 
   const NewDomainSchema = Yup.object().shape({

@@ -8,6 +8,7 @@ import {
   SettingsRounded,
   Shop2Rounded,
   Domain,
+  AccountTreeRounded,
 } from '@mui/icons-material';
 import { SvgIcon } from '@mui/material';
 
@@ -36,6 +37,15 @@ export const items = [
     icon: (
       <SvgIcon fontSize="small">
         <Domain />
+      </SvgIcon>
+    ),
+  },
+  {
+    title: 'Departments',
+    path: '/departments',
+    icon: (
+      <SvgIcon fontSize="small">
+        <AccountTreeRounded />
       </SvgIcon>
     ),
   },
