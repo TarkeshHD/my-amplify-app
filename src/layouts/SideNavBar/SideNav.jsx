@@ -1,4 +1,16 @@
-import { Box, Button, Divider, Drawer, Stack, SvgIcon, Typography, useMediaQuery, useTheme } from '@mui/material';
+import {
+  Box,
+  Button,
+  Collapse,
+  Divider,
+  Drawer,
+  List,
+  Stack,
+  SvgIcon,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
 import PropTypes from 'prop-types';
 
 import { Link, useLocation } from 'react-router-dom';
@@ -8,6 +20,7 @@ import Logo from '../../components/Logo';
 import { SideNavItem } from './SideNavItem';
 import { items } from './config';
 import { NAVBAR } from '../../config';
+import { SideNavNestedItems } from './SideNavNestedItems';
 
 export const SideNav = (props) => {
   const { open, onClose } = props;
@@ -91,6 +104,11 @@ export const SideNav = (props) => {
           >
             {items.map((item) => {
               const active = item.path ? pathname === item.path : false;
+              const hasChildren = item.children;
+
+              if (hasChildren) {
+                return <SideNavNestedItems active={active} item={item} key={item.title} />;
+              }
 
               return (
                 <SideNavItem

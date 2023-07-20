@@ -32,22 +32,28 @@ export const items = [
     ),
   },
   {
-    title: 'Domains',
-    path: '/domains',
-    icon: (
-      <SvgIcon fontSize="small">
-        <Domain />
-      </SvgIcon>
-    ),
-  },
-  {
-    title: 'Departments',
-    path: '/departments',
-    icon: (
-      <SvgIcon fontSize="small">
-        <AccountTreeRounded />
-      </SvgIcon>
-    ),
+    title: 'Organization',
+
+    children: [
+      {
+        title: 'Domains',
+        path: '/domains',
+        icon: (
+          <SvgIcon fontSize="small">
+            <Domain />
+          </SvgIcon>
+        ),
+      },
+      {
+        title: 'Departments',
+        path: '/departments',
+        icon: (
+          <SvgIcon fontSize="small">
+            <AccountTreeRounded />
+          </SvgIcon>
+        ),
+      },
+    ],
   },
   {
     title: 'Account',

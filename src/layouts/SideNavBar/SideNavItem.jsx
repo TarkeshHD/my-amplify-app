@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 
 export const SideNavItem = (props) => {
-  const { active = false, disabled, external, icon, path, title } = props;
+  const { active = false, disabled, external, icon, path, title, onClick, sx = {} } = props;
 
   let linkProps = {};
   if (path) {
@@ -40,8 +40,10 @@ export const SideNavItem = (props) => {
           '&:hover': {
             backgroundColor: 'rgba(255, 255, 255, 0.04)',
           },
+          ...sx,
         }}
         {...linkProps}
+        onClick={onClick}
       >
         {icon && (
           <Box
@@ -92,4 +94,6 @@ SideNavItem.propTypes = {
   icon: PropTypes.node,
   path: PropTypes.string,
   title: PropTypes.string.isRequired,
+  onClick: PropTypes.func,
+  sx: PropTypes.object,
 };
