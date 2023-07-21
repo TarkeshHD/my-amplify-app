@@ -44,7 +44,7 @@ export const SideNav = (props) => {
         sx={{
           display: 'flex',
           flexDirection: 'column',
-          height: '100%',
+          minHeight: '90vh',
         }}
       >
         <Box sx={{ p: 3 }}>
@@ -84,7 +84,9 @@ export const SideNav = (props) => {
             </SvgIcon>
           </Box>
         </Box>
+
         <Divider sx={{ borderColor: 'neutral.700' }} />
+
         <Box
           component="nav"
           sx={{
@@ -124,7 +126,9 @@ export const SideNav = (props) => {
             })}
           </Stack>
         </Box>
+
         <Divider sx={{ borderColor: 'neutral.700' }} />
+
         <Box
           sx={{
             px: 2,
@@ -148,7 +152,7 @@ export const SideNav = (props) => {
               },
             }}
           >
-            <img alt="Go to pro" src="vite.svg" />
+            {/* <img alt="Go to pro" src="vite.svg" /> */}
           </Box>
           <Button
             component="a"

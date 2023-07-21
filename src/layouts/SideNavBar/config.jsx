@@ -55,49 +55,49 @@ export const items = [
       },
     ],
   },
-  {
-    title: 'Account',
-    path: '/account',
-    icon: (
-      <SvgIcon fontSize="small">
-        <PersonRounded />
-      </SvgIcon>
-    ),
-  },
-  {
-    title: 'Settings',
-    path: '/settings',
-    icon: (
-      <SvgIcon fontSize="small">
-        <SettingsRounded />
-      </SvgIcon>
-    ),
-  },
-  {
-    title: 'Login',
-    path: '/auth/login',
-    icon: (
-      <SvgIcon fontSize="small">
-        <LockRounded />
-      </SvgIcon>
-    ),
-  },
-  {
-    title: 'Register',
-    path: '/auth/register',
-    icon: (
-      <SvgIcon fontSize="small">
-        <PersonAddRounded />
-      </SvgIcon>
-    ),
-  },
-  {
-    title: 'Error',
-    path: '/404',
-    icon: (
-      <SvgIcon fontSize="small">
-        <ErrorRounded />
-      </SvgIcon>
-    ),
-  },
+  // {
+  //   title: 'Account',
+  //   path: '/account',
+  //   icon: (
+  //     <SvgIcon fontSize="small">
+  //       <PersonRounded />
+  //     </SvgIcon>
+  //   ),
+  // },
+  // {
+  //   title: 'Settings',
+  //   path: '/settings',
+  //   icon: (
+  //     <SvgIcon fontSize="small">
+  //       <SettingsRounded />
+  //     </SvgIcon>
+  //   ),
+  // },
+  // {
+  //   title: 'Login',
+  //   path: '/auth/login',
+  //   icon: (
+  //     <SvgIcon fontSize="small">
+  //       <LockRounded />
+  //     </SvgIcon>
+  //   ),
+  // },
+  // {
+  //   title: 'Register',
+  //   path: '/auth/register',
+  //   icon: (
+  //     <SvgIcon fontSize="small">
+  //       <PersonAddRounded />
+  //     </SvgIcon>
+  //   ),
+  // },
+  // {
+  //   title: 'Error',
+  //   path: '/404',
+  //   icon: (
+  //     <SvgIcon fontSize="small">
+  //       <ErrorRounded />
+  //     </SvgIcon>
+  //   ),
+  // },
 ];
