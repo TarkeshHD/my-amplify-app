@@ -1,14 +1,14 @@
 import { Box, Container, Unstable_Grid2 as Grid } from '@mui/material';
 import { Helmet } from 'react-helmet-async';
+import { AccountCircle, CurrencyRupee, EventAvailable, HourglassEmpty, TrendingUp } from '@mui/icons-material';
 
-import { DashboardBudget } from '../sections/dashboard/DashboardBudget';
+import { DashboardDiffCard } from '../sections/dashboard/DashboardDiffCard';
 
-import { DashboardSales } from '../sections/dashboard/DashboardSales';
+import { DashboardBarChart } from '../sections/dashboard/DashboardBarChart';
 
 import { DashboardTasksProgress } from '../sections/dashboard/DashboardTasksProgress';
-import { DashboardTotalCustomers } from '../sections/dashboard/DashboardTotalCustomers';
-import { DashboardTotalProfit } from '../sections/dashboard/DashboardTotalProfit';
-import { DashboardTraffic } from '../sections/dashboard/DashboardTraffic';
+
+import { DashboardPieChart } from '../sections/dashboard/DashboardPieChart';
 
 const now = new Date();
 
@@ -21,19 +21,40 @@ const Page = () => (
     <Container maxWidth="xl">
       <Grid container spacing={3}>
         <Grid xs={12} sm={6} lg={3}>
-          <DashboardBudget difference={12} positive sx={{ height: '100%' }} value="$24k" />
+          <DashboardDiffCard
+            title="VR Sessions"
+            icon={<EventAvailable />}
+            difference={12}
+            positive
+            sx={{ height: '100%' }}
+            value="1570"
+          />
         </Grid>
         <Grid xs={12} sm={6} lg={3}>
-          <DashboardTotalCustomers difference={16} positive={false} sx={{ height: '100%' }} value="1.6k" />
+          <DashboardDiffCard
+            title="Training Hours"
+            icon={<HourglassEmpty />}
+            iconColor="error.main"
+            difference={16}
+            positive={false}
+            sx={{ height: '100%' }}
+            value="65h"
+          />
         </Grid>
         <Grid xs={12} sm={6} lg={3}>
-          <DashboardTasksProgress sx={{ height: '100%' }} value={75.5} />
+          <DashboardTasksProgress
+            title="Evaluation Success"
+            icon={<TrendingUp />}
+            sx={{ height: '100%' }}
+            value={75.5}
+          />
         </Grid>
         <Grid xs={12} sm={6} lg={3}>
-          <DashboardTotalProfit sx={{ height: '100%' }} value="$15k" />
+          <DashboardDiffCard title={'Active Users'} icon={<AccountCircle />} sx={{ height: '100%' }} value="78%" />
         </Grid>
         <Grid xs={12} lg={8}>
-          <DashboardSales
+          <DashboardBarChart
+            title="Monthly Sessions"
             chartSeries={[
               {
                 name: 'This year',
@@ -48,7 +69,8 @@ const Page = () => (
           />
         </Grid>
         <Grid xs={12} md={6} lg={4}>
-          <DashboardTraffic
+          <DashboardPieChart
+            title={'Domain Users'}
             chartSeries={[63, 15, 22]}
             labels={['Desktop', 'Tablet', 'Phone']}
             sx={{ height: '100%' }}

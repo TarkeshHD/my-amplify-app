@@ -83,8 +83,8 @@ const useChartOptions = () => {
   };
 };
 
-export const DashboardSales = (props) => {
-  const { chartSeries, sx } = props;
+export const DashboardBarChart = (props) => {
+  const { chartSeries, sx, title = 'Title' } = props;
   const chartOptions = useChartOptions();
 
   return (
@@ -103,7 +103,7 @@ export const DashboardSales = (props) => {
             Sync
           </Button>
         }
-        title="Sales"
+        title={title}
       />
       <CardContent>
         <Chart height={350} options={chartOptions} series={chartSeries} type="bar" width="100%" />
@@ -126,7 +126,7 @@ export const DashboardSales = (props) => {
   );
 };
 
-DashboardSales.protoTypes = {
+DashboardBarChart.protoTypes = {
   chartSeries: PropTypes.array.isRequired,
   sx: PropTypes.object,
 };

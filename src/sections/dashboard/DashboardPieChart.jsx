@@ -65,13 +65,13 @@ const iconMap = {
   ),
 };
 
-export const DashboardTraffic = (props) => {
-  const { chartSeries, labels, sx } = props;
+export const DashboardPieChart = (props) => {
+  const { chartSeries, labels, sx, title = 'Title' } = props;
   const chartOptions = useChartOptions(labels);
 
   return (
     <Card sx={sx}>
-      <CardHeader title="Traffic Source" />
+      <CardHeader title={title} />
       <CardContent>
         <Chart height={300} options={chartOptions} series={chartSeries} type="donut" width="100%" />
         <Stack alignItems="center" direction="row" justifyContent="center" spacing={2} sx={{ mt: 2 }}>
@@ -103,7 +103,7 @@ export const DashboardTraffic = (props) => {
   );
 };
 
-DashboardTraffic.propTypes = {
+DashboardPieChart.propTypes = {
   chartSeries: PropTypes.array.isRequired,
   labels: PropTypes.array.isRequired,
   sx: PropTypes.object,
