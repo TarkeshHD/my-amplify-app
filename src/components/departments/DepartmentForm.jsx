@@ -119,7 +119,7 @@ export default function DepartmentForm({ isEdit, currentDepartment, domains = []
 
             <Stack alignItems="flex-end" sx={{ mt: 3 }}>
               <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
-                {!isEdit ? 'Create Domain' : 'Save Changes'}
+                {!isEdit ? 'Create Department' : 'Save Changes'}
               </LoadingButton>
             </Stack>
           </Box>
