@@ -68,21 +68,19 @@ const Page = () => {
               <Typography variant="h4">Departments</Typography>
             </Stack>
             <Stack alignItems="center" direction="row" spacing={1}>
-              {(user.role === 'superAdmin' || user.role === 'admin') && (
-                <Button
-                  startIcon={
-                    <SvgIcon fontSize="small">
-                      <Add />
-                    </SvgIcon>
-                  }
-                  variant="contained"
-                  onClick={() => {
-                    setOpenDepartmentForm(true);
-                  }}
-                >
-                  Add Department
-                </Button>
-              )}
+              <Button
+                startIcon={
+                  <SvgIcon fontSize="small">
+                    <Add />
+                  </SvgIcon>
+                }
+                variant="contained"
+                onClick={() => {
+                  setOpenDepartmentForm(true);
+                }}
+              >
+                Add Department
+              </Button>
             </Stack>
           </Stack>
 

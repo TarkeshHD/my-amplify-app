@@ -12,9 +12,11 @@ import { useAuth } from '../hooks/useAuth';
 import CustomDialog from '../components/CustomDialog';
 import AdminForm from '../components/users/AdminForm';
 import TraineeForm from '../components/users/TraineeForm';
+import SuperAdminForm from '../components/users/SuperAdminForm';
 
 const Page = () => {
   const [openAdminForm, setOpenAdminForm] = useState(false);
+  const [openSuperAdminForm, setOpenSuperAdminForm] = useState(false);
   const [openTraineeForm, setOpenTraineeForm] = useState(false);
   const [fetchingData, setFetchingData] = useState(false);
   const [data, setData] = useState([]);
@@ -103,7 +105,24 @@ const Page = () => {
               >
                 Export
               </Button>
-              {user.role === 'superAdmin' && (
+
+              {user.role !== 'admin' && (
+                <Button
+                  startIcon={
+                    <SvgIcon fontSize="small">
+                      <Add />
+                    </SvgIcon>
+                  }
+                  variant="contained"
+                  onClick={() => {
+                    setOpenSuperAdminForm(true);
+                  }}
+                >
+                  Add Super Admin
+                </Button>
+              )}
+
+              {user.role !== 'admin' && (
                 <Button
                   startIcon={
                     <SvgIcon fontSize="small">
@@ -118,26 +137,37 @@ const Page = () => {
                   Add Admin
                 </Button>
               )}
-              {(user.role === 'superAdmin' || user.role === 'admin') && (
-                <Button
-                  startIcon={
-                    <SvgIcon fontSize="small">
-                      <Add />
-                    </SvgIcon>
-                  }
-                  variant="contained"
-                  onClick={() => {
-                    setOpenTraineeForm(true);
-                  }}
-                >
-                  Add Trainee
-                </Button>
-              )}
+
+              <Button
+                startIcon={
+                  <SvgIcon fontSize="small">
+                    <Add />
+                  </SvgIcon>
+                }
+                variant="contained"
+                onClick={() => {
+                  setOpenTraineeForm(true);
+                }}
+              >
+                Add Trainee
+              </Button>
             </Stack>
           </Stack>
           {/* <SearchBar /> */}
 
           <UsersTable fetchingData={fetchingData} count={data.length} items={data} />
+
+          {/* SUPER ADMIN FORM */}
+          <CustomDialog
+            onClose={() => {
+              setOpenSuperAdminForm(false);
+            }}
+            open={openSuperAdminForm}
+            title={<Typography variant="h5">Super Admin</Typography>}
+          >
+            <SuperAdminForm />
+          </CustomDialog>
+
           {/* ADMIN FORM */}
           <CustomDialog
             onClose={() => {
