@@ -9,6 +9,7 @@ import {
   Shop2Rounded,
   Domain,
   AccountTreeRounded,
+  ModelTraining,
 } from '@mui/icons-material';
 import { SvgIcon } from '@mui/material';
 
@@ -36,7 +37,7 @@ export const items = [
     path: '/modules',
     icon: (
       <SvgIcon fontSize="small">
-        <PersonRounded />
+        <ModelTraining />
       </SvgIcon>
     ),
   },
