@@ -39,7 +39,7 @@ export default function TraineeForm({ isEdit, currentUser, domains = [], departm
     () => ({
       username: currentUser?.username || '',
       name: currentUser?.name || '',
-      password: currentUser?.password || '',
+      // password: currentUser?.password || '',
       domain: currentUser?.domain || 'None',
       domainId: currentUser?.domainId || 'None',
       department: currentUser?.department || 'None',
@@ -109,7 +109,7 @@ export default function TraineeForm({ isEdit, currentUser, domains = [], departm
             >
               <RHFTextField name="name" label="Display Name" />
               <RHFTextField name="username" label="Username" />
-              <RHFTextField name="password" label="Password" />
+              {/* <RHFTextField name="password" label="Password" /> */}
 
               <RHFAutocomplete
                 name="domain"
