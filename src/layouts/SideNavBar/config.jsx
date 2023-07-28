@@ -32,6 +32,15 @@ export const items = [
     ),
   },
   {
+    title: 'Modules',
+    path: '/modules',
+    icon: (
+      <SvgIcon fontSize="small">
+        <PersonRounded />
+      </SvgIcon>
+    ),
+  },
+  {
     title: 'Organization',
 
     children: [
@@ -55,15 +64,7 @@ export const items = [
       },
     ],
   },
-  // {
-  //   title: 'Account',
-  //   path: '/account',
-  //   icon: (
-  //     <SvgIcon fontSize="small">
-  //       <PersonRounded />
-  //     </SvgIcon>
-  //   ),
-  // },
+
   // {
   //   title: 'Settings',
   //   path: '/settings',

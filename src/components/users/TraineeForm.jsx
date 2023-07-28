@@ -27,7 +27,7 @@ export default function TraineeForm({ isEdit, currentUser, domains = [], departm
   const NewUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     username: Yup.string().required('Username is required'),
-    password: Yup.string().required('Password is required'),
+    // password: Yup.string().required('Password is required'),
     domain: Yup.string().required('Domain is required').notOneOf(['None'], 'Select one domain'),
     domainId: Yup.string(),
     department: Yup.string().required('Department is required').notOneOf(['None'], 'Select one department'),

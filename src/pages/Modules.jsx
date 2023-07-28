@@ -23,7 +23,7 @@ const Page = () => {
   const getModules = async () => {
     try {
       setFetchingData(true);
-      const response = await axios.get('/modules/all');
+      const response = await axios.get('/module/all');
       console.log(response.data);
       setData(response?.data?.details);
     } catch (error) {
