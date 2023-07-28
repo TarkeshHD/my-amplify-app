@@ -36,7 +36,6 @@ export default function SuperAdminForm({ isEdit, currentUser }) {
       username: currentUser?.username || '',
       name: currentUser?.name || '',
       password: currentUser?.password || '',
-
       role: 'superAdmin',
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
