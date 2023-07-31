@@ -18,6 +18,7 @@
     "@mui/material": "^5.12.3",
     "@mui/system": "^5.12.3",
     "axios": "^1.4.0",
+    "export-to-csv": "^0.2.1",
     "jwt-decode": "^3.1.2",
     "material-react-table": "^1.14.0",
     "prop-types": "^15.8.1",

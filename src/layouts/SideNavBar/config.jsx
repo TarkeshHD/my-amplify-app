@@ -10,6 +10,7 @@ import {
   Domain,
   AccountTreeRounded,
   ModelTraining,
+  Poll,
 } from '@mui/icons-material';
 import { SvgIcon } from '@mui/material';
 
@@ -38,6 +39,15 @@ export const items = [
     icon: (
       <SvgIcon fontSize="small">
         <ModelTraining />
+      </SvgIcon>
+    ),
+  },
+  {
+    title: 'Evaluations',
+    path: '/evaluations',
+    icon: (
+      <SvgIcon fontSize="small">
+        <Poll />
       </SvgIcon>
     ),
   },

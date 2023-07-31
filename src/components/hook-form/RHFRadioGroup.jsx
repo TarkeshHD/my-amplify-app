@@ -12,7 +12,14 @@ RHFRadioGroup.propTypes = {
   getOptionLabel: PropTypes.arrayOf(PropTypes.string),
 };
 
-export default function RHFRadioGroup({ name, options, getOptionLabel, correctValue, ...other }) {
+export default function RHFRadioGroup({
+  name,
+  options,
+  getOptionLabel,
+  selectedValue,
+  selectedColor = 'success',
+  ...other
+}) {
   const { control } = useFormContext();
 
   return (
@@ -26,7 +33,7 @@ export default function RHFRadioGroup({ name, options, getOptionLabel, correctVa
               <FormControlLabel
                 key={option?.label}
                 value={option?.value}
-                control={<Radio color={option?.value === correctValue ? 'success' : 'primary'} />}
+                control={<Radio color={option?.value === selectedValue ? selectedColor : 'primary'} />}
                 label={getOptionLabel?.length ? getOptionLabel[index] : option?.label}
                 disabled={option?.disabled}
               />

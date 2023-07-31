@@ -142,7 +142,7 @@ export const ModulesTable = ({ count = 0, items = [...FAKE_DATA], fetchingData }
         <EditPasswordForm user={openEditPassForm?.original} />
       </CustomDialog>
 
-      {/* View Evaluation Data */}
+      {/* View Module Data */}
       <CustomDialog
         onClose={() => {
           setOpenEvalutationData(false);

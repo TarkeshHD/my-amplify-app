@@ -1,11 +1,11 @@
-import { Box, Paper, Radio, RadioGroup, Stack, Typography } from '@mui/material';
+import { Alert, Box, Paper, Radio, RadioGroup, Stack, Typography } from '@mui/material';
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { FormProvider, RHFRadioGroup } from '../hook-form';
 
-const QuestionCard = ({ question, options = [], correctValue }) => {
+const QuestionCard = ({ question, options = [], showValues = false, correctValue, answeredValue }) => {
   const defaultValues = {
-    choice: correctValue,
+    choice: showValues ? answeredValue : correctValue,
   };
   const methods = useForm({
     defaultValues,
@@ -27,6 +27,16 @@ const QuestionCard = ({ question, options = [], correctValue }) => {
     }
   };
 
+  const getSelectedColor = () => {
+    if (showValues) {
+      if (answeredValue === correctValue) {
+        return 'success';
+      }
+      return 'error';
+    }
+    return 'success';
+  };
+
   return (
     <Paper variant="outlined">
       <Paper sx={{ backgroundColor: 'lightgray', padding: 2 }}>
@@ -34,9 +44,30 @@ const QuestionCard = ({ question, options = [], correctValue }) => {
       </Paper>
       <Box sx={{ padding: 2 }}>
         <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
-          <RHFRadioGroup name="choice" correctValue={correctValue} options={options} row={false} />
+          <RHFRadioGroup
+            name="choice"
+            selectedValue={showValues ? answeredValue : correctValue}
+            selectedColor={getSelectedColor()}
+            options={options}
+            row={false}
+          />
         </FormProvider>
       </Box>
+      {showValues && (
+        <Box>
+          {correctValue === answeredValue ? (
+            <Alert severity="success">
+              <span style={{ fontWeight: 'bold' }}> Right Answer </span>, Correct option is{' '}
+              <span style={{ fontWeight: 'bold' }}>{correctValue}</span>
+            </Alert>
+          ) : (
+            <Alert severity="error">
+              <span style={{ fontWeight: 'bold' }}> Wrong Answer </span>, Correct option is{' '}
+              <span style={{ fontWeight: 'bold' }}>{correctValue}</span>
+            </Alert>
+          )}
+        </Box>
+      )}
     </Paper>
   );
 };
