@@ -16,7 +16,7 @@ const useChartOptions = (labels) => {
     },
     labels,
     legend: {
-      show: false,
+      show: true,
     },
     plotOptions: {
       pie: {
@@ -74,7 +74,7 @@ export const DashboardPieChart = (props) => {
       <CardHeader title={title} />
       <CardContent>
         <Chart height={300} options={chartOptions} series={chartSeries} type="donut" width="100%" />
-        <Stack alignItems="center" direction="row" justifyContent="center" spacing={2} sx={{ mt: 2 }}>
+        {/* <Stack alignItems="center" direction="column" justifyContent="center" spacing={2} sx={{ mt: 2 }}>
           {chartSeries.map((item, index) => {
             const label = labels[index];
 
@@ -83,12 +83,11 @@ export const DashboardPieChart = (props) => {
                 key={label}
                 sx={{
                   display: 'flex',
-                  flexDirection: 'column',
                   alignItems: 'center',
                 }}
               >
                 {iconMap[label]}
-                <Typography sx={{ my: 1 }} variant="h6">
+                <Typography sx={{ marginRight: 1 }} variant="h6">
                   {label}
                 </Typography>
                 <Typography color="text.secondary" variant="subtitle2">
@@ -97,7 +96,7 @@ export const DashboardPieChart = (props) => {
               </Box>
             );
           })}
-        </Stack>
+        </Stack> */}
       </CardContent>
     </Card>
   );

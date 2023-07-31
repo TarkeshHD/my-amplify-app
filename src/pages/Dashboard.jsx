@@ -22,7 +22,7 @@ const Page = () => (
       <Grid container spacing={3}>
         <Grid xs={12} sm={6} lg={3}>
           <DashboardDiffCard
-            title="VR Sessions"
+            title="Total Users"
             icon={<EventAvailable />}
             difference={12}
             positive
@@ -32,7 +32,7 @@ const Page = () => (
         </Grid>
         <Grid xs={12} sm={6} lg={3}>
           <DashboardDiffCard
-            title="Training Hours"
+            title="VR Sessions"
             icon={<HourglassEmpty />}
             iconColor="error.main"
             difference={16}
@@ -42,15 +42,17 @@ const Page = () => (
           />
         </Grid>
         <Grid xs={12} sm={6} lg={3}>
-          <DashboardTasksProgress
-            title="Evaluation Success"
-            icon={<TrendingUp />}
+          <DashboardDiffCard
+            title="Evaluataion Sessions"
+            icon={<EventAvailable />}
+            difference={12}
+            positive
             sx={{ height: '100%' }}
-            value={75.5}
+            value="158"
           />
         </Grid>
         <Grid xs={12} sm={6} lg={3}>
-          <DashboardDiffCard title={'Active Users'} icon={<AccountCircle />} sx={{ height: '100%' }} value="78%" />
+          <DashboardTasksProgress title="Pass Percentage" icon={<TrendingUp />} sx={{ height: '100%' }} value={75.5} />
         </Grid>
         <Grid xs={12} lg={8}>
           <DashboardBarChart
@@ -72,8 +74,7 @@ const Page = () => (
           <DashboardPieChart
             title={'Domain Users'}
             chartSeries={[63, 15, 22]}
-            labels={['Desktop', 'Tablet', 'Phone']}
-            sx={{ height: '100%' }}
+            labels={['Domain A', 'Domain B', 'Domain C']}
           />
         </Grid>
       </Grid>
