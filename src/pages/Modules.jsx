@@ -14,6 +14,7 @@ import AdminForm from '../components/users/AdminForm';
 import TraineeForm from '../components/users/TraineeForm';
 import SuperAdminForm from '../components/users/SuperAdminForm';
 import { ModulesTable } from '../sections/modules/ModulesTable';
+import QuestionsGrid from '../components/modules/QuestionsGrid';
 
 const Page = () => {
   const [openModuleForm, setOpenModuleForm] = useState(false);
@@ -71,7 +72,7 @@ const Page = () => {
             </Stack>
           </Stack>
 
-          <ModulesTable fetchingData={fetchingData} count={data.length} items={data} />
+          <ModulesTable fetchingData={fetchingData} count={data.length} />
 
           {/* MODULE FORM */}
           <CustomDialog
@@ -81,7 +82,7 @@ const Page = () => {
             open={openModuleForm}
             title={<Typography variant="h5">Add Module</Typography>}
           >
-            <div>Module Form</div>
+            <div>Add Form</div>
           </CustomDialog>
         </Stack>
       </Container>

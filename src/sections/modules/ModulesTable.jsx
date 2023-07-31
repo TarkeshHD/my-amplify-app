@@ -8,29 +8,42 @@ import { getInitials } from '../../utils/utils';
 import SearchNotFound from '../../components/SearchNotFound';
 import CustomDialog from '../../components/CustomDialog';
 import EditPasswordForm from '../../components/users/EditPasswordForm';
+import QuestionsGrid from '../../components/modules/QuestionsGrid';
 
-export const ModulesTable = ({ count = 0, items = [], fetchingData }) => {
+const FAKE_DATA = [
+  {
+    id: '000102',
+    index: '2.2',
+    name: 'Automotive Training',
+    description: 'This module trains you on how to fixe leaked engine and  put new brakes',
+    thumbnail: 'https://picsum.photos/200',
+  },
+];
+
+export const ModulesTable = ({ count = 0, items = [...FAKE_DATA], fetchingData }) => {
   const columns = useMemo(
     () => [
+      {
+        accessorKey: 'index', // simple recommended way to define a column
+        header: 'Index',
+      },
+      {
+        accessorKey: 'thumbnail', // simple recommended way to define a column
+        header: 'Thumbnail',
+        Cell: ({ cell, column }) => (
+          <Box sx={{}}>
+            <img style={{ maxWidth: 80 }} alt="celll" src={cell.getValue()} />
+          </Box>
+        ),
+      },
       {
         accessorKey: 'name', // simple recommended way to define a column
         header: 'Name',
       },
+
       {
-        accessorKey: 'username', // simple recommended way to define a column
-        header: 'Username',
-      },
-      {
-        accessorKey: 'role', // simple recommended way to define a column
-        header: 'Role',
-      },
-      {
-        accessorFn: (row) => row?.domainId?.name || 'NA', // simple recommended way to define a column
-        header: 'Domain',
-      },
-      {
-        accessorFn: (row) => row?.departmentId?.name || 'NA', // simple recommended way to define a column
-        header: 'Department',
+        accessorKey: 'description', // simple recommended way to define a column
+        header: 'Description',
       },
     ],
     [],
@@ -38,6 +51,7 @@ export const ModulesTable = ({ count = 0, items = [], fetchingData }) => {
 
   // Set below flag as well as use it as 'Row' Object to be passed inside forms
   const [openEditPassForm, setOpenEditPass] = useState(null);
+  const [openEvaluationData, setOpenEvalutationData] = useState(null);
 
   return (
     <>
@@ -83,6 +97,12 @@ export const ModulesTable = ({ count = 0, items = [], fetchingData }) => {
               </Stack>
             </MenuItem>,
           ]}
+          muiTableBodyRowProps={({ row }) => ({
+            onClick: () => {
+              setOpenEvalutationData(row);
+            },
+            sx: { cursor: 'pointer' },
+          })}
           enableRowActions
           displayColumnDefOptions={{
             'mrt-row-actions': {
@@ -120,6 +140,18 @@ export const ModulesTable = ({ count = 0, items = [], fetchingData }) => {
         title={<Typography variant="h5">Edit Password</Typography>}
       >
         <EditPasswordForm user={openEditPassForm?.original} />
+      </CustomDialog>
+
+      {/* View Evaluation Data */}
+      <CustomDialog
+        onClose={() => {
+          setOpenEvalutationData(false);
+        }}
+        sx={{ minWidth: '60vw' }}
+        open={Boolean(openEvaluationData)}
+        title={<Typography variant="h5">Module's Assessment</Typography>}
+      >
+        <QuestionsGrid />
       </CustomDialog>
     </>
   );

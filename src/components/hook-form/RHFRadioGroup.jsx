@@ -12,7 +12,7 @@ RHFRadioGroup.propTypes = {
   getOptionLabel: PropTypes.arrayOf(PropTypes.string),
 };
 
-export default function RHFRadioGroup({ name, options, getOptionLabel, ...other }) {
+export default function RHFRadioGroup({ name, options, getOptionLabel, correctValue, ...other }) {
   const { control } = useFormContext();
 
   return (
@@ -24,10 +24,11 @@ export default function RHFRadioGroup({ name, options, getOptionLabel, ...other 
           <RadioGroup {...field} row {...other}>
             {options.map((option, index) => (
               <FormControlLabel
-                key={option}
-                value={option}
-                control={<Radio />}
-                label={getOptionLabel?.length ? getOptionLabel[index] : option}
+                key={option?.label}
+                value={option?.value}
+                control={<Radio color={option?.value === correctValue ? 'success' : 'primary'} />}
+                label={getOptionLabel?.length ? getOptionLabel[index] : option?.label}
+                disabled={option?.disabled}
               />
             ))}
           </RadioGroup>
