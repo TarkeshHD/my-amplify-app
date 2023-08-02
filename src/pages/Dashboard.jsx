@@ -43,7 +43,7 @@ const Page = () => (
         </Grid>
         <Grid xs={12} sm={6} lg={3}>
           <DashboardDiffCard
-            title="Evaluataion Sessions"
+            title="Evaluation Sessions"
             icon={<EventAvailable />}
             difference={12}
             positive

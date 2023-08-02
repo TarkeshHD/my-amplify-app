@@ -3,7 +3,7 @@ import { FormatListBulleted } from '@mui/icons-material';
 import { Avatar, Box, Card, CardContent, LinearProgress, Stack, SvgIcon, Typography } from '@mui/material';
 
 export const DashboardTasksProgress = (props) => {
-  const { value, sx } = props;
+  const { value, sx, title } = props;
 
   return (
     <Card sx={sx}>
@@ -11,7 +11,7 @@ export const DashboardTasksProgress = (props) => {
         <Stack alignItems="flex-start" direction="row" justifyContent="space-between" spacing={3}>
           <Stack spacing={1}>
             <Typography color="text.secondary" gutterBottom variant="overline">
-              Task Progress
+              {title}
             </Typography>
             <Typography variant="h4">{value}%</Typography>
           </Stack>
