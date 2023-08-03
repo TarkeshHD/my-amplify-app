@@ -15,6 +15,7 @@ import TraineeForm from '../components/users/TraineeForm';
 import SuperAdminForm from '../components/users/SuperAdminForm';
 import { ModulesTable } from '../sections/modules/ModulesTable';
 import QuestionsGrid from '../components/modules/QuestionsGrid';
+import ModuleForm from '../components/modules/ModuleForm';
 
 const Page = () => {
   const [openModuleForm, setOpenModuleForm] = useState(false);
@@ -79,10 +80,11 @@ const Page = () => {
             onClose={() => {
               setOpenModuleForm(false);
             }}
+            sx={{ minWidth: '40vw' }}
             open={openModuleForm}
             title={<Typography variant="h5">Add Module</Typography>}
           >
-            <div>Add Form</div>
+            <ModuleForm />
           </CustomDialog>
         </Stack>
       </Container>
