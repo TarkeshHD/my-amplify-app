@@ -4,7 +4,7 @@ import { MaterialReactTable } from 'material-react-table';
 import { Avatar, Box, Card, IconButton, MenuItem, Stack, Typography } from '@mui/material';
 import { Delete, Edit } from '@mui/icons-material';
 import { Scrollbar } from '../../components/Scrollbar';
-import { getInitials } from '../../utils/utils';
+import { getFile, getInitials } from '../../utils/utils';
 import SearchNotFound from '../../components/SearchNotFound';
 import CustomDialog from '../../components/CustomDialog';
 import EditPasswordForm from '../../components/users/EditPasswordForm';
@@ -32,7 +32,7 @@ export const ModulesTable = ({ count = 0, items = [...FAKE_DATA], fetchingData }
         header: 'Thumbnail',
         Cell: ({ cell, column }) => (
           <Box sx={{}}>
-            <img style={{ maxWidth: 80 }} alt="celll" src={cell.getValue()} />
+            <img style={{ maxWidth: 80 }} alt="celll" src={getFile(cell?.getValue()?.path)} />
           </Box>
         ),
       },

@@ -73,7 +73,7 @@ const Page = () => {
             </Stack>
           </Stack>
 
-          <ModulesTable fetchingData={fetchingData} count={data.length} />
+          <ModulesTable items={data} fetchingData={fetchingData} count={data.length} />
 
           {/* MODULE FORM */}
           <CustomDialog
