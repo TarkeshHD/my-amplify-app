@@ -35,7 +35,7 @@ export default function DomainForm({ isEdit, currentDomain, domains = [] }) {
     () => ({
       name: currentDomain?.name || '',
       domainPassword: currentDomain?.domainPassword || '',
-      parentId: currentDomain?.parentId || '',
+      parentId: currentDomain?.parentId || 'None',
       parentDomain: currentDomain?.parentId || 'None',
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
