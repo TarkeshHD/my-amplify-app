@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { MaterialReactTable } from 'material-react-table';
 import { Avatar, Box, Card, IconButton, MenuItem, Stack, Typography } from '@mui/material';
 import { Delete, Edit } from '@mui/icons-material';
@@ -20,7 +20,9 @@ const FAKE_DATA = [
   },
 ];
 
-export const ModulesTable = ({ count = 0, items = [...FAKE_DATA], fetchingData }) => {
+export const ModulesTable = ({ count = 0, items = [...FAKE_DATA], fetchingData, handleRowSelection }) => {
+  const tableRef = useRef(null);
+
   const columns = useMemo(
     () => [
       {
@@ -49,9 +51,18 @@ export const ModulesTable = ({ count = 0, items = [...FAKE_DATA], fetchingData }
     [],
   );
 
+  // Table state
+  const [rowSelection, setRowSelection] = useState({});
+
   // Set below flag as well as use it as 'Row' Object to be passed inside forms
   const [openEditPassForm, setOpenEditPass] = useState(null);
   const [openEvaluationData, setOpenEvalutationData] = useState(null);
+
+  // State Listeners
+
+  useEffect(() => {
+    handleRowSelection(rowSelection);
+  }, [rowSelection]);
 
   return (
     <>
@@ -116,6 +127,7 @@ export const ModulesTable = ({ count = 0, items = [...FAKE_DATA], fetchingData }
           enableColumnOrdering
           state={{
             isLoading: fetchingData,
+            rowSelection,
           }}
           initialState={{ pagination: { pageSize: 5 }, showGlobalFilter: true }}
           muiTablePaginationProps={{
@@ -128,6 +140,8 @@ export const ModulesTable = ({ count = 0, items = [...FAKE_DATA], fetchingData }
             sx: { minWidth: '300px' },
             variant: 'outlined',
           }}
+          onRowSelectionChange={setRowSelection}
+          getRowId={(originalRow) => originalRow._id}
         />
       </Card>
 

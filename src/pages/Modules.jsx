@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Box, Button, Container, DialogActions, IconButton, Stack, SvgIcon, Tooltip, Typography } from '@mui/material';
-import { Download, Upload, Add, CloseRounded } from '@mui/icons-material';
+import { Download, Upload, Add, CloseRounded, PeopleAlt } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { useSelection } from '../hooks/useSelection';
 import { applyPagination } from '../utils/utils';
@@ -16,11 +16,16 @@ import SuperAdminForm from '../components/users/SuperAdminForm';
 import { ModulesTable } from '../sections/modules/ModulesTable';
 import QuestionsGrid from '../components/modules/QuestionsGrid';
 import ModuleForm from '../components/modules/ModuleForm';
+import AssignModulesForm from '../components/modules/AssignModulesForm';
 
 const Page = () => {
   const [openModuleForm, setOpenModuleForm] = useState(false);
+  const [openAssignForm, setOpenAssignForm] = useState(false);
   const [fetchingData, setFetchingData] = useState(false);
   const [data, setData] = useState([]);
+  const [selectedRows, setSelectedRows] = useState([]);
+  const [domains, setDomains] = useState([]);
+  const [departments, setDepartments] = useState([]);
 
   const getModules = async () => {
     try {
@@ -36,8 +41,42 @@ const Page = () => {
     }
   };
 
+  const getDomains = async () => {
+    try {
+      const response = await axios.get('/domain/all');
+
+      setDomains(response?.data?.details);
+    } catch (error) {
+      toast.error(error.message || 'Failed to fetch domains');
+      console.log(error);
+    }
+  };
+
+  const getDepartments = async () => {
+    try {
+      const response = await axios.get('/department/all');
+
+      setDepartments(response?.data?.details);
+    } catch (error) {
+      toast.error(error.message || 'Failed to fetch departments');
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    getDepartments();
+  }, []);
+
+  useEffect(() => {
+    getDomains();
+  }, []);
+
   useEffect(() => {
     getModules();
+  }, []);
+
+  const handleRowSelection = useCallback((rows) => {
+    setSelectedRows(Object.keys(rows));
   }, []);
 
   const { user } = useAuth();
@@ -55,6 +94,25 @@ const Page = () => {
               <Typography variant="h4">Modules</Typography>
             </Stack>
             <Stack alignItems="center" direction="row" spacing={1}>
+              <Tooltip title="Slect rows to assign modules">
+                <span>
+                  <Button
+                    startIcon={
+                      <SvgIcon fontSize="small">
+                        <PeopleAlt />
+                      </SvgIcon>
+                    }
+                    variant="contained"
+                    onClick={() => {
+                      setOpenAssignForm(true);
+                    }}
+                    disabled={selectedRows.length === 0}
+                  >
+                    Assign Modules
+                  </Button>
+                </span>
+              </Tooltip>
+
               {user.role === 'productAdmin' && (
                 <Button
                   startIcon={
@@ -73,7 +131,12 @@ const Page = () => {
             </Stack>
           </Stack>
 
-          <ModulesTable items={data} fetchingData={fetchingData} count={data.length} />
+          <ModulesTable
+            handleRowSelection={handleRowSelection}
+            items={data}
+            fetchingData={fetchingData}
+            count={data.length}
+          />
 
           {/* MODULE FORM */}
           <CustomDialog
@@ -85,6 +148,17 @@ const Page = () => {
             title={<Typography variant="h5">Add Module</Typography>}
           >
             <ModuleForm />
+          </CustomDialog>
+
+          {/* ASSIGN MODULES FORM */}
+          <CustomDialog
+            onClose={() => {
+              setOpenAssignForm(false);
+            }}
+            open={openAssignForm}
+            title={<Typography variant="h5">Assign Module</Typography>}
+          >
+            <AssignModulesForm selectedModules={selectedRows} domains={domains} departments={departments} />
           </CustomDialog>
         </Stack>
       </Container>
