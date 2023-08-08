@@ -9,6 +9,7 @@ import SearchNotFound from '../../components/SearchNotFound';
 import CustomDialog from '../../components/CustomDialog';
 import EditPasswordForm from '../../components/users/EditPasswordForm';
 import QuestionsGrid from '../../components/modules/QuestionsGrid';
+import AssignModulesForm from '../../components/modules/AssignModulesForm';
 
 const FAKE_DATA = [
   {
@@ -20,7 +21,14 @@ const FAKE_DATA = [
   },
 ];
 
-export const ModulesTable = ({ count = 0, items = [...FAKE_DATA], fetchingData, handleRowSelection }) => {
+export const ModulesTable = ({
+  count = 0,
+  items = [...FAKE_DATA],
+  fetchingData,
+  handleRowSelection,
+  domains = [],
+  departments = [],
+}) => {
   const tableRef = useRef(null);
 
   const columns = useMemo(
@@ -55,7 +63,7 @@ export const ModulesTable = ({ count = 0, items = [...FAKE_DATA], fetchingData, 
   const [rowSelection, setRowSelection] = useState({});
 
   // Set below flag as well as use it as 'Row' Object to be passed inside forms
-  const [openEditPassForm, setOpenEditPass] = useState(null);
+  const [openAssignModules, setOpenAssignModules] = useState(null);
   const [openEvaluationData, setOpenEvalutationData] = useState(null);
 
   // State Listeners
@@ -98,13 +106,14 @@ export const ModulesTable = ({ count = 0, items = [...FAKE_DATA], fetchingData, 
               key={3}
               onClick={() => {
                 // onEditRow();
-                setOpenEditPass(row);
+
+                setOpenAssignModules(row.original);
                 closeMenu();
               }}
             >
               <Stack spacing={2} direction={'row'}>
                 <Edit />
-                <Typography>Edit Password</Typography>
+                <Typography>Edit Assigned Values</Typography>
               </Stack>
             </MenuItem>,
           ]}
@@ -148,12 +157,18 @@ export const ModulesTable = ({ count = 0, items = [...FAKE_DATA], fetchingData, 
       {/* Edit Password Form */}
       <CustomDialog
         onClose={() => {
-          setOpenEditPass(false);
+          setOpenAssignModules(false);
         }}
-        open={Boolean(openEditPassForm)}
-        title={<Typography variant="h5">Edit Password</Typography>}
+        open={Boolean(openAssignModules)}
+        title={<Typography variant="h5">Edit Assigned Values</Typography>}
       >
-        <EditPasswordForm user={openEditPassForm?.original} />
+        <AssignModulesForm
+          domains={domains}
+          departments={departments}
+          selectedModules={[openAssignModules?.id]}
+          isEdit
+          moduleAccess={openAssignModules?.moduleAccessId}
+        />
       </CustomDialog>
 
       {/* View Module Data */}

@@ -32,13 +32,23 @@ import { SeverityPill } from '../SeverityPill';
 
 AssignModulesForm.propTypes = {};
 
-export default function AssignModulesForm({ domains = [], departments = [], selectedModules = [], ...props }) {
+export default function AssignModulesForm({
+  isEdit = false,
+  moduleAccess,
+  domains = [],
+  departments = [],
+  selectedModules = [],
+  ...props
+}) {
   const navigate = useNavigate();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [itemList, setItemList] = useState([]);
   const [searchedList, setSearchedList] = useState([]);
+  const [searchValue, setSearchValue] = useState('');
+  const [checkedItems, setCheckedItems] = useState([]);
+
   useEffect(() => {
     // Generate render list out of domains and departments
     const list = [];
@@ -61,10 +71,22 @@ export default function AssignModulesForm({ domains = [], departments = [], sele
     );
     setItemList(list);
     setSearchedList(list);
+    if (isEdit) {
+      // Set checked list
+      const checkedList = list.filter((v) => {
+        if (v.type === 'domain') {
+          return moduleAccess?.domains?.some((domainId) => domainId === v.id);
+        }
+        return moduleAccess?.departments?.some((domainId) => domainId === v.id);
+      });
+      console.log('CheckedList ', checkedList);
+      setCheckedItems(checkedList);
+    }
   }, []);
 
   const onSubmit = async () => {
     try {
+      setIsSubmitting(true);
       // Seperate Domain Access and Departemnt Access
       const domainsAccess = checkedItems.filter((v) => v.type === 'domain');
       const departmentsAccess = checkedItems.filter((v) => v.type === 'department');
@@ -76,18 +98,22 @@ export default function AssignModulesForm({ domains = [], departments = [], sele
       };
 
       console.log('Request Object', reqObj);
-      const response = await axios.post('/module/assign', reqObj);
+      if (isEdit) {
+        delete reqObj.modules;
+        const response = await axios.post(`/module/assign/update/${selectedModules[0]}`, reqObj);
+      } else {
+        const response = await axios.post('/module/assign', reqObj);
+      }
 
       toast.success('Updated Successfully');
       navigate(0);
     } catch (error) {
       console.error(error);
       toast.error(error.message || 'Something went wrong!');
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
-  const [searchValue, setSearchValue] = useState('');
-  const [checkedItems, setCheckedItems] = useState([]);
 
   const handleDebounceSearch = (event) => {
     const queryList = itemList.filter(

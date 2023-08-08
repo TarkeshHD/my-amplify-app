@@ -136,6 +136,8 @@ const Page = () => {
             items={data}
             fetchingData={fetchingData}
             count={data.length}
+            domains={domains}
+            departments={departments}
           />
 
           {/* MODULE FORM */}
