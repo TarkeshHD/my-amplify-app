@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
+  Alert,
   Box,
   Button,
   Container,
@@ -149,6 +150,10 @@ const Page = () => {
               )}
             </Stack>
           </Stack>
+
+          <Alert severity="info">
+            <Typography variant="subtitle2">Select modules to assign them to domains and departments</Typography>
+          </Alert>
 
           <ModulesTable
             handleRowSelection={handleRowSelection}

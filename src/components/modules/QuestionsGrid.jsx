@@ -9,8 +9,19 @@ const statusMap = {
   Fail: 'error',
 };
 
-const QuestionsGrid = ({ showValues = false, evalData }) => {
-  console.log('Eval data', evalData);
+const EVAL_SAMPLE = [
+  { answer: 'a', answeredValue: 'b' },
+  { answer: 'a', answeredValue: 'c' },
+  { answer: 'd', answeredValue: 'd' },
+  { answer: 'd', answeredValue: 'b' },
+  { answer: 'b', answeredValue: 'b' },
+  { answer: 'c', answeredValue: 'b' },
+  { answer: 'c', answeredValue: 'c' },
+  { answer: 'a', answeredValue: 'b' },
+];
+
+const QuestionsGrid = ({ showValues = false, evalData, evaluation = EVAL_SAMPLE }) => {
+  console.log('Eval data', evaluation);
   return (
     <Grid container spacing={2}>
       {showValues && (
@@ -27,26 +38,17 @@ const QuestionsGrid = ({ showValues = false, evalData }) => {
           </Grid>
         </>
       )}
-      {[
-        { correctValue: 'a', answeredValue: 'b' },
-        { correctValue: 'a', answeredValue: 'c' },
-        { correctValue: 'd', answeredValue: 'd' },
-        { correctValue: 'd', answeredValue: 'b' },
-        { correctValue: 'b', answeredValue: 'b' },
-        { correctValue: 'c', answeredValue: 'b' },
-        { correctValue: 'c', answeredValue: 'c' },
-        { correctValue: 'a', answeredValue: 'b' },
-      ].map((v, i) => (
+      {evaluation.map((v, i) => (
         <Grid key={i} item xs={6}>
           <QuestionCard
-            question={'कौन सी क्रेन सुरक्षित है ? ट्रेडिशनल हायड्रा या फराना नई जनरेशन क्रेन ?'}
+            question={v.title || 'कौन सी क्रेन सुरक्षित है ? ट्रेडिशनल हायड्रा या फराना नई जनरेशन क्रेन ?'}
             options={[
-              { label: 'फराना नई जनरेशन क्रेन', value: 'a' },
-              { label: 'ट्रेडिशनल हायड्रा', value: 'b' },
-              { label: 'उपर में से कोई भी नहीं।', value: 'c' },
-              { label: 'उपरोक्त सभी', value: 'd' },
+              { label: v.options?.a || 'फराना नई जनरेशन क्रेन', value: 'a' },
+              { label: v.options?.b || 'ट्रेडिशनल हायड्रा', value: 'b' },
+              { label: v.options?.c || 'उपर में से कोई भी नहीं।', value: 'c' },
+              { label: v.options?.d || 'उपरोक्त सभी', value: 'd' },
             ]}
-            correctValue={v.correctValue}
+            correctValue={v.answer}
             answeredValue={v.answeredValue}
             showValues={showValues}
           />

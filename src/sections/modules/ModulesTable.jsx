@@ -116,13 +116,13 @@ export const ModulesTable = ({
             >
               <Stack spacing={2} direction={'row'}>
                 <Edit />
-                <Typography>Edit Assigned Values</Typography>
+                <Typography>Assigned Entities</Typography>
               </Stack>
             </MenuItem>,
           ]}
           muiTableBodyRowProps={({ row }) => ({
             onClick: () => {
-              setOpenEvalutationData(row);
+              setOpenEvalutationData(row.original);
             },
             sx: { cursor: 'pointer' },
           })}
@@ -193,9 +193,13 @@ export const ModulesTable = ({
         }}
         sx={{ minWidth: '60vw' }}
         open={Boolean(openEvaluationData)}
-        title={<Typography variant="h5">Module's Assessment</Typography>}
+        title={
+          <>
+            <Typography variant="h5">Module's Assessment</Typography>
+          </>
+        }
       >
-        <QuestionsGrid />
+        <QuestionsGrid evaluation={openEvaluationData?.evaluation} />
       </CustomDialog>
     </>
   );
