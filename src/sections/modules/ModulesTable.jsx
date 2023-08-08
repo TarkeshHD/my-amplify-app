@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { MaterialReactTable } from 'material-react-table';
 import { Avatar, Box, Card, IconButton, MenuItem, Stack, Typography } from '@mui/material';
-import { Delete, Edit } from '@mui/icons-material';
+import { Delete, Edit, QuestionAnswer, Quiz } from '@mui/icons-material';
 import { Scrollbar } from '../../components/Scrollbar';
 import { getFile, getInitials } from '../../utils/utils';
 import SearchNotFound from '../../components/SearchNotFound';
@@ -10,6 +10,7 @@ import CustomDialog from '../../components/CustomDialog';
 import EditPasswordForm from '../../components/users/EditPasswordForm';
 import QuestionsGrid from '../../components/modules/QuestionsGrid';
 import AssignModulesForm from '../../components/modules/AssignModulesForm';
+import ModuleQuestionForm from '../../components/modules/ModuleQuestionsForm';
 
 const FAKE_DATA = [
   {
@@ -65,6 +66,7 @@ export const ModulesTable = ({
   // Set below flag as well as use it as 'Row' Object to be passed inside forms
   const [openAssignModules, setOpenAssignModules] = useState(null);
   const [openEvaluationData, setOpenEvalutationData] = useState(null);
+  const [openQuestionsForm, setOpenQuestionsForm] = useState(null);
 
   // State Listeners
 
@@ -94,12 +96,13 @@ export const ModulesTable = ({
               key={1}
               onClick={() => {
                 // onEditRow();
+                setOpenQuestionsForm(row.original);
                 closeMenu();
               }}
             >
               <Stack spacing={2} direction={'row'}>
-                <Edit />
-                <Typography>Edit</Typography>
+                <Quiz />
+                <Typography>Add/Edit Questions</Typography>
               </Stack>
             </MenuItem>,
             <MenuItem
@@ -154,7 +157,19 @@ export const ModulesTable = ({
         />
       </Card>
 
-      {/* Edit Password Form */}
+      {/* Questions Form */}
+      <CustomDialog
+        onClose={() => {
+          setOpenQuestionsForm(false);
+        }}
+        sx={{ minWidth: '40vw' }}
+        open={Boolean(openQuestionsForm)}
+        title={<Typography variant="h5">Questions</Typography>}
+      >
+        <ModuleQuestionForm isEdit={openQuestionsForm?.evaluation?.length !== 0} currentModule={openQuestionsForm} />
+      </CustomDialog>
+
+      {/* Assign Modules Form */}
       <CustomDialog
         onClose={() => {
           setOpenAssignModules(false);

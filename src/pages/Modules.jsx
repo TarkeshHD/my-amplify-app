@@ -1,6 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Box, Button, Container, DialogActions, IconButton, Stack, SvgIcon, Tooltip, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  Container,
+  DialogActions,
+  IconButton,
+  Stack,
+  SvgIcon,
+  Tab,
+  Tabs,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { Download, Upload, Add, CloseRounded, PeopleAlt } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { useSelection } from '../hooks/useSelection';
@@ -17,6 +29,7 @@ import { ModulesTable } from '../sections/modules/ModulesTable';
 import QuestionsGrid from '../components/modules/QuestionsGrid';
 import ModuleForm from '../components/modules/ModuleForm';
 import AssignModulesForm from '../components/modules/AssignModulesForm';
+import ModuleQuestionForm from '../components/modules/ModuleQuestionsForm';
 
 const Page = () => {
   const [openModuleForm, setOpenModuleForm] = useState(false);
@@ -26,6 +39,12 @@ const Page = () => {
   const [selectedRows, setSelectedRows] = useState([]);
   const [domains, setDomains] = useState([]);
   const [departments, setDepartments] = useState([]);
+
+  // For Tabs in add modules popup
+  const [selectedTabModuleForm, setSelectedTabModuleForm] = useState('one');
+  const handleTabChange = (event, newValue) => {
+    setSelectedTabModuleForm(newValue);
+  };
 
   const getModules = async () => {
     try {
@@ -149,6 +168,22 @@ const Page = () => {
             open={openModuleForm}
             title={<Typography variant="h5">Add Module</Typography>}
           >
+            {/* <Box sx={{ borderBottom: 2, borderColor: 'divider', mb: 2 }}>
+              <Tabs value={selectedTabModuleForm} onChange={handleTabChange} aria-label="tabs-modules">
+                <Tab value="one" label="Basic" />
+                <Tab value="two" label="Questions" />
+              </Tabs>
+            </Box>
+            {(() => {
+              switch (selectedTabModuleForm) {
+                case 'one':
+                  return <ModuleForm />;
+                case 'two':
+                  return <ModuleQuestionForm />;
+                default:
+                  return null;
+              }
+            })()} */}
             <ModuleForm />
           </CustomDialog>
 

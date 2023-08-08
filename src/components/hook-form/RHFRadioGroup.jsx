@@ -8,7 +8,7 @@ import { Radio, RadioGroup, FormHelperText, FormControlLabel } from '@mui/materi
 
 RHFRadioGroup.propTypes = {
   name: PropTypes.string,
-  options: PropTypes.arrayOf(PropTypes.string),
+  options: PropTypes.arrayOf(PropTypes.object),
   getOptionLabel: PropTypes.arrayOf(PropTypes.string),
 };
 
