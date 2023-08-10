@@ -39,5 +39,6 @@
     "cms": {
       "state": "on"
     }
-  }
+  },
+  "passingMarks": 6
 }

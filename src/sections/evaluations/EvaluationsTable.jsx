@@ -7,7 +7,9 @@ import {
   MRT_ToggleDensePaddingButton as MRTToggleDensePaddingButton,
   MaterialReactTable,
 } from 'material-react-table';
-import { Avatar, Box, Button, Card, IconButton, MenuItem, Stack, Typography } from '@mui/material';
+import { toast } from 'react-toastify';
+import moment from 'moment-timezone';
+import { Avatar, Box, Button, Card, IconButton, MenuItem, Skeleton, Stack, Typography } from '@mui/material';
 import { ExportToCsv } from 'export-to-csv';
 import { Delete, Edit, FileDownload } from '@mui/icons-material';
 import { Scrollbar } from '../../components/Scrollbar';
@@ -17,6 +19,8 @@ import CustomDialog from '../../components/CustomDialog';
 import EditPasswordForm from '../../components/users/EditPasswordForm';
 import QuestionsGrid from '../../components/modules/QuestionsGrid';
 import { SeverityPill } from '../../components/SeverityPill';
+import { useConfig } from '../../hooks/useConfig';
+import axios from '../../utils/axios';
 
 const statusMap = {
   Pending: 'warning',
@@ -44,22 +48,49 @@ const FAKE_DATA = [
 ];
 
 export const EvaluationsTable = ({ count = 0, items = [...FAKE_DATA], fetchingData }) => {
+  const config = useConfig();
   const columns = useMemo(
     () => [
       {
-        accessorKey: 'module', // simple recommended way to define a column
-        header: 'Module',
-        filterVariant: 'text', // default
+        accessorKey: 'userId.username', // simple recommended way to define a column
+        header: 'User',
+        filterVariant: 'multi-select',
         size: 100,
       },
       {
-        accessorKey: 'username', // simple recommended way to define a column
-        header: 'User',
+        accessorKey: 'moduleId.name', // simple recommended way to define a column
+        header: 'Module',
         filterVariant: 'multi-select',
+        size: 100,
       },
+      {
+        accessorKey: 'userId.domainId.name', // simple recommended way to define a column
+        header: 'Domain',
+        filterVariant: 'multi-select',
+        size: 100,
+      },
+      {
+        accessorKey: 'userId.departmentId.name', // simple recommended way to define a column
+        header: 'Department',
+        filterVariant: 'multi-select',
+        size: 100,
+      },
+
       {
         accessorKey: 'session', // simple recommended way to define a column
         header: 'Session Time',
+        Cell: ({ cell, column, row }) => {
+          const tz = moment.tz.guess();
+          const startTime = moment.unix(row?.original?.startTime).tz(tz).format('DD/MM/YYYY HH:mm');
+          const endTime = row?.original?.endTime
+            ? moment.unix(row?.original?.endTime).tz(tz).format('DD/MM/YYYY HH:mm')
+            : 'Pending';
+          return (
+            <Typography>
+              {startTime} - {endTime}
+            </Typography>
+          );
+        },
       },
 
       {
@@ -69,7 +100,14 @@ export const EvaluationsTable = ({ count = 0, items = [...FAKE_DATA], fetchingDa
       {
         accessorKey: 'status', // simple recommended way to define a column
         header: 'Status',
-        Cell: ({ cell, column }) => <SeverityPill color={statusMap[cell.getValue()]}>{cell.getValue()}</SeverityPill>,
+        Cell: ({ cell, column, row }) => {
+          let status = 'Pending';
+          if (row?.original?.endTime) {
+            status = row?.original?.score >= config.data.passingMarks ? 'Pass' : 'Fail';
+          }
+
+          return <SeverityPill color={statusMap[status]}>{status}</SeverityPill>;
+        },
         filterVariant: 'multi-select',
       },
     ],
@@ -92,6 +130,44 @@ export const EvaluationsTable = ({ count = 0, items = [...FAKE_DATA], fetchingDa
   });
   const handleExportRows = (rows) => {
     csvExporter.generateCsv(rows.map((row) => row.original));
+  };
+
+  const handleRowClick = async (row) => {
+    try {
+      setOpenEvalutationData({ loading: true });
+      const doc = row?.original;
+      const response = await axios.get(`/evaluation/${doc.id}`);
+      const responseObj = response?.data?.details;
+      const tz = moment.tz.guess();
+      const startTime = moment.unix(row?.original?.startTime).tz(tz).format('DD/MM/YYYY HH:mm');
+      const endTime = row?.original?.endTime
+        ? moment.unix(row?.original?.endTime).tz(tz).format('DD/MM/YYYY HH:mm')
+        : 'Pending';
+      const session = `${startTime} - ${endTime}`;
+
+      let status = 'Pending';
+      if (row?.original?.endTime) {
+        status = row?.original?.score >= config.data.passingMarks ? 'Pass' : 'Fail';
+      }
+
+      responseObj.status = status;
+      responseObj.session = session;
+      responseObj.username = responseObj.userId?.name;
+
+      const { answers } = responseObj;
+      responseObj.evaluationDump = responseObj.evaluationDump.map((v, index) => ({
+        ...v,
+        answeredValue: answers[index],
+      }));
+
+      console.log(responseObj);
+
+      setOpenEvalutationData(responseObj);
+    } catch (error) {
+      console.log(error);
+      toast.error(error.message || 'Failed to fetch eval-data');
+      setOpenEvalutationData(false);
+    }
   };
 
   return (
@@ -146,7 +222,7 @@ export const EvaluationsTable = ({ count = 0, items = [...FAKE_DATA], fetchingDa
           ]}
           muiTableBodyRowProps={({ row }) => ({
             onClick: () => {
-              setOpenEvalutationData(row.original);
+              handleRowClick(row);
             },
             sx: { cursor: 'pointer' },
           })}
@@ -188,7 +264,15 @@ export const EvaluationsTable = ({ count = 0, items = [...FAKE_DATA], fetchingDa
         open={Boolean(openEvaluationData)}
         title={<Typography variant="h5">Evaluation</Typography>}
       >
-        <QuestionsGrid showValues evalData={openEvaluationData} />
+        {openEvaluationData?.loading ? (
+          <Box>
+            <Skeleton variant="text" sx={{ fontSize: '1rem' }} />
+            <Skeleton variant="rectangular" width={210} height={60} />
+            <Skeleton variant="rounded" width={210} height={60} />
+          </Box>
+        ) : (
+          <QuestionsGrid showValues evalData={openEvaluationData} evaluation={openEvaluationData?.evaluationDump} />
+        )}
       </CustomDialog>
     </>
   );

@@ -24,7 +24,7 @@ const Page = () => {
   const getEvaluations = async () => {
     try {
       setFetchingData(true);
-      const response = await axios.get('/module/all');
+      const response = await axios.get('/evaluation/all');
       console.log(response.data);
       setData(response?.data?.details);
     } catch (error) {
@@ -55,7 +55,7 @@ const Page = () => {
             </Stack>
           </Stack>
 
-          <EvaluationsTable fetchingData={fetchingData} count={data.length} />
+          <EvaluationsTable fetchingData={fetchingData} items={data} count={data.length} />
         </Stack>
       </Container>
     </>
