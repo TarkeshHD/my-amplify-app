@@ -2,6 +2,7 @@ import { createContext, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { isTokenValid, setSession } from '../utils/jwt';
 import axios from '../utils/axios';
+import jwtDecode from 'jwt-decode';
 
 const initialState = {
   isAuthenticated: false,
@@ -36,6 +37,7 @@ function AuthProvider({ children }) {
           let response = {};
 
           const res = await axios.post('/auth/login/token', {});
+
           response = res.data.details;
 
           console.log('State updated on intitalise', response);

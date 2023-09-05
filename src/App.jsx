@@ -11,13 +11,13 @@ import reactLogo from './assets/react.svg';
 
 import './App.css';
 import { ConfigProvider } from './context/ConfigurationContext';
+import ConfigThemeWrapper from './components/ConfigThemeWrapper';
 
 function App() {
-  const theme = createTheme();
   return (
     <HelmetProvider>
       <ConfigProvider>
-        <ThemeProvider theme={theme}>
+        <ConfigThemeWrapper>
           <CssBaseline />
           <AuthProvider>
             <ToastContainer
@@ -35,7 +35,7 @@ function App() {
             />
             <Router />
           </AuthProvider>
-        </ThemeProvider>
+        </ConfigThemeWrapper>
       </ConfigProvider>
     </HelmetProvider>
   );
