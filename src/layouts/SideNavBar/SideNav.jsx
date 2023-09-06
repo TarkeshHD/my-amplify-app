@@ -21,12 +21,16 @@ import { SideNavItem } from './SideNavItem';
 import { items } from './config';
 import { NAVBAR } from '../../config';
 import { SideNavNestedItems } from './SideNavNestedItems';
+import { useConfig } from '../../hooks/useConfig';
 
 export const SideNav = (props) => {
   const { open, onClose } = props;
   const { pathname } = useLocation();
   const lgUp = useMediaQuery((theme) => theme.breakpoints.up('lg'));
   const theme = useTheme();
+
+  const config = useConfig();
+  const { data } = config;
 
   const content = (
     <Scrollbar
@@ -53,8 +57,8 @@ export const SideNav = (props) => {
             href="/"
             sx={{
               display: 'inline-flex',
-              height: 32,
-              width: 32,
+              height: 78,
+              width: 78,
             }}
           >
             <Logo />
@@ -62,7 +66,7 @@ export const SideNav = (props) => {
           <Box
             sx={{
               alignItems: 'center',
-              backgroundColor: 'rgba(255, 255, 255, 0.04)',
+              backgroundColor: 'rgba(255, 255, 255, 0.04)', // for header and sub header
               borderRadius: 1,
               cursor: 'pointer',
               display: 'flex',
@@ -73,10 +77,10 @@ export const SideNav = (props) => {
           >
             <div>
               <Typography color="inherit" variant="subtitle1">
-                VRse Builder
+                {data?.client?.appName}
               </Typography>
               <Typography color="neutral.400" variant="body2">
-                Autovrse Creation
+                {data?.client?.appDescription}
               </Typography>
             </div>
             <SvgIcon fontSize="small" sx={{ color: 'neutral.500' }}>
@@ -162,7 +166,7 @@ export const SideNav = (props) => {
               </SvgIcon>
             }
             fullWidth
-            href="https://autovrse.in/contact"
+            href={data?.client?.contactUrl}
             sx={{ mt: 2 }}
             target="_blank"
             variant="contained"
@@ -181,7 +185,7 @@ export const SideNav = (props) => {
         open
         PaperProps={{
           sx: {
-            backgroundColor: 'neutral.800',
+            backgroundColor: 'neutral.800', // Change color for sidebar
             color: 'common.white',
             width: NAVBAR.DASHBOARD_WIDTH,
           },
