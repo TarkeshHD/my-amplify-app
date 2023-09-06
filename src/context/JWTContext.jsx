@@ -2,7 +2,6 @@ import { createContext, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { isTokenValid, setSession } from '../utils/jwt';
 import axios from '../utils/axios';
-import jwtDecode from 'jwt-decode';
 
 const initialState = {
   isAuthenticated: false,
