@@ -16,7 +16,7 @@ const useChartOptions = () => {
         show: false,
       },
     },
-    colors: [theme.palette.primary.main, alpha(theme.palette.primary.main, 0.25)],
+    colors: [theme.palette.info.dark, alpha(theme.palette.info.dark, 0.25)],
     dataLabels: {
       enabled: false,
     },

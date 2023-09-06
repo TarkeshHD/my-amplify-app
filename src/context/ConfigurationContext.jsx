@@ -2,6 +2,8 @@ import { createContext, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import BaseConfig from '../utils/BaseConfig.json';
 
+import axios from '../utils/axios';
+
 const initialState = {
   data: null,
   isConfigfileFetched: false,
@@ -27,19 +29,22 @@ function ConfigProvider({ children }) {
   }, []);
 
   const getConfiguration = async () => {
+    let responses = BaseConfig;
     try {
       // Use some method of authorization to fetch this configuration ??
 
-      const response = BaseConfig;
+      const response = await axios.get('/config');
 
-      // Make API call and set Response
+      // If the response doesn't have the required fields, use the default config file
 
-      setState((prev) => ({ ...prev, isConfigfileFetched: true, data: response }));
+      responses = response?.data?.details || BaseConfig;
 
       console.log('Login');
     } catch (error) {
-      setState((prev) => ({ ...prev, isAuthenticated: false, data: null }));
+      responses = BaseConfig;
       console.log(error);
+    } finally {
+      setState((prev) => ({ ...prev, isConfigfileFetched: true, data: responses }));
     }
   };
 
