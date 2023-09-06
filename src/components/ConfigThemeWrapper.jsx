@@ -10,8 +10,9 @@ const ConfigThemeWrapper = ({ children }) => {
   const config = useConfig();
   const { data } = config;
 
-  theme.palette.primary = data?.theme?.palette?.primary;
-  console.log('theme primary', theme.primary);
+  if (data?.clientName !== 'AutovrseTest') {
+    theme.palette.primary = data?.theme?.palette?.primary;
+  }
 
   return <ThemeProvider theme={theme}>{children}</ThemeProvider>;
 };
