@@ -13,7 +13,6 @@ const Logo = () => {
   } else {
     logo = defaultLogo;
   }
-  console.log(logo);
 
   return <img alt="avLogo" src={logo} />;
 };
