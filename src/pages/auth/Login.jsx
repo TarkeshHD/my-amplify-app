@@ -21,10 +21,13 @@ const Page = () => {
     setMethod(value);
   }, []);
 
+  const TEST_CONFIG = ['BasicAuth'];
+
   useEffect(() => {
     if (config?.isConfigfileFetched) {
       console.log('Updating data');
-      setMethod(config?.data?.features?.auth?.types?.[0]);
+
+      setMethod(TEST_CONFIG[0]); // config?.data?.features?.auth?.types?.[0]
     }
   }, [config.isConfigfileFetched]);
 
@@ -106,7 +109,7 @@ const Page = () => {
                   <>
                     <Tabs onChange={handleMethodChange} sx={{ mb: 3 }} value={method}>
                       {config?.data?.features?.auth?.state === 'on' &&
-                        config?.data?.features?.auth?.types?.map((v, i) => <Tab key={i} label={'Basic'} value={v} />)}
+                        TEST_CONFIG.map((v, i) => <Tab key={i} label={'Basic'} value={v} />)}
                     </Tabs>
                     {method && getLoginComponents(method)}
                   </>
