@@ -2,12 +2,12 @@
   "clientId": "645278b8e4ec736b2cb8be49",
   "clientName": "AutovrseTest",
   "instanceIdentifier": "Shell Reactor Internals VR Experience",
+  "domainUrl": "https://www.fjfsbo.com/dner",
   "client": {
     "appName": "VRse Builder",
     "appDescription": "Autovrse Creation",
     "contactUrl": "https://autovrse.in/contact"
   },
-  "domainUrl": "https://www.fjfsbo.com/dner",
   "theme": {
     "palette": {
       "primary": "#45a8bc",

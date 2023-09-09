@@ -26,9 +26,9 @@ export default function TraineeForm({ isEdit, currentUser, domains = [], departm
 
   const NewUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
-    username: Yup.string().required('Username is required'),
+    username: Yup.string().required('Employee Code is required'),
     // password: Yup.string().required('Password is required'),
-    domain: Yup.string().required('Domain is required').notOneOf(['None'], 'Select one domain'),
+    domain: Yup.string().required('Plant is required').notOneOf(['None'], 'Select one plant'),
     domainId: Yup.string(),
     department: Yup.string().required('Department is required').notOneOf(['None'], 'Select one department'),
     departmentId: Yup.string(),
@@ -108,13 +108,13 @@ export default function TraineeForm({ isEdit, currentUser, domains = [], departm
               }}
             >
               <RHFTextField name="name" label="Display Name" />
-              <RHFTextField name="username" label="Username" />
+              <RHFTextField name="username" label="Employee Code" />
               {/* <RHFTextField name="password" label="Password" /> */}
 
               <RHFAutocomplete
                 name="domain"
-                label="Domain"
-                placeholder="Domain"
+                label="Plant"
+                placeholder="Plant"
                 options={[...domains, 'None']}
                 getOptionLabel={(option) => {
                   if (typeof option === 'string') {

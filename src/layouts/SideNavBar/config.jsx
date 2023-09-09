@@ -56,7 +56,7 @@ export const items = [
 
     children: [
       {
-        title: 'Domains',
+        title: 'Plants',
         path: '/domains',
         icon: (
           <SvgIcon fontSize="small">
