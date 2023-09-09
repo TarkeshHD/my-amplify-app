@@ -26,7 +26,7 @@ export const UsersTable = ({ count = 0, items = [], fetchingData }) => {
       },
       {
         accessorFn: (row) => row?.domainId?.name || 'NA', // simple recommended way to define a column
-        header: 'Domain',
+        header: 'Plant',
       },
       {
         accessorFn: (row) => row?.departmentId?.name || 'NA', // simple recommended way to define a column

@@ -65,7 +65,7 @@ export const EvaluationsTable = ({ count = 0, items = [...FAKE_DATA], fetchingDa
       },
       {
         accessorKey: 'userId.domainId.name', // simple recommended way to define a column
-        header: 'Domain',
+        header: 'Plant',
         filterVariant: 'multi-select',
         size: 100,
       },

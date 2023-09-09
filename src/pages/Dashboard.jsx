@@ -72,9 +72,9 @@ const Page = () => (
         </Grid>
         <Grid xs={12} md={6} lg={4}>
           <DashboardPieChart
-            title={'Domain Users'}
+            title={'Plant Users'}
             chartSeries={[63, 15, 22]}
-            labels={['Domain A', 'Domain B', 'Domain C']}
+            labels={['Plant A', 'Plant B', 'Plant C']}
           />
         </Grid>
       </Grid>

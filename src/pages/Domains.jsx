@@ -58,14 +58,14 @@ const Page = () => {
   return (
     <>
       <Helmet>
-        <title>Domains | VRse Builder</title>
+        <title>Plants | VRse Builder</title>
       </Helmet>
 
       <Container maxWidth="xl">
         <Stack spacing={3}>
           <Stack direction="row" justifyContent="space-between" spacing={4}>
             <Stack spacing={1}>
-              <Typography variant="h4">Domains</Typography>
+              <Typography variant="h4">Plants</Typography>
             </Stack>
             <Stack alignItems="center" direction="row" spacing={1}>
               <Button
@@ -79,7 +79,7 @@ const Page = () => {
                   setOpenDomainForm(true);
                 }}
               >
-                Add Domain
+                Add Plant
               </Button>
             </Stack>
           </Stack>
@@ -91,7 +91,7 @@ const Page = () => {
               setOpenDomainForm(false);
             }}
             open={openDomainForm}
-            title={<>Add Domain</>}
+            title={<>Add Plant</>}
           >
             <DomainForm domains={flatDomains} />
           </CustomDialog>

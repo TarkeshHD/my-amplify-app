@@ -28,7 +28,7 @@ export default function AdminForm({ isEdit, currentUser, domains = [] }) {
     name: Yup.string().required('Name is required'),
     username: Yup.string().required('Username is required'),
     password: Yup.string().required('Password is required'),
-    domain: Yup.string().required('Domain is required').notOneOf(['None'], 'Select one domain'),
+    domain: Yup.string().required('Plant is required').notOneOf(['None'], 'Select one plant'),
     domainId: Yup.string(),
     role: Yup.string().required(),
   });
@@ -106,8 +106,8 @@ export default function AdminForm({ isEdit, currentUser, domains = [] }) {
 
               <RHFAutocomplete
                 name="domain"
-                label="Domain"
-                placeholder="Domain"
+                label="Plant"
+                placeholder="Plant"
                 options={[...domains, 'None']}
                 getOptionLabel={(option) => {
                   if (typeof option === 'string') {
