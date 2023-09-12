@@ -96,15 +96,15 @@ export default function DomainForm({ isEdit, currentDomain, domains = [] }) {
                 gridTemplateColumns: { xs: 'repeat(1, 1fr)' }, // Add sm: 'repeat(2, 1fr)'  for two Fields in line
               }}
             >
-              <RHFTextField name="name" label="Plant Name" />
+              <RHFTextField name="name" label="Domain Name" />
 
-              <RHFTextField name="domainPassword" label="Plant Password" />
+              <RHFTextField name="domainPassword" label="Domain Password" />
 
               {/* List of all domains, disabled and prefilled for Admin */}
               <RHFAutocomplete
                 name="parentDomain"
-                label="Parent Plant"
-                placeholder="Parent Plant"
+                label="Parent Domain"
+                placeholder="Parent Domain"
                 options={[...domains, 'None']}
                 getOptionLabel={(option) => {
                   if (typeof option === 'string') {
@@ -123,7 +123,7 @@ export default function DomainForm({ isEdit, currentDomain, domains = [] }) {
 
             <Stack alignItems="flex-end" sx={{ mt: 3 }}>
               <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
-                {!isEdit ? 'Create Plant' : 'Save Changes'}
+                {!isEdit ? 'Create Domain' : 'Save Changes'}
               </LoadingButton>
             </Stack>
           </Box>

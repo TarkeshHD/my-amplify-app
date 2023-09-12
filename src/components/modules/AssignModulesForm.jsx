@@ -174,7 +174,7 @@ export default function AssignModulesForm({
                     {item.type === 'domain' ? (
                       <Box display={'flex'} justifyContent={'space-between'} alignItems={'center'} width={'100%'}>
                         <ListItemText primary={item.name} />
-                        <SeverityPill color={'primary'}> Plant </SeverityPill>
+                        <SeverityPill color={'primary'}> Domain </SeverityPill>
                       </Box>
                     ) : (
                       <Box display={'flex'} justifyContent={'space-between'} alignItems={'center'} width={'100%'}>

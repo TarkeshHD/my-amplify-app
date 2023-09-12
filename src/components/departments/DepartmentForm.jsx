@@ -27,7 +27,7 @@ export default function DepartmentForm({ isEdit, currentDepartment, domains = []
   const NewDepartmentSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     domainId: Yup.string(),
-    domain: Yup.string().required('Plant is required').notOneOf(['None'], 'Select one plant'),
+    domain: Yup.string().required('Domain is required').notOneOf(['None'], 'Select one domain'),
   });
 
   const defaultValues = useMemo(
@@ -99,8 +99,8 @@ export default function DepartmentForm({ isEdit, currentDepartment, domains = []
               {/* List of all domains, disabled and prefilled for Admin */}
               <RHFAutocomplete
                 name="domain"
-                label="Plant"
-                placeholder="Plant"
+                label="Domain"
+                placeholder="Domain"
                 options={[...domains, 'None']}
                 getOptionLabel={(option) => {
                   if (typeof option === 'string') {

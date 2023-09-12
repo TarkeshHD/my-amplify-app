@@ -10,7 +10,7 @@ const ConfigThemeWrapper = ({ children }) => {
   const config = useConfig();
   const { data } = config;
 
-  if (data?.clientName !== 'AutovrseTest') {
+  if (data?.clientName !== 'FrontEndFallbackConfig') {
     theme.palette.primary = data?.theme?.palette?.primary;
   }
 
