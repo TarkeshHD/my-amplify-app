@@ -8,7 +8,7 @@ const Logo = () => {
   const { data } = config;
   let logo = '';
 
-  if (data?.clientName !== 'AutovrseTest') {
+  if (data?.clientName !== 'FrontEndFallbackConfig') {
     logo = import.meta.env.VITE_BASE_URL + data.clientLogo;
   } else {
     logo = defaultLogo;

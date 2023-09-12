@@ -28,7 +28,7 @@ export default function TraineeForm({ isEdit, currentUser, domains = [], departm
     name: Yup.string().required('Name is required'),
     username: Yup.string().required('Employee Code is required'),
     // password: Yup.string().required('Password is required'),
-    domain: Yup.string().required('Plant is required').notOneOf(['None'], 'Select one plant'),
+    domain: Yup.string().required('Domain is required').notOneOf(['None'], 'Select one domain'),
     domainId: Yup.string(),
     department: Yup.string().required('Department is required').notOneOf(['None'], 'Select one department'),
     departmentId: Yup.string(),
@@ -113,8 +113,8 @@ export default function TraineeForm({ isEdit, currentUser, domains = [], departm
 
               <RHFAutocomplete
                 name="domain"
-                label="Plant"
-                placeholder="Plant"
+                label="Domain"
+                placeholder="Domain"
                 options={[...domains, 'None']}
                 getOptionLabel={(option) => {
                   if (typeof option === 'string') {

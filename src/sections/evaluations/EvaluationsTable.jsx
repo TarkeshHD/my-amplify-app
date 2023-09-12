@@ -39,7 +39,7 @@ const FAKE_DATA = [
   },
   {
     id: '000102',
-    module: 'Plant Training',
+    module: 'Domain Training',
     username: 'CW_02',
     session: '29-Jul-2023  -  31-Jul-2023',
     score: '4',
@@ -65,7 +65,7 @@ export const EvaluationsTable = ({ count = 0, items = [...FAKE_DATA], fetchingDa
       },
       {
         accessorKey: 'userId.domainId.name', // simple recommended way to define a column
-        header: 'Plant',
+        header: 'Domain',
         filterVariant: 'multi-select',
         size: 100,
       },
