@@ -13,6 +13,7 @@ import CustomDialog from '../components/CustomDialog';
 import AdminForm from '../components/users/AdminForm';
 import TraineeForm from '../components/users/TraineeForm';
 import SuperAdminForm from '../components/users/SuperAdminForm';
+import { useConfig } from '../hooks/useConfig';
 
 const Page = () => {
   const [openAdminForm, setOpenAdminForm] = useState(false);
@@ -71,18 +72,20 @@ const Page = () => {
   }, []);
 
   const { user } = useAuth();
+  const config = useConfig();
+  const { data: configData } = config;
 
   return (
     <>
       <Helmet>
-        <title>Users | VRse Builder</title>
+        <title>{configData?.labels?.user?.singular || 'User'} | VRse Builder</title>
       </Helmet>
 
       <Container maxWidth="xl">
         <Stack spacing={3}>
           <Stack direction="row" justifyContent="space-between" spacing={4}>
             <Stack spacing={1}>
-              <Typography variant="h4">Users</Typography>
+              <Typography variant="h4">{configData?.labels?.user?.singular || 'User'} </Typography>
             </Stack>
             <Stack alignItems="center" direction="row" spacing={1}>
               <Button

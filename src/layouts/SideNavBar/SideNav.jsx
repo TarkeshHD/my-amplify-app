@@ -18,7 +18,7 @@ import { ArrowOutwardRounded, ChevronRightRounded } from '@mui/icons-material';
 import { Scrollbar } from '../../components/Scrollbar';
 import Logo from '../../components/Logo';
 import { SideNavItem } from './SideNavItem';
-import { items } from './config';
+import { getItems } from './config';
 import { NAVBAR } from '../../config';
 import { SideNavNestedItems } from './SideNavNestedItems';
 import { useConfig } from '../../hooks/useConfig';
@@ -31,6 +31,8 @@ export const SideNav = (props) => {
 
   const config = useConfig();
   const { data } = config;
+
+  const items = getItems(data?.labels);
 
   const content = (
     <Scrollbar

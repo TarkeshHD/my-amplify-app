@@ -8,8 +8,11 @@ import { getInitials } from '../../utils/utils';
 import SearchNotFound from '../../components/SearchNotFound';
 import CustomDialog from '../../components/CustomDialog';
 import EditPasswordForm from '../../components/users/EditPasswordForm';
+import { useConfig } from '../../hooks/useConfig';
 
 export const UsersTable = ({ count = 0, items = [], fetchingData }) => {
+  const config = useConfig();
+  const { data } = config;
   const columns = useMemo(
     () => [
       {
@@ -26,11 +29,11 @@ export const UsersTable = ({ count = 0, items = [], fetchingData }) => {
       },
       {
         accessorFn: (row) => row?.domainId?.name || 'NA', // simple recommended way to define a column
-        header: 'Domain',
+        header: `${data?.labels?.domain?.singular || 'Domain'}`,
       },
       {
         accessorFn: (row) => row?.departmentId?.name || 'NA', // simple recommended way to define a column
-        header: 'Department',
+        header: `${data?.labels?.department?.singular || 'Department'}`,
       },
     ],
     [],

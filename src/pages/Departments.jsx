@@ -13,6 +13,7 @@ import AdminForm from '../components/users/AdminForm';
 import TraineeForm from '../components/users/TraineeForm';
 import { DepartmentsTable } from '../sections/departments/DepartmentsTable';
 import DepartmentForm from '../components/departments/DepartmentForm';
+import { useConfig } from '../hooks/useConfig';
 
 const Page = () => {
   const [openDepartmentForm, setOpenDepartmentForm] = useState(false);
@@ -21,6 +22,9 @@ const Page = () => {
   const [data, setData] = useState([]);
   const [domains, setDomains] = useState([]);
 
+  const config = useConfig();
+  const { data: configData } = config;
+
   const getDepartments = async () => {
     try {
       setFetchingData(true);
@@ -28,7 +32,9 @@ const Page = () => {
       console.log(response.data);
       setData(response?.data?.details);
     } catch (error) {
-      toast.error(error.message || 'Failed to fetch departments');
+      toast.error(
+        error.message || `Failed to fetch ${data?.labels?.department?.plural?.toLowerCase() || 'departments'}`,
+      );
       console.log(error);
     } finally {
       setFetchingData(false);
@@ -41,7 +47,7 @@ const Page = () => {
 
       setDomains(response?.data?.details);
     } catch (error) {
-      toast.error(error.message || 'Failed to fetch users');
+      toast.error(error.message || `Failed to fetch ${data?.labels?.user?.plural?.toLowerCase() || 'users'}`);
       console.log(error);
     }
   };
@@ -58,14 +64,14 @@ const Page = () => {
   return (
     <>
       <Helmet>
-        <title>Departments | VRse Builder</title>
+        <title>{configData?.labels?.department?.singular || 'Department'} | VRse Builder</title>
       </Helmet>
 
       <Container maxWidth="xl">
         <Stack spacing={3}>
           <Stack direction="row" justifyContent="space-between" spacing={4}>
             <Stack spacing={1}>
-              <Typography variant="h4">Departments</Typography>
+              <Typography variant="h4">{configData?.labels?.department?.singular || 'Department'}</Typography>
             </Stack>
             <Stack alignItems="center" direction="row" spacing={1}>
               <Button
@@ -79,7 +85,7 @@ const Page = () => {
                   setOpenDepartmentForm(true);
                 }}
               >
-                Add Department
+                Add {configData?.labels?.department?.singular || 'Department'}
               </Button>
             </Stack>
           </Stack>
@@ -92,7 +98,7 @@ const Page = () => {
               setOpenDepartmentForm(false);
             }}
             open={openDepartmentForm}
-            title={<>Add Department</>}
+            title={<>Add </>}
           >
             <DepartmentForm domains={domains} />
           </CustomDialog>

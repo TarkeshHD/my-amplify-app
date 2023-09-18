@@ -27,6 +27,7 @@ import { FormProvider, RHFSelect, RHFSwitch, RHFTextField } from '../hook-form';
 import RHFAutocomplete from '../hook-form/RHFAutocomplete';
 import axios from '../../utils/axios';
 import { SeverityPill } from '../SeverityPill';
+import { useConfig } from '../../hooks/useConfig';
 
 // ----------------------------------------------------------------------
 
@@ -41,6 +42,8 @@ export default function AssignModulesForm({
   ...props
 }) {
   const navigate = useNavigate();
+  const config = useConfig();
+  const { data } = config;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -174,12 +177,15 @@ export default function AssignModulesForm({
                     {item.type === 'domain' ? (
                       <Box display={'flex'} justifyContent={'space-between'} alignItems={'center'} width={'100%'}>
                         <ListItemText primary={item.name} />
-                        <SeverityPill color={'primary'}> Domain </SeverityPill>
+                        <SeverityPill color={'primary'}> {data?.labels?.domain?.singular || 'Domain'} </SeverityPill>
                       </Box>
                     ) : (
                       <Box display={'flex'} justifyContent={'space-between'} alignItems={'center'} width={'100%'}>
                         <ListItemText primary={item.name} secondary={item.domainName} />
-                        <SeverityPill color={'error'}> Department </SeverityPill>
+                        <SeverityPill color={'error'}>
+                          {' '}
+                          {data?.labels?.department?.singular || 'Department'}{' '}
+                        </SeverityPill>
                       </Box>
                     )}
                   </ListItem>

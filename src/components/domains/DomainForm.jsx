@@ -13,6 +13,7 @@ import { Box, Grid, Stack, Switch, Typography, FormControlLabel } from '@mui/mat
 import { FormProvider, RHFSelect, RHFSwitch, RHFTextField } from '../hook-form';
 import RHFAutocomplete from '../hook-form/RHFAutocomplete';
 import axios from '../../utils/axios';
+import { useConfig } from '../../hooks/useConfig';
 
 // ----------------------------------------------------------------------
 
@@ -23,6 +24,9 @@ DomainForm.propTypes = {
 
 export default function DomainForm({ isEdit, currentDomain, domains = [] }) {
   const navigate = useNavigate();
+
+  const config = useConfig();
+  const { data } = config;
 
   const NewDomainSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
@@ -96,14 +100,14 @@ export default function DomainForm({ isEdit, currentDomain, domains = [] }) {
                 gridTemplateColumns: { xs: 'repeat(1, 1fr)' }, // Add sm: 'repeat(2, 1fr)'  for two Fields in line
               }}
             >
-              <RHFTextField name="name" label="Domain Name" />
+              <RHFTextField name="name" label={(data?.labels?.domain?.singular || 'Domain') + ' Name'} />
 
-              <RHFTextField name="domainPassword" label="Domain Password" />
+              <RHFTextField name="domainPassword" label={(data?.labels?.domain?.singular || 'Domain') + ' Password'} />
 
               {/* List of all domains, disabled and prefilled for Admin */}
               <RHFAutocomplete
                 name="parentDomain"
-                label="Parent Domain"
+                label={'Parent ' + (data?.labels?.domain?.singular || 'Domain')}
                 placeholder="Parent Domain"
                 options={[...domains, 'None']}
                 getOptionLabel={(option) => {
@@ -123,7 +127,7 @@ export default function DomainForm({ isEdit, currentDomain, domains = [] }) {
 
             <Stack alignItems="flex-end" sx={{ mt: 3 }}>
               <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
-                {!isEdit ? 'Create Domain' : 'Save Changes'}
+                {!isEdit ? 'Create ' + (data?.labels?.domain?.singular || 'Domain') : 'Save Changes'}
               </LoadingButton>
             </Stack>
           </Box>

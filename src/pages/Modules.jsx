@@ -31,6 +31,7 @@ import QuestionsGrid from '../components/modules/QuestionsGrid';
 import ModuleForm from '../components/modules/ModuleForm';
 import AssignModulesForm from '../components/modules/AssignModulesForm';
 import ModuleQuestionForm from '../components/modules/ModuleQuestionsForm';
+import { useConfig } from '../hooks/useConfig';
 
 const Page = () => {
   const [openModuleForm, setOpenModuleForm] = useState(false);
@@ -54,7 +55,7 @@ const Page = () => {
       console.log(response.data);
       setData(response?.data?.details);
     } catch (error) {
-      toast.error(error.message || 'Failed to fetch users');
+      toast.error(error.message || `Failed to fetch ${data?.labels?.user?.plural?.toLowerCase() || 'users'}`);
       console.log(error);
     } finally {
       setFetchingData(false);
@@ -67,7 +68,7 @@ const Page = () => {
 
       setDomains(response?.data?.details);
     } catch (error) {
-      toast.error(error.message || 'Failed to fetch domains');
+      toast.error(error.message || `Failed to fetch ${data?.labels?.domain?.plural.toLowerCase() || 'domains'}`);
       console.log(error);
     }
   };
@@ -78,7 +79,9 @@ const Page = () => {
 
       setDepartments(response?.data?.details);
     } catch (error) {
-      toast.error(error.message || 'Failed to fetch departments');
+      toast.error(
+        error.message || `Failed to fetch ${data?.labels?.department?.plural.toLowerCase() || 'departments'}`,
+      );
       console.log(error);
     }
   };
@@ -100,21 +103,25 @@ const Page = () => {
   }, []);
 
   const { user } = useAuth();
+  const config = useConfig();
+  const { data: configData } = config;
 
   return (
     <>
       <Helmet>
-        <title>Modules | VRse Builder</title>
+        <title>{configData?.labels?.module?.singular || 'Module'} | VRse Builder</title>
       </Helmet>
 
       <Container maxWidth="xl">
         <Stack spacing={3}>
           <Stack direction="row" justifyContent="space-between" spacing={4}>
             <Stack spacing={1}>
-              <Typography variant="h4">Modules</Typography>
+              <Typography variant="h4">{configData?.labels?.module?.plural || 'Modules'}</Typography>
             </Stack>
             <Stack alignItems="center" direction="row" spacing={1}>
-              <Tooltip title="Slect rows to assign modules">
+              <Tooltip
+                title={'Select rows to assign ' + (configData?.labels?.module?.plural?.toLowerCase() || 'modules')}
+              >
                 <span>
                   <Button
                     startIcon={
@@ -128,7 +135,7 @@ const Page = () => {
                     }}
                     disabled={selectedRows.length === 0}
                   >
-                    Assign Modules
+                    Assign {configData?.labels?.module?.plural || 'Modules'}
                   </Button>
                 </span>
               </Tooltip>
@@ -145,14 +152,18 @@ const Page = () => {
                     setOpenModuleForm(true);
                   }}
                 >
-                  Add Module
+                  Add {configData?.labels?.module?.singular || 'Module'}
                 </Button>
               )}
             </Stack>
           </Stack>
 
           <Alert severity="info">
-            <Typography variant="subtitle2">Select modules to assign them to domains and departments</Typography>
+            <Typography variant="subtitle2">
+              Select {configData?.labels?.module?.singular || 'Module'} to assign them to{' '}
+              {configData?.labels?.domain?.plural?.toLowerCase() || 'domains'} and
+              {configData?.labels?.department?.plural?.toLowerCase() || 'departments'}
+            </Typography>
           </Alert>
 
           <ModulesTable
@@ -171,7 +182,7 @@ const Page = () => {
             }}
             sx={{ minWidth: '40vw' }}
             open={openModuleForm}
-            title={<Typography variant="h5">Add Module</Typography>}
+            title={<Typography variant="h5">Add {configData?.labels?.module?.singular || 'Module'}</Typography>}
           >
             {/* <Box sx={{ borderBottom: 2, borderColor: 'divider', mb: 2 }}>
               <Tabs value={selectedTabModuleForm} onChange={handleTabChange} aria-label="tabs-modules">
@@ -198,7 +209,7 @@ const Page = () => {
               setOpenAssignForm(false);
             }}
             open={openAssignForm}
-            title={<Typography variant="h5">Assign Module</Typography>}
+            title={<Typography variant="h5">Assign {configData?.labels?.module?.singular || 'Module'}</Typography>}
           >
             <AssignModulesForm selectedModules={selectedRows} domains={domains} departments={departments} />
           </CustomDialog>

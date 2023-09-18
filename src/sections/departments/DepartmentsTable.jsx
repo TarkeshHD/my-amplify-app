@@ -7,21 +7,24 @@ import { Scrollbar } from '../../components/Scrollbar';
 import { getInitials } from '../../utils/utils';
 import SearchNotFound from '../../components/SearchNotFound';
 import CustomDialog from '../../components/CustomDialog';
+import { useConfig } from '../../hooks/useConfig';
 
 export const DepartmentsTable = ({ count = 0, items = [], fetchingData }) => {
+  const config = useConfig();
+  const { data } = config;
   const columns = useMemo(
     () => [
       {
         accessorKey: 'name', // simple recommended way to define a column
-        header: 'Department',
+        header: `${data?.labels?.department?.singular || 'Department'}`,
       },
       {
         accessorFn: (row) => row?.domainId?.name || 'NA', // simple recommended way to define a column
-        header: 'Domain',
+        header: `${data?.labels?.domain?.singular || 'Domain'}`,
       },
       {
         accessorKey: 'userCount', // simple recommended way to define a column
-        header: 'Users',
+        header: `${data?.labels?.user?.plural || 'Users'}`,
       },
     ],
     [],
