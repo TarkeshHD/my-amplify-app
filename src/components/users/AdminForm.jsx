@@ -13,6 +13,7 @@ import { Box, Grid, Stack, Switch, Typography, FormControlLabel } from '@mui/mat
 import { FormProvider, RHFSelect, RHFSwitch, RHFTextField } from '../hook-form';
 import RHFAutocomplete from '../hook-form/RHFAutocomplete';
 import axios from '../../utils/axios';
+import { useConfig } from '../../hooks/useConfig';
 
 // ----------------------------------------------------------------------
 
@@ -23,12 +24,16 @@ AdminForm.propTypes = {
 
 export default function AdminForm({ isEdit, currentUser, domains = [] }) {
   const navigate = useNavigate();
+  const config = useConfig();
+  const { data } = config;
 
   const NewUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     username: Yup.string().required('Username is required'),
     password: Yup.string().required('Password is required'),
-    domain: Yup.string().required('Domain is required').notOneOf(['None'], 'Select one domain'),
+    domain: Yup.string()
+      .required(`${data?.labels?.domain?.singular || 'Domain'} is required`)
+      .notOneOf(['None'], `Select one ${data?.labels?.domain?.singular || 'Domain'}`),
     domainId: Yup.string(),
     role: Yup.string().required(),
   });
@@ -106,8 +111,8 @@ export default function AdminForm({ isEdit, currentUser, domains = [] }) {
 
               <RHFAutocomplete
                 name="domain"
-                label="Domain"
-                placeholder="Domain"
+                label={data?.labels?.domain?.singular || 'Domain'}
+                placeholder={data?.labels?.domain?.singular || 'Domain'}
                 options={[...domains, 'None']}
                 getOptionLabel={(option) => {
                   if (typeof option === 'string') {
@@ -126,7 +131,7 @@ export default function AdminForm({ isEdit, currentUser, domains = [] }) {
 
             <Stack alignItems="flex-end" sx={{ mt: 3 }}>
               <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
-                {!isEdit ? 'Create User' : 'Save Changes'}
+                {!isEdit ? 'Create ' + (data?.labels?.user?.singular || 'User') : 'Save Changes'}
               </LoadingButton>
             </Stack>
           </Box>

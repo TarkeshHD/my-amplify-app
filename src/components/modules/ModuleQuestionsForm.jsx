@@ -15,6 +15,7 @@ import RHFAutocomplete from '../hook-form/RHFAutocomplete';
 import axios from '../../utils/axios';
 import { RHFUploadSingleFile } from '../hook-form/RHFUpload';
 import { getFile } from '../../utils/utils';
+import { useConfig } from '../../hooks/useConfig';
 
 // ----------------------------------------------------------------------
 
@@ -25,7 +26,8 @@ ModuleQuestionForm.propTypes = {
 
 export default function ModuleQuestionForm({ isEdit, currentModule }) {
   const navigate = useNavigate();
-
+  const config = useConfig();
+  const { data } = config;
   console.log('Is Edit', isEdit);
   console.log('Current Module', currentModule);
 
@@ -44,7 +46,7 @@ export default function ModuleQuestionForm({ isEdit, currentModule }) {
           }),
         }),
       )
-      .required('Evaluation array is required')
+      .required(`${data?.labels?.evaluation?.singular || 'Evaluation'} array is required`)
       .length(10),
   });
 
@@ -206,7 +208,7 @@ export default function ModuleQuestionForm({ isEdit, currentModule }) {
 
           <Grid item xs={12}>
             <Typography variant="subtitle2" color={'text.disabled'}>
-              Select correct option for the quesion
+              Select correct option for the question
             </Typography>
             <RHFRadioGroup
               name={`evaluation[${index}].answer`}
@@ -243,7 +245,7 @@ export default function ModuleQuestionForm({ isEdit, currentModule }) {
       <Grid item xs={12}>
         <Stack alignItems="flex-end" sx={{ mt: 3 }}>
           <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
-            {!isEdit ? 'Create Module' : 'Save Changes'}
+            {!isEdit ? 'Create ' + (data?.labels?.module?.singular || 'Module') : 'Save Changes'}
           </LoadingButton>
         </Stack>
       </Grid>

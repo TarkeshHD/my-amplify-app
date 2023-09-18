@@ -14,6 +14,7 @@ import { FormProvider, RHFSelect, RHFSwitch, RHFTextField } from '../hook-form';
 import RHFAutocomplete from '../hook-form/RHFAutocomplete';
 import axios from '../../utils/axios';
 import { RHFUploadSingleFile } from '../hook-form/RHFUpload';
+import { useConfig } from '../../hooks/useConfig';
 
 // ----------------------------------------------------------------------
 
@@ -24,6 +25,8 @@ ModuleForm.propTypes = {
 
 export default function ModuleForm({ isEdit, currentModule }) {
   const navigate = useNavigate();
+  const config = useConfig();
+  const { data } = config;
 
   const NewModuleSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
@@ -159,7 +162,7 @@ export default function ModuleForm({ isEdit, currentModule }) {
         <Grid item xs={12}>
           <Stack alignItems="flex-end" sx={{ mt: 3 }}>
             <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
-              {!isEdit ? 'Create Module' : 'Save Changes'}
+              {!isEdit ? 'Create ' + (data?.labels?.module?.singular || 'Module') : 'Save Changes'}
             </LoadingButton>
           </Stack>
         </Grid>

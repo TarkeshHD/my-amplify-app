@@ -13,6 +13,7 @@ import AdminForm from '../components/users/AdminForm';
 import TraineeForm from '../components/users/TraineeForm';
 import { DomainsTable } from '../sections/domains/DomainsTable';
 import DomainForm from '../components/domains/DomainForm';
+import { useConfig } from '../hooks/useConfig';
 
 const Page = () => {
   const [openDomainForm, setOpenDomainForm] = useState(false);
@@ -21,6 +22,9 @@ const Page = () => {
   const [data, setData] = useState([]);
   const [flatDomains, setFlatDomains] = useState([]);
 
+  const config = useConfig();
+  const { data: configData } = config;
+
   const getDomainsTree = async () => {
     try {
       setFetchingData(true);
@@ -28,7 +32,7 @@ const Page = () => {
       console.log(response.data);
       setData(response?.data?.details);
     } catch (error) {
-      toast.error(error.message || 'Failed to fetch users');
+      toast.error(error.message || `Failed to fetch ${data?.labels?.user?.plural?.toLowerCase() || 'users'}`);
       console.log(error);
     } finally {
       setFetchingData(false);
@@ -41,7 +45,7 @@ const Page = () => {
       console.log(response.data);
       setFlatDomains(response?.data?.details);
     } catch (error) {
-      toast.error(error.message || 'Failed to fetch users');
+      toast.error(error.message || `Failed to fetch ${data?.labels?.user?.plural?.toLowerCase() || 'users'}`);
       console.log(error);
     }
   };
@@ -58,14 +62,14 @@ const Page = () => {
   return (
     <>
       <Helmet>
-        <title>Domains | VRse Builder</title>
+        <title>{configData?.labels?.domain?.singular || 'Domain'} | VRse Builder</title>
       </Helmet>
 
       <Container maxWidth="xl">
         <Stack spacing={3}>
           <Stack direction="row" justifyContent="space-between" spacing={4}>
             <Stack spacing={1}>
-              <Typography variant="h4">Domains</Typography>
+              <Typography variant="h4">{configData?.labels?.domain?.plural || 'Domains'}</Typography>
             </Stack>
             <Stack alignItems="center" direction="row" spacing={1}>
               <Button
@@ -79,7 +83,7 @@ const Page = () => {
                   setOpenDomainForm(true);
                 }}
               >
-                Add Domain
+                Add {configData?.labels?.domain?.singular || 'Domain'}
               </Button>
             </Stack>
           </Stack>
@@ -91,7 +95,7 @@ const Page = () => {
               setOpenDomainForm(false);
             }}
             open={openDomainForm}
-            title={<>Add Domain</>}
+            title={<>Add {configData?.labels?.domain?.singular || 'Domain'}</>}
           >
             <DomainForm domains={flatDomains} />
           </CustomDialog>

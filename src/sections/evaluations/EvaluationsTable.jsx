@@ -49,29 +49,30 @@ const FAKE_DATA = [
 
 export const EvaluationsTable = ({ count = 0, items = [...FAKE_DATA], fetchingData }) => {
   const config = useConfig();
+  const { data } = config;
   const columns = useMemo(
     () => [
       {
         accessorKey: 'userId.username', // simple recommended way to define a column
-        header: 'User',
+        header: `${data?.labels?.user?.singular || 'User'}`,
         filterVariant: 'multi-select',
         size: 100,
       },
       {
         accessorKey: 'moduleId.name', // simple recommended way to define a column
-        header: 'Module',
+        header: `${data?.labels?.module?.singular || 'Module'}`,
         filterVariant: 'multi-select',
         size: 100,
       },
       {
         accessorKey: 'userId.domainId.name', // simple recommended way to define a column
-        header: 'Domain',
+        header: `${data?.labels?.domain?.singular || 'Domain'}`,
         filterVariant: 'multi-select',
         size: 100,
       },
       {
         accessorKey: 'userId.departmentId.name', // simple recommended way to define a column
-        header: 'Department',
+        header: `${data?.labels?.department?.singular || 'Department'}`,
         filterVariant: 'multi-select',
         size: 100,
       },
@@ -262,7 +263,7 @@ export const EvaluationsTable = ({ count = 0, items = [...FAKE_DATA], fetchingDa
         }}
         sx={{ minWidth: '60vw' }}
         open={Boolean(openEvaluationData)}
-        title={<Typography variant="h5">Evaluation</Typography>}
+        title={<Typography variant="h5">{data?.labels?.evaluation?.singular || 'Evaluation'} </Typography>}
       >
         {openEvaluationData?.loading ? (
           <Box>

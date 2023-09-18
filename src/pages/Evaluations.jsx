@@ -16,10 +16,14 @@ import SuperAdminForm from '../components/users/SuperAdminForm';
 import { ModulesTable } from '../sections/modules/ModulesTable';
 import QuestionsGrid from '../components/modules/QuestionsGrid';
 import { EvaluationsTable } from '../sections/evaluations/EvaluationsTable';
+import { useConfig } from '../hooks/useConfig';
 
 const Page = () => {
   const [fetchingData, setFetchingData] = useState(false);
   const [data, setData] = useState([]);
+
+  const config = useConfig();
+  const { data: configData } = config;
 
   const getEvaluations = async () => {
     try {
@@ -28,7 +32,7 @@ const Page = () => {
       console.log(response.data);
       setData(response?.data?.details);
     } catch (error) {
-      toast.error(error.message || 'Failed to fetch users');
+      toast.error(error.message || `Failed to fetch ${data?.labels?.user?.plural?.toLowerCase() || 'users'}`);
       console.log(error);
     } finally {
       setFetchingData(false);
@@ -44,14 +48,14 @@ const Page = () => {
   return (
     <>
       <Helmet>
-        <title>Evaluations | VRse Builder</title>
+        <title>{configData?.labels?.evaluation?.singular || 'Evaluation'} | VRse Builder</title>
       </Helmet>
 
       <Container maxWidth="xl">
         <Stack spacing={3}>
           <Stack direction="row" justifyContent="space-between" spacing={4}>
             <Stack spacing={1}>
-              <Typography variant="h4">Evaluations</Typography>
+              <Typography variant="h4">{configData?.labels?.evaluation?.singular || 'Evaluation'}</Typography>
             </Stack>
           </Stack>
 

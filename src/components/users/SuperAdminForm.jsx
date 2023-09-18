@@ -13,6 +13,7 @@ import { Box, Grid, Stack, Switch, Typography, FormControlLabel } from '@mui/mat
 import { FormProvider, RHFSelect, RHFSwitch, RHFTextField } from '../hook-form';
 import RHFAutocomplete from '../hook-form/RHFAutocomplete';
 import axios from '../../utils/axios';
+import { useConfig } from '../../hooks/useConfig';
 
 // ----------------------------------------------------------------------
 
@@ -23,6 +24,8 @@ SuperAdminForm.propTypes = {
 
 export default function SuperAdminForm({ isEdit, currentUser }) {
   const navigate = useNavigate();
+  const config = useConfig();
+  const { data } = config;
 
   const NewUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
@@ -100,7 +103,7 @@ export default function SuperAdminForm({ isEdit, currentUser }) {
 
             <Stack alignItems="flex-end" sx={{ mt: 3 }}>
               <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
-                {!isEdit ? 'Create User' : 'Save Changes'}
+                {!isEdit ? 'Create ' + (data?.labels?.user?.singular || 'User') : 'Save Changes'}
               </LoadingButton>
             </Stack>
           </Box>
