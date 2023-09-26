@@ -41,6 +41,7 @@ const Page = () => {
   const [selectedRows, setSelectedRows] = useState([]);
   const [domains, setDomains] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [users, setUsers] = useState([]);
 
   // For Tabs in add modules popup
   const [selectedTabModuleForm, setSelectedTabModuleForm] = useState('one');
@@ -86,6 +87,17 @@ const Page = () => {
     }
   };
 
+  const getUsers = async () => {
+    try {
+      const response = await axios.get('/user/all');
+      console.log(response.data.details.users);
+      setUsers(response?.data?.details.users);
+    } catch (error) {
+      toast.error(error.message || `Failed to fetch ${data?.labels?.user?.plural?.toLowerCase() || 'users'}`);
+      console.log(error);
+    }
+  };
+
   useEffect(() => {
     getDepartments();
   }, []);
@@ -96,6 +108,10 @@ const Page = () => {
 
   useEffect(() => {
     getModules();
+  }, []);
+
+  useEffect(() => {
+    getUsers();
   }, []);
 
   const handleRowSelection = useCallback((rows) => {
@@ -173,6 +189,7 @@ const Page = () => {
             count={data.length}
             domains={domains}
             departments={departments}
+            users={users}
           />
 
           {/* MODULE FORM */}
@@ -211,7 +228,12 @@ const Page = () => {
             open={openAssignForm}
             title={<Typography variant="h5">Assign {configData?.labels?.module?.singular || 'Module'}</Typography>}
           >
-            <AssignModulesForm selectedModules={selectedRows} domains={domains} departments={departments} />
+            <AssignModulesForm
+              selectedModules={selectedRows}
+              domains={domains}
+              departments={departments}
+              users={users}
+            />
           </CustomDialog>
         </Stack>
       </Container>

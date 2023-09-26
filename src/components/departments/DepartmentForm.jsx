@@ -73,7 +73,6 @@ export default function DepartmentForm({ isEdit, currentDepartment, domains = []
 
   const onSubmit = async (values) => {
     try {
-      console.log('Values', values);
       if (values.domainId === 'None') {
         delete values.domainId;
       }
