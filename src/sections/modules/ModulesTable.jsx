@@ -29,6 +29,7 @@ export const ModulesTable = ({
   handleRowSelection,
   domains = [],
   departments = [],
+  users = [],
 }) => {
   const tableRef = useRef(null);
 
@@ -183,6 +184,7 @@ export const ModulesTable = ({
           selectedModules={[openAssignModules?.id]}
           isEdit
           moduleAccess={openAssignModules?.moduleAccessId}
+          users={users}
         />
       </CustomDialog>
 
