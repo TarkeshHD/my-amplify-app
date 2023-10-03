@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { MaterialReactTable } from 'material-react-table';
 import { Avatar, Box, Card, IconButton, MenuItem, Stack, Typography } from '@mui/material';
 import { Delete, Edit, QuestionAnswer, Quiz } from '@mui/icons-material';
+import TimerIcon from '@mui/icons-material/Timer';
 import { Scrollbar } from '../../components/Scrollbar';
 import { getFile, getInitials } from '../../utils/utils';
 import SearchNotFound from '../../components/SearchNotFound';
@@ -11,6 +12,7 @@ import EditPasswordForm from '../../components/users/EditPasswordForm';
 import QuestionsGrid from '../../components/modules/QuestionsGrid';
 import AssignModulesForm from '../../components/modules/AssignModulesForm';
 import ModuleQuestionForm from '../../components/modules/ModuleQuestionsForm';
+import ModuleTimeForm from '../../components/modules/ModuleTimeForm';
 
 const FAKE_DATA = [
   {
@@ -68,6 +70,7 @@ export const ModulesTable = ({
   const [openAssignModules, setOpenAssignModules] = useState(null);
   const [openEvaluationData, setOpenEvalutationData] = useState(null);
   const [openQuestionsForm, setOpenQuestionsForm] = useState(null);
+  const [openTimeForm, setOpenTimeForm] = useState(null);
 
   // State Listeners
 
@@ -93,19 +96,35 @@ export const ModulesTable = ({
                 <Typography>Delete</Typography>
               </Stack>
             </MenuItem>,
-            <MenuItem
-              key={1}
-              onClick={() => {
-                // onEditRow();
-                setOpenQuestionsForm(row.original);
-                closeMenu();
-              }}
-            >
-              <Stack spacing={2} direction={'row'}>
-                <Quiz />
-                <Typography>Add/Edit Questions</Typography>
-              </Stack>
-            </MenuItem>,
+            row.original.evaluationType === 'mcq' ? (
+              <MenuItem
+                key={1}
+                onClick={() => {
+                  // onEditRow();
+                  setOpenQuestionsForm(row.original);
+                  closeMenu();
+                }}
+              >
+                <Stack spacing={2} direction={'row'}>
+                  <Quiz />
+                  <Typography>Add/Edit Questions</Typography>
+                </Stack>
+              </MenuItem>
+            ) : (
+              <MenuItem
+                key={4}
+                onClick={() => {
+                  // onEditRow();
+                  setOpenTimeForm(row.original);
+                  closeMenu();
+                }}
+              >
+                <Stack spacing={2} direction={'row'}>
+                  <TimerIcon />
+                  <Typography>Add/Edit Time Evaluation</Typography>
+                </Stack>
+              </MenuItem>
+            ),
             <MenuItem
               key={3}
               onClick={() => {
@@ -186,6 +205,19 @@ export const ModulesTable = ({
           moduleAccess={openAssignModules?.moduleAccessId}
           users={users}
         />
+      </CustomDialog>
+
+      {/* Time Form */}
+
+      <CustomDialog
+        onClose={() => {
+          setOpenTimeForm(false);
+        }}
+        sx={{ minWidth: '40vw' }}
+        open={Boolean(openTimeForm)}
+        title={<Typography variant="h5">Time Form</Typography>}
+      >
+        <ModuleTimeForm isEdit={openTimeForm?.evaluation?.length !== 0} currentModule={openTimeForm} />
       </CustomDialog>
 
       {/* View Module Data */}

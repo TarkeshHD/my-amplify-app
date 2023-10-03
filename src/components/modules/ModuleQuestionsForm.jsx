@@ -28,8 +28,6 @@ export default function ModuleQuestionForm({ isEdit, currentModule }) {
   const navigate = useNavigate();
   const config = useConfig();
   const { data } = config;
-  console.log('Is Edit', isEdit);
-  console.log('Current Module', currentModule);
 
   const NewModuleQuestionSchema = Yup.object().shape({
     evaluation: Yup.array()
@@ -116,7 +114,6 @@ export default function ModuleQuestionForm({ isEdit, currentModule }) {
   const onSubmit = async (values) => {
     try {
       // Make two requests and seperate Files from Body to seperate formdata and json request!
-      console.log('Values', values);
       const evaluationArr = values.evaluation;
       const formData = new FormData();
       const evaluation = [];
@@ -134,6 +131,7 @@ export default function ModuleQuestionForm({ isEdit, currentModule }) {
       const reqObj = {
         evaluation,
       };
+
       const responseJson = await axios.post(`/module/questions/update/${currentModule._id?.toString()}`, reqObj);
 
       const responseFiles = await axios.post(
