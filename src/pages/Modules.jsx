@@ -32,6 +32,7 @@ import ModuleForm from '../components/modules/ModuleForm';
 import AssignModulesForm from '../components/modules/AssignModulesForm';
 import ModuleQuestionForm from '../components/modules/ModuleQuestionsForm';
 import { useConfig } from '../hooks/useConfig';
+import ModuleTimeForm from '../components/modules/ModuleTimeForm';
 
 const Page = () => {
   const [openModuleForm, setOpenModuleForm] = useState(false);

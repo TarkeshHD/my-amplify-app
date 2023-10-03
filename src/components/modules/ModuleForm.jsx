@@ -8,9 +8,9 @@ import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 // @mui
 import { LoadingButton } from '@mui/lab';
-import { Box, Grid, Stack, Switch, Typography, FormControlLabel } from '@mui/material';
+import { Box, Grid, Stack, Switch, Typography, FormControlLabel, FormLabel, RadioGroup, Radio } from '@mui/material';
 
-import { FormProvider, RHFSelect, RHFSwitch, RHFTextField } from '../hook-form';
+import { FormProvider, RHFRadioGroup, RHFSelect, RHFSwitch, RHFTextField } from '../hook-form';
 import RHFAutocomplete from '../hook-form/RHFAutocomplete';
 import axios from '../../utils/axios';
 import { RHFUploadSingleFile } from '../hook-form/RHFUpload';
@@ -41,6 +41,7 @@ export default function ModuleForm({ isEdit, currentModule }) {
       name: currentModule?.name || '',
       description: currentModule?.description || '',
       index: currentModule?.index || '',
+      evaluationType: 'mcq',
       thumbnail: currentModule?.thumbnail, // Need to figure out prefilling when doing Edit Part
       SOP: currentModule?.SOP, // Need to figure out prefilling when doing Edit Part
     }),
@@ -78,7 +79,9 @@ export default function ModuleForm({ isEdit, currentModule }) {
     try {
       console.log('Values', values);
       const formData = new FormData();
+
       Object.keys(values).map((key) => formData.append(key, values[key]));
+
       const response = await axios.post('/module/create', formData);
       toast.success(!isEdit ? 'Create success!' : 'Update success!');
       navigate(0);
@@ -110,6 +113,11 @@ export default function ModuleForm({ isEdit, currentModule }) {
     [setValue],
   );
 
+  const radioOptions = [
+    { label: 'MCQ', value: 'mcq' },
+    { label: 'Time', value: 'time' },
+  ];
+
   return (
     <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
       <Grid container spacing={3}>
@@ -120,6 +128,16 @@ export default function ModuleForm({ isEdit, currentModule }) {
         <Grid item xs={6}>
           {' '}
           <RHFTextField name="index" type="number" label="Index" />{' '}
+        </Grid>
+        <Grid item xs={12}>
+          <Typography variant="subtitle2" color={'text.secondary'} mb={1}>
+            Mode
+          </Typography>
+          <RHFRadioGroup
+            name="evaluationType"
+            options={radioOptions}
+            getOptionLabel={radioOptions.map((option) => option.label)}
+          />
         </Grid>
         <Grid item xs={12}>
           <RHFTextField rows={5} multiline name="description" label="Description" />

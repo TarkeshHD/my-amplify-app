@@ -10,4 +10,9 @@ export const getInitials = (name = '') =>
     .map((v) => v && v[0].toUpperCase())
     .join('');
 
-export const getFile = (path) => `${import.meta.env.VITE_BASE_URL}file/${path}`;
+export const getFile = (path) => {
+  if (!path) {
+    return;
+  }
+  return `${import.meta.env.VITE_BASE_URL}file/${path}`;
+};
