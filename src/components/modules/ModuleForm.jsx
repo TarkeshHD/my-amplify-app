@@ -41,7 +41,7 @@ export default function ModuleForm({ isEdit, currentModule }) {
       name: currentModule?.name || '',
       description: currentModule?.description || '',
       index: currentModule?.index || '',
-      evaluationType: 'mcq',
+      evaluationType: 'question',
       thumbnail: currentModule?.thumbnail, // Need to figure out prefilling when doing Edit Part
       SOP: currentModule?.SOP, // Need to figure out prefilling when doing Edit Part
     }),
@@ -77,7 +77,6 @@ export default function ModuleForm({ isEdit, currentModule }) {
 
   const onSubmit = async (values) => {
     try {
-      console.log('Values', values);
       const formData = new FormData();
 
       Object.keys(values).map((key) => formData.append(key, values[key]));
@@ -114,7 +113,7 @@ export default function ModuleForm({ isEdit, currentModule }) {
   );
 
   const radioOptions = [
-    { label: 'MCQ', value: 'mcq' },
+    { label: 'MCQ', value: 'question' },
     { label: 'Time', value: 'time' },
   ];
 
@@ -180,7 +179,7 @@ export default function ModuleForm({ isEdit, currentModule }) {
         <Grid item xs={12}>
           <Stack alignItems="flex-end" sx={{ mt: 3 }}>
             <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
-              {!isEdit ? 'Create ' + (data?.labels?.module?.singular || 'Module') : 'Save Changes'}
+              {!isEdit ? `Create ${data?.labels?.module?.singular || 'Module'}` : 'Save Changes'}
             </LoadingButton>
           </Stack>
         </Grid>

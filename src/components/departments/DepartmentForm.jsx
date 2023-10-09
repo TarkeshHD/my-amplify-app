@@ -113,7 +113,6 @@ export default function DepartmentForm({ isEdit, currentDepartment, domains = []
                   return option?.name || '';
                 }}
                 onChangeCustom={(value) => {
-                  console.log('Custom Change', value);
                   setValue('domain', value?.name);
                   setValue('domainId', value?._id);
                 }}
@@ -123,7 +122,7 @@ export default function DepartmentForm({ isEdit, currentDepartment, domains = []
 
             <Stack alignItems="flex-end" sx={{ mt: 3 }}>
               <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
-                {!isEdit ? 'Create ' + (data?.labels?.department?.singular || 'Department') : 'Save Changes'}
+                {!isEdit ? `Create ${data?.labels?.department?.singular || 'Department'}` : 'Save Changes'}
               </LoadingButton>
             </Stack>
           </Box>

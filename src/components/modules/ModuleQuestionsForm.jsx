@@ -243,7 +243,7 @@ export default function ModuleQuestionForm({ isEdit, currentModule }) {
       <Grid item xs={12}>
         <Stack alignItems="flex-end" sx={{ mt: 3 }}>
           <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
-            {!isEdit ? 'Create ' + (data?.labels?.module?.singular || 'Module') : 'Save Changes'}
+            {!isEdit ? `Create ${data?.labels?.module?.singular || 'Module'}` : 'Save Changes'}
           </LoadingButton>
         </Stack>
       </Grid>

@@ -2,6 +2,8 @@ import { Box, Grid, Typography } from '@mui/material';
 import React from 'react';
 import QuestionCard from './QuestionCard';
 import { SeverityPill } from '../SeverityPill';
+import TimeCard from './TimeCard';
+import moment from 'moment-timezone';
 
 const statusMap = {
   Pending: 'warning',
@@ -20,7 +22,12 @@ const EVAL_SAMPLE = [
   { answer: 'a', answeredValue: 'b' },
 ];
 
-const QuestionsGrid = ({ showValues = false, evalData, evaluation = EVAL_SAMPLE }) => {
+export const secondsToHHMMSS = (seconds) => {
+  const duration = moment.duration(seconds, 'seconds');
+  return moment.utc(duration.asMilliseconds()).format('HH:mm:ss');
+};
+
+const TimeGrid = ({ showValues = false, evalData, evaluation = EVAL_SAMPLE }) => {
   return (
     <Grid container spacing={2}>
       {showValues && (
@@ -33,34 +40,21 @@ const QuestionsGrid = ({ showValues = false, evalData, evaluation = EVAL_SAMPLE 
               {evalData?.session}
             </Typography>
           </Grid>
-          <Grid item xs={4} />
-          <Grid item textAlign={'right'} xs={2}>
+          <Grid item xs={2} />
+          <Grid item textAlign={'right'} xs={4}>
             <SeverityPill color={statusMap[evalData?.status]}>{evalData?.status}</SeverityPill>
             <Typography color={'text.disabled'} fontWeight={'bold'} variant="body2" display={'block'}>
-              Score: {evalData?.score}
+              Score: {evalData?.score} | Time: {secondsToHHMMSS(evalData?.endTime - evalData?.startTime)}
             </Typography>
           </Grid>
         </>
       )}
-      {evaluation.map((v, i) => (
-        <Grid key={i} item xs={6}>
-          <QuestionCard
-            notEditable={true}
-            question={v.title || 'कौन सी क्रेन सुरक्षित है ? ट्रेडिशनल हायड्रा या फराना नई जनरेशन क्रेन ?'}
-            options={[
-              { label: v.options?.a || 'फराना नई जनरेशन क्रेन', value: 'a' },
-              { label: v.options?.b || 'ट्रेडिशनल हायड्रा', value: 'b' },
-              { label: v.options?.c || 'उपर में से कोई भी नहीं।', value: 'c' },
-              { label: v.options?.d || 'उपरोक्त सभी', value: 'd' },
-            ]}
-            correctValue={v.answer}
-            answeredValue={v.answeredValue}
-            showValues={showValues}
-          />
-        </Grid>
-      ))}
+
+      <Grid item xs={12}>
+        <TimeCard tableData={evalData.mistakes} status={evalData.status} />
+      </Grid>
     </Grid>
   );
 };
 
-export default QuestionsGrid;
+export default TimeGrid;

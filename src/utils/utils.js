@@ -16,3 +16,12 @@ export const getFile = (path) => {
   }
   return `${import.meta.env.VITE_BASE_URL}file/${path}`;
 };
+
+export const capitalizeFirstLetter = (word) => {
+  // Check if the input is a valid string
+  if (typeof word !== 'string' || word.length === 0) {
+    return word;
+  }
+
+  return word.charAt(0).toUpperCase() + word.slice(1);
+};

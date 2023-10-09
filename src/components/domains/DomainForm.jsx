@@ -74,7 +74,6 @@ export default function DomainForm({ isEdit, currentDomain, domains = [] }) {
 
   const onSubmit = async (values) => {
     try {
-      console.log('Values', values);
       if (values.parentId === 'None') {
         delete values.parentId;
       }
@@ -100,9 +99,9 @@ export default function DomainForm({ isEdit, currentDomain, domains = [] }) {
                 gridTemplateColumns: { xs: 'repeat(1, 1fr)' }, // Add sm: 'repeat(2, 1fr)'  for two Fields in line
               }}
             >
-              <RHFTextField name="name" label={(data?.labels?.domain?.singular || 'Domain') + ' Name'} />
+              <RHFTextField name="name" label={`${data?.labels?.domain?.singular || 'Domain'} Name`} />
 
-              <RHFTextField name="domainPassword" label={(data?.labels?.domain?.singular || 'Domain') + ' Password'} />
+              <RHFTextField name="domainPassword" label={`${data?.labels?.domain?.singular || 'Domain'} Password`} />
 
               {/* List of all domains, disabled and prefilled for Admin */}
               <RHFAutocomplete
@@ -117,7 +116,6 @@ export default function DomainForm({ isEdit, currentDomain, domains = [] }) {
                   return option?.name || '';
                 }}
                 onChangeCustom={(value) => {
-                  console.log('Custom Change', value);
                   setValue('domainName', value);
                   setValue('parentId', value?._id);
                 }}
@@ -127,7 +125,7 @@ export default function DomainForm({ isEdit, currentDomain, domains = [] }) {
 
             <Stack alignItems="flex-end" sx={{ mt: 3 }}>
               <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
-                {!isEdit ? 'Create ' + (data?.labels?.domain?.singular || 'Domain') : 'Save Changes'}
+                {!isEdit ? `Create ${data?.labels?.domain?.singular || 'Domain'}` : 'Save Changes'}
               </LoadingButton>
             </Stack>
           </Box>

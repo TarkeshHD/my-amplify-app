@@ -85,7 +85,6 @@ export default function TraineeForm({ isEdit, currentUser, domains = [], departm
 
   const onSubmit = async (values) => {
     try {
-      console.log('Values', values);
       if (values.domainId === 'None') {
         delete values.domainId;
       }

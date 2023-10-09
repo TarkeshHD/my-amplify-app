@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   MRT_FullScreenToggleButton as MRTFullScreenToggleButton,
   MRT_ShowHideColumnsButton as MRTShowHideColumnsButton,
@@ -9,11 +9,10 @@ import {
 } from 'material-react-table';
 import { toast } from 'react-toastify';
 import moment from 'moment-timezone';
-import { Avatar, Box, Button, Card, IconButton, MenuItem, Skeleton, Stack, Typography } from '@mui/material';
+import { Box, Button, Card, MenuItem, Skeleton, Stack, Typography } from '@mui/material';
 import { ExportToCsv } from 'export-to-csv';
 import { Delete, Edit, FileDownload } from '@mui/icons-material';
-import { Scrollbar } from '../../components/Scrollbar';
-import { getInitials } from '../../utils/utils';
+import { capitalizeFirstLetter, getInitials } from '../../utils/utils';
 import SearchNotFound from '../../components/SearchNotFound';
 import CustomDialog from '../../components/CustomDialog';
 import EditPasswordForm from '../../components/users/EditPasswordForm';
@@ -21,6 +20,8 @@ import QuestionsGrid from '../../components/modules/QuestionsGrid';
 import { SeverityPill } from '../../components/SeverityPill';
 import { useConfig } from '../../hooks/useConfig';
 import axios from '../../utils/axios';
+import TimeGrid from '../../components/modules/TimeGrid';
+import CustomDateRangePicker from '../../components/DatePicker/CustomDateRangePicker';
 
 const statusMap = {
   Pending: 'warning',
@@ -47,9 +48,53 @@ const FAKE_DATA = [
   },
 ];
 
+const getScore = (item) => {
+  if (item?.mode === 'mcq') {
+    return item?.answers?.mcqBased?.score + ' / ' + item?.answers?.mcqBased?.answerKey.length;
+  }
+
+  return capitalizeFirstLetter(item?.answers?.timeBased?.score);
+};
+
+const getStatus = async (item, config) => {
+  if (item?.mode === 'mcq') {
+    return item?.answers?.mcqBased?.score >= config.data.passingMarks ? 'Pass' : 'Fail';
+  }
+  const response = await axios.get(`/evaluation/${item.id}`);
+
+  return item.answers?.timeBased.timeTaken < response?.data?.details?.evaluationDump.timeBased.bronzeTimeLimit
+    ? 'Pass'
+    : 'Fail';
+};
+
 export const EvaluationsTable = ({ count = 0, items = [...FAKE_DATA], fetchingData }) => {
   const config = useConfig();
   const { data } = config;
+
+  const fetchScoresAndStatuses = async (item) => {
+    let score = '-';
+    let status = 'Pending';
+
+    if (item?.endTime) {
+      score = getScore(item);
+      status = await getStatus(item, config);
+    }
+
+    return { ...item, score, status };
+  };
+
+  const [updatedItems, setUpdatedItems] = useState(items);
+  const updateItems = async () => {
+    const newItems = await Promise.all(items.map(fetchScoresAndStatuses));
+    setUpdatedItems(newItems);
+  };
+
+  // Call the updateItems function to update your items
+  useEffect(() => {
+    updateItems();
+  }, [items]);
+
+  // const scoresList =
   const columns = useMemo(
     () => [
       {
@@ -57,29 +102,74 @@ export const EvaluationsTable = ({ count = 0, items = [...FAKE_DATA], fetchingDa
         header: `${data?.labels?.user?.singular || 'User'}`,
         filterVariant: 'multi-select',
         size: 100,
+        Cell: ({ cell, column, row }) => {
+          return <Typography>{row?.original?.userId?.username || '-'}</Typography>;
+        },
       },
       {
         accessorKey: 'moduleId.name', // simple recommended way to define a column
         header: `${data?.labels?.module?.singular || 'Module'}`,
         filterVariant: 'multi-select',
         size: 100,
+        Cell: ({ cell, column, row }) => {
+          return <Typography>{row?.original?.moduleId?.name || '-'}</Typography>;
+        },
       },
       {
         accessorKey: 'userId.domainId.name', // simple recommended way to define a column
         header: `${data?.labels?.domain?.singular || 'Domain'}`,
         filterVariant: 'multi-select',
         size: 100,
+        Cell: ({ cell, column, row }) => {
+          return <Typography>{row?.original?.userId?.domainId?.name || '-'}</Typography>;
+        },
       },
       {
         accessorKey: 'userId.departmentId.name', // simple recommended way to define a column
         header: `${data?.labels?.department?.singular || 'Department'}`,
         filterVariant: 'multi-select',
         size: 100,
+        Cell: ({ cell, column, row }) => {
+          return <Typography>{row?.original?.userId?.departmentId?.name || '-'}</Typography>;
+        },
       },
 
       {
-        accessorKey: 'session', // simple recommended way to define a column
+        size: 250,
+        accessorFn: (row) => {
+          const endTime = row?.endTime ? row?.endTime : undefined;
+          return [row?.startTime, endTime];
+        },
         header: 'Session Time',
+        filterFn: (row, id, filterValue) => {
+          const [startTime, endTime] = row.getValue(id);
+          const [startFilterValue, endFilterValue] = filterValue;
+          // When there is no filtered Date
+          if (startFilterValue === true && endFilterValue === true) {
+            return true;
+          }
+
+          if (startFilterValue < startTime && startTime < endFilterValue) {
+            if (endTime === undefined) {
+              // Start time is between, but end time is pending
+              return true;
+            }
+
+            if (startFilterValue < endTime && endTime < endFilterValue) {
+              // Both start time and end time are between
+              return true;
+            }
+          }
+
+          if (endTime !== undefined && startFilterValue < endTime && endTime < endFilterValue) {
+            // End time is between
+            return true;
+          }
+
+          // Neither start time nor end time are between
+          return false;
+        },
+        sortingFn: 'datetime',
         Cell: ({ cell, column, row }) => {
           const tz = moment.tz.guess();
           const startTime = moment.unix(row?.original?.startTime).tz(tz).format('DD/MM/YYYY HH:mm');
@@ -92,21 +182,19 @@ export const EvaluationsTable = ({ count = 0, items = [...FAKE_DATA], fetchingDa
             </Typography>
           );
         },
+        Filter: ({ column }) => <CustomDateRangePicker column={column} />,
       },
 
       {
         accessorKey: 'score', // simple recommended way to define a column
         header: 'Score',
+        filterVariant: 'multi-select',
       },
       {
         accessorKey: 'status', // simple recommended way to define a column
-        header: 'Status',
+        header: 'status',
         Cell: ({ cell, column, row }) => {
-          let status = 'Pending';
-          if (row?.original?.endTime) {
-            status = row?.original?.score >= config.data.passingMarks ? 'Pass' : 'Fail';
-          }
-
+          const status = row?.original?.status;
           return <SeverityPill color={statusMap[status]}>{status}</SeverityPill>;
         },
         filterVariant: 'multi-select',
@@ -139,6 +227,7 @@ export const EvaluationsTable = ({ count = 0, items = [...FAKE_DATA], fetchingDa
       const doc = row?.original;
       const response = await axios.get(`/evaluation/${doc.id}`);
       const responseObj = response?.data?.details;
+
       const tz = moment.tz.guess();
       const startTime = moment.unix(row?.original?.startTime).tz(tz).format('DD/MM/YYYY HH:mm');
       const endTime = row?.original?.endTime
@@ -146,22 +235,25 @@ export const EvaluationsTable = ({ count = 0, items = [...FAKE_DATA], fetchingDa
         : 'Pending';
       const session = `${startTime} - ${endTime}`;
 
-      let status = 'Pending';
-      if (row?.original?.endTime) {
-        status = row?.original?.score >= config.data.passingMarks ? 'Pass' : 'Fail';
-      }
+      let status = row?.original?.status;
 
       responseObj.status = status;
       responseObj.session = session;
-      responseObj.username = responseObj.userId?.name;
+      responseObj.username = row?.original?.userId?.name;
+      responseObj.score = row?.original?.score;
 
       const { answers } = responseObj;
-      responseObj.evaluationDump = responseObj.evaluationDump.map((v, index) => ({
-        ...v,
-        answeredValue: answers[index],
-      }));
-
-      console.log(responseObj);
+      if (responseObj.mode === 'mcq') {
+        responseObj.evaluationDump = responseObj.evaluationDump.mcqBased.map((v, index) => {
+          return {
+            ...v,
+            answeredValue: answers.mcqBased.answerKey[index],
+          };
+        });
+      } else {
+        responseObj.mistakes = responseObj?.answers?.timeBased?.mistakes;
+        responseObj.scores = row?.original?.scores;
+      }
 
       setOpenEvalutationData(responseObj);
     } catch (error) {
@@ -235,7 +327,7 @@ export const EvaluationsTable = ({ count = 0, items = [...FAKE_DATA], fetchingDa
           }}
           positionActionsColumn="last"
           columns={columns}
-          data={items}
+          data={updatedItems}
           enableRowSelection // enable some features
           enableColumnOrdering
           state={{
@@ -248,7 +340,7 @@ export const EvaluationsTable = ({ count = 0, items = [...FAKE_DATA], fetchingDa
           enableGlobalFilterModes
           positionGlobalFilter="left"
           muiSearchTextFieldProps={{
-            placeholder: `Search ${items.length} rows`,
+            placeholder: `Search ${updatedItems.length} rows`,
             sx: { minWidth: '300px' },
             variant: 'outlined',
           }}
@@ -271,8 +363,10 @@ export const EvaluationsTable = ({ count = 0, items = [...FAKE_DATA], fetchingDa
             <Skeleton variant="rectangular" width={210} height={60} />
             <Skeleton variant="rounded" width={210} height={60} />
           </Box>
-        ) : (
+        ) : openEvaluationData?.mode === 'mcq' ? (
           <QuestionsGrid showValues evalData={openEvaluationData} evaluation={openEvaluationData?.evaluationDump} />
+        ) : (
+          <TimeGrid showValues evalData={openEvaluationData} evaluation={openEvaluationData?.answers} />
         )}
       </CustomDialog>
     </>

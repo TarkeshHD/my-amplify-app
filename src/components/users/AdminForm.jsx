@@ -79,7 +79,6 @@ export default function AdminForm({ isEdit, currentUser, domains = [] }) {
 
   const onSubmit = async (values) => {
     try {
-      console.log('Values', values);
       if (values.domainId === 'None') {
         delete values.domainId;
       }
@@ -131,7 +130,7 @@ export default function AdminForm({ isEdit, currentUser, domains = [] }) {
 
             <Stack alignItems="flex-end" sx={{ mt: 3 }}>
               <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
-                {!isEdit ? 'Create ' + (data?.labels?.user?.singular || 'User') : 'Save Changes'}
+                {!isEdit ? `Create ${data?.labels?.user?.singular || 'User'}` : 'Save Changes'}
               </LoadingButton>
             </Stack>
           </Box>
