@@ -29,7 +29,6 @@ const Page = () => {
     try {
       setFetchingData(true);
       const response = await axios.get('/domain/tree');
-      console.log(response.data);
       setData(response?.data?.details);
     } catch (error) {
       toast.error(error.message || `Failed to fetch ${data?.labels?.user?.plural?.toLowerCase() || 'users'}`);
@@ -42,7 +41,6 @@ const Page = () => {
   const getDomains = async () => {
     try {
       const response = await axios.get('/domain/all');
-      console.log(response.data);
       setFlatDomains(response?.data?.details);
     } catch (error) {
       toast.error(error.message || `Failed to fetch ${data?.labels?.user?.plural?.toLowerCase() || 'users'}`);

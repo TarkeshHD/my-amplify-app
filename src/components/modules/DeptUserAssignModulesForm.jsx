@@ -97,7 +97,6 @@ const DeptUserAssignModulesForm = ({
       };
       if (isEdit) {
         delete reqObj.modules;
-        console.log(reqObj);
         const response = await axios.post(`/module/assign/update/special/${selectedModules[0]}`, reqObj);
       } else {
         delete reqObj.isSpecialAccess && delete reqObj.isDomainAccess;

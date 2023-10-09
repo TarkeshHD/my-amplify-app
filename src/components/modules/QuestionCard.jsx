@@ -3,7 +3,14 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { FormProvider, RHFRadioGroup } from '../hook-form';
 
-const QuestionCard = ({ question, options = [], showValues = false, correctValue, answeredValue }) => {
+const QuestionCard = ({
+  question,
+  options = [],
+  showValues = false,
+  correctValue,
+  answeredValue,
+  notEditable = false,
+}) => {
   const defaultValues = {
     choice: showValues ? answeredValue : correctValue,
   };
@@ -37,6 +44,14 @@ const QuestionCard = ({ question, options = [], showValues = false, correctValue
     return 'success';
   };
 
+  // Modify the options array to include the 'disabled' property
+  const modifiedOptions = notEditable
+    ? options.map((option) => ({
+        ...option,
+        disabled: true,
+      }))
+    : options;
+
   return (
     <Paper variant="outlined">
       <Paper sx={{ backgroundColor: 'lightgray', padding: 2 }}>
@@ -48,7 +63,7 @@ const QuestionCard = ({ question, options = [], showValues = false, correctValue
             name="choice"
             selectedValue={showValues ? answeredValue : correctValue}
             selectedColor={getSelectedColor()}
-            options={options}
+            options={modifiedOptions}
             row={false}
           />
         </FormProvider>

@@ -103,7 +103,7 @@ export default function SuperAdminForm({ isEdit, currentUser }) {
 
             <Stack alignItems="flex-end" sx={{ mt: 3 }}>
               <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
-                {!isEdit ? 'Create ' + (data?.labels?.user?.singular || 'User') : 'Save Changes'}
+                {!isEdit ? `Create ${data?.labels?.user?.singular || 'User'}` : 'Save Changes'}
               </LoadingButton>
             </Stack>
           </Box>

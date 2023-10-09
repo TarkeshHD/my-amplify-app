@@ -29,7 +29,6 @@ const Page = () => {
     try {
       setFetchingData(true);
       const response = await axios.get('/department/all');
-      console.log(response.data);
       setData(response?.data?.details);
     } catch (error) {
       toast.error(

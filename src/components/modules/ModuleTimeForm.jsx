@@ -23,12 +23,10 @@ ModuleTimeForm.propTypes = {
   currentModule: PropTypes.object,
 };
 
-export default function ModuleTimeForm({ isEdit, currentModule }) {
+export default function ModuleTimeForm({ isEdit, currentModule, fieldDisabled = false }) {
   const navigate = useNavigate();
   const config = useConfig();
   const { data } = config;
-
-  console.log(currentModule, 'currentModule');
 
   const NewModuleSchema = Yup.object().shape({
     goldTimeLimit: Yup.number().required('Gold Time Limit is required'),
@@ -82,10 +80,8 @@ export default function ModuleTimeForm({ isEdit, currentModule }) {
 
   const onSubmit = async (values) => {
     try {
-      console.log('Values', values);
       const formData = new FormData();
       Object.keys(values).map((key) => formData.append(key, values[key]));
-      console.log('module id', currentModule._id?.toString());
       const response = await axios.post(`/module/time/update/${currentModule._id?.toString()}`, formData);
       toast.success(!isEdit ? 'Create success!' : 'Update success!');
       navigate(0);
@@ -100,32 +96,40 @@ export default function ModuleTimeForm({ isEdit, currentModule }) {
       <Grid container spacing={3}>
         <Grid item xs={6}>
           {' '}
-          <RHFTextField name="goldTimeLimit" type="number" label="Gold Time Limit" />{' '}
+          <RHFTextField name="goldTimeLimit" type="number" label="Gold Time Limit" disabled={fieldDisabled} />{' '}
         </Grid>
         <Grid item xs={6}>
           {' '}
-          <RHFTextField name="silverTimeLimit" type="number" label="Silver Time Limit" />{' '}
+          <RHFTextField name="silverTimeLimit" type="number" label="Silver Time Limit" disabled={fieldDisabled} />{' '}
         </Grid>
         <Grid item xs={6}>
-          <RHFTextField name="bronzeTimeLimit" type="number" label="Bronze Time Limit" />
+          <RHFTextField name="bronzeTimeLimit" type="number" label="Bronze Time Limit" disabled={fieldDisabled} />
         </Grid>
         <Grid item xs={6}>
-          <RHFTextField name="mistakesAllowed" type="number" label="Mistakes Allowed" />{' '}
+          <RHFTextField name="mistakesAllowed" type="number" label="Mistakes Allowed" disabled={fieldDisabled} />{' '}
         </Grid>
         <Grid item xs={12}>
           <Typography variant="subtitle2" color={'text.secondary'} mb={1}>
             Notes
           </Typography>
-          <RHFTextField rows={5} multiline name="note" label="Any Note (OPTIONAL)" />
+          <RHFTextField
+            rows={5}
+            multiline
+            name="note"
+            label={fieldDisabled ? 'No notes added' : 'Any Note (OPTIONAL)'}
+            disabled={fieldDisabled}
+          />
         </Grid>
 
-        <Grid item xs={12}>
-          <Stack alignItems="flex-end" sx={{ mt: 3 }}>
-            <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
-              {!isEdit ? 'Create ' + (data?.labels?.module?.singular || 'Module') : 'Save Changes'}
-            </LoadingButton>
-          </Stack>
-        </Grid>
+        {!fieldDisabled && ( // Render the button only if fieldDisabled is false
+          <Grid item xs={12}>
+            <Stack alignItems="flex-end" sx={{ mt: 3 }}>
+              <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
+                {!isEdit ? `Create ${data?.labels?.module?.singular || 'Module'}` : 'Save Changes'}
+              </LoadingButton>
+            </Stack>
+          </Grid>
+        )}
       </Grid>
     </FormProvider>
   );

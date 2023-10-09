@@ -54,7 +54,6 @@ const Page = () => {
     try {
       setFetchingData(true);
       const response = await axios.get('/module/all');
-      console.log(response.data);
       setData(response?.data?.details);
     } catch (error) {
       toast.error(error.message || `Failed to fetch ${data?.labels?.user?.plural?.toLowerCase() || 'users'}`);
@@ -91,7 +90,6 @@ const Page = () => {
   const getUsers = async () => {
     try {
       const response = await axios.get('/user/all');
-      console.log(response.data.details.users);
       setUsers(response?.data?.details.users);
     } catch (error) {
       toast.error(error.message || `Failed to fetch ${data?.labels?.user?.plural?.toLowerCase() || 'users'}`);

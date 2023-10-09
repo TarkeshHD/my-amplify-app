@@ -96,7 +96,7 @@ export const ModulesTable = ({
                 <Typography>Delete</Typography>
               </Stack>
             </MenuItem>,
-            row.original.evaluationType === 'mcq' ? (
+            row.original.evaluationType === 'question' ? (
               <MenuItem
                 key={1}
                 onClick={() => {
@@ -107,7 +107,7 @@ export const ModulesTable = ({
               >
                 <Stack spacing={2} direction={'row'}>
                   <Quiz />
-                  <Typography>Add/Edit Questions</Typography>
+                  <Typography>Add/Edit Questions </Typography>
                 </Stack>
               </MenuItem>
             ) : (
@@ -130,6 +130,7 @@ export const ModulesTable = ({
               onClick={() => {
                 // onEditRow();
 
+                console.log(row.original);
                 setOpenAssignModules(row.original);
                 closeMenu();
               }}
@@ -233,7 +234,11 @@ export const ModulesTable = ({
           </>
         }
       >
-        <QuestionsGrid evaluation={openEvaluationData?.evaluation} />
+        {openEvaluationData?.evaluationType === 'question' ? (
+          <QuestionsGrid evaluation={openEvaluationData?.evaluation} />
+        ) : (
+          <ModuleTimeForm isEdit={false} currentModule={openEvaluationData} fieldDisabled={true} />
+        )}
       </CustomDialog>
     </>
   );
