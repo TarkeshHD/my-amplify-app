@@ -26,7 +26,7 @@ export const DashboardDiffCard = (props) => {
             <SvgIcon>{icon}</SvgIcon>
           </Avatar>
         </Stack>
-        {difference && (
+        {(difference || difference === 0) && ( // Only when value is false
           <Stack alignItems="center" direction="row" spacing={2} sx={{ mt: 2 }}>
             <Stack alignItems="center" direction="row" spacing={0.5}>
               <SvgIcon color={positive ? 'success' : 'error'} fontSize="small">
