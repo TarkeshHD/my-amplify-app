@@ -1,6 +1,6 @@
-import { Box, Container, Unstable_Grid2 as Grid } from '@mui/material';
+import { Container, Unstable_Grid2 as Grid, Button, Alert } from '@mui/material';
 import { Helmet } from 'react-helmet-async';
-import { AccountCircle, CurrencyRupee, EventAvailable, HourglassEmpty, TrendingUp } from '@mui/icons-material';
+import { EventAvailable, HourglassEmpty, TrendingUp } from '@mui/icons-material';
 
 import { DashboardDiffCard } from '../sections/dashboard/DashboardDiffCard';
 
@@ -10,12 +10,96 @@ import { DashboardTasksProgress } from '../sections/dashboard/DashboardTasksProg
 
 import { DashboardPieChart } from '../sections/dashboard/DashboardPieChart';
 import { useConfig } from '../hooks/useConfig';
+import { useEffect, useState } from 'react';
+import axios from '../utils/axios';
+import { useAuth } from '../hooks/useAuth';
+import { toast } from 'react-toastify';
+import { calculatePercentageChange } from '../utils/utils';
 
 const now = new Date();
 
 const Page = () => {
   const config = useConfig();
   const { data } = config;
+
+  const auth = useAuth();
+
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [lastMonthUserPercentage, setLastMonthUserPercentage] = useState(0);
+  const [totalVRSession, setTotalVRSession] = useState('0h');
+  const [lastMonthVRSessionPercentage, setLastMonthVRSessionPercentage] = useState(0);
+  const [evalSession, setEvalSession] = useState(0);
+  const [lastMonthEvalSessionPercentage, setLastMonthEvalSessionPercentage] = useState(0);
+  const [passPercentage, setPassPercentage] = useState(0);
+  const [monthlyTotalEval, setMonthlyTotalEval] = useState([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  const [monthlyPassEval, setMonthlyPassEval] = useState([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  const [domainOrDeptVal, setDomainOrDeptVal] = useState([[], []]);
+
+  const [domainName, setDomainName] = useState(false);
+
+  const fetchData = async () => {
+    try {
+      const response = await axios.get('/analytic/all');
+      const data = response.data;
+      // Total User Analytics
+      const totalUsers = data?.details?.userCount?.total;
+      const lastMonthUserPercentage = calculatePercentageChange(data?.details?.userCount?.tillLastMonth, totalUsers);
+      // Total VR Session Analytics
+      const totalVRSession = `${data?.details?.evalSessionTime?.total}h`;
+      const lastMonthVRSessionPercentage = calculatePercentageChange(
+        data?.details?.evalSessionTime?.tillLastMonth,
+        data?.details?.evalSessionTime?.total,
+      );
+      // Evaluation Session Analytics
+      const evalSession = data?.details?.evalSessionCount?.total;
+      const lastMonthEvalSessionPercentage = calculatePercentageChange(
+        data?.details?.evalSessionCount?.tillLastMonth,
+        evalSession,
+      );
+      // Pass Percentage Analytics
+      const passPercentage = data?.details?.passPercentage?.value;
+      // Monthly Evaluation Analytics
+      const monthlyTotalEval = data?.details?.monthlyEvals?.monthlyResults;
+      const monthlyPassEval = data?.details?.monthlyEvals?.passUserResults;
+
+      let countArr = [];
+      let nameArr = [];
+      let domainName = false;
+
+      if (auth?.user?.role === 'admin') {
+        // setting domain name
+        const domainResponse = await axios.get(`/domain/${auth?.user?.domainId}`);
+        domainName = domainResponse?.data?.details?.name;
+        // Department Analytics
+        countArr = data?.details?.departmentCount?.map((item) => item.count);
+        nameArr = data?.details?.departmentCount?.map((item) => item.departmentName);
+      } else {
+        // Domain Analytics
+        countArr = data?.details?.domainCount?.map((item) => item.count);
+        nameArr = data?.details?.domainCount?.map((item) => item.domainName);
+      }
+
+      setTotalUsers(totalUsers);
+      setLastMonthUserPercentage(lastMonthUserPercentage);
+      setTotalVRSession(totalVRSession);
+      setLastMonthVRSessionPercentage(lastMonthVRSessionPercentage);
+      setEvalSession(evalSession);
+      setLastMonthEvalSessionPercentage(lastMonthEvalSessionPercentage);
+      setPassPercentage(passPercentage);
+      setMonthlyTotalEval(monthlyTotalEval);
+      setMonthlyPassEval(monthlyPassEval);
+      setDomainName(domainName);
+      setDomainOrDeptVal([countArr, nameArr]);
+    } catch (error) {
+      toast.error(`Fetch analytics! ${error.message}`);
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   return (
     <>
       <Helmet>
@@ -24,14 +108,22 @@ const Page = () => {
 
       <Container maxWidth="xl">
         <Grid container spacing={3}>
+          {domainName && (
+            <Grid item lg={12} xs={12}>
+              <Alert severity="info">
+                The analytics shown are of <strong>{domainName}</strong> domain.
+              </Alert>
+            </Grid>
+          )}
+
           <Grid xs={12} sm={6} lg={3}>
             <DashboardDiffCard
               title={'Total ' + (data?.labels?.user?.plural || 'Users')}
               icon={<EventAvailable />}
-              difference={12}
-              positive
+              difference={lastMonthUserPercentage}
+              positive={lastMonthUserPercentage > 0 ? true : false}
               sx={{ height: '100%' }}
-              value="1570"
+              value={totalUsers}
             />
           </Grid>
           <Grid xs={12} sm={6} lg={3}>
@@ -39,20 +131,20 @@ const Page = () => {
               title="VR Sessions"
               icon={<HourglassEmpty />}
               iconColor="error.main"
-              difference={16}
-              positive={false}
+              difference={lastMonthVRSessionPercentage}
+              positive={lastMonthVRSessionPercentage > 0 ? true : false}
               sx={{ height: '100%' }}
-              value="65h"
+              value={totalVRSession}
             />
           </Grid>
           <Grid xs={12} sm={6} lg={3}>
             <DashboardDiffCard
               title={(data?.labels?.evaluation?.singular || 'Evaluation') + ' Sessions'}
               icon={<EventAvailable />}
-              difference={12}
-              positive
+              difference={lastMonthEvalSessionPercentage}
+              positive={lastMonthEvalSessionPercentage > 0 ? true : false}
               sx={{ height: '100%' }}
-              value="158"
+              value={evalSession}
             />
           </Grid>
           <Grid xs={12} sm={6} lg={3}>
@@ -60,20 +152,20 @@ const Page = () => {
               title="Pass Percentage"
               icon={<TrendingUp />}
               sx={{ height: '100%' }}
-              value={75.5}
+              value={passPercentage}
             />
           </Grid>
           <Grid xs={12} lg={8}>
             <DashboardBarChart
-              title="Monthly Sessions"
+              title="Monthly Evaluation Sessions"
               chartSeries={[
                 {
-                  name: 'This year',
-                  data: [18, 16, 5, 8, 3, 14, 14, 16, 17, 19, 18, 20],
+                  name: 'Total Evaluations',
+                  data: monthlyTotalEval,
                 },
                 {
-                  name: 'Last year',
-                  data: [12, 11, 4, 6, 2, 9, 9, 10, 11, 12, 13, 13],
+                  name: 'Passed Evaluations',
+                  data: monthlyPassEval,
                 },
               ]}
               sx={{ height: '100%' }}
@@ -81,9 +173,13 @@ const Page = () => {
           </Grid>
           <Grid xs={12} md={6} lg={4}>
             <DashboardPieChart
-              title={(data?.labels?.domain?.singular || 'Domain') + ' ' + (data?.labels?.user?.plural || 'Users')}
-              chartSeries={[63, 15, 22]}
-              labels={['Domain A', 'Domain B', 'Domain C']}
+              title={`${
+                auth?.user?.role === 'admin'
+                  ? data?.labels?.department?.singular || 'Department'
+                  : data?.labels?.domain?.singular || 'Domain'
+              } ${data?.labels?.user?.plural || 'Users'}`}
+              chartSeries={domainOrDeptVal[0]}
+              labels={domainOrDeptVal[1]}
             />
           </Grid>
         </Grid>

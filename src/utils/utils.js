@@ -25,3 +25,19 @@ export const capitalizeFirstLetter = (word) => {
 
   return word.charAt(0).toUpperCase() + word.slice(1);
 };
+
+export const calculatePercentageChange = (oldValue, newValue) => {
+  if (oldValue === 0) {
+    // Handle the case where oldValue is zero to avoid division by zero
+    if (newValue === 0) {
+      return 0;
+    } else {
+      // If old value is zero and new value is non-zero, consider it as an infinite increase
+      return 100;
+    }
+  }
+
+  const change = newValue - oldValue;
+  const percentageChange = (change / Math.abs(oldValue)) * 100;
+  return percentageChange.toFixed(0);
+};
