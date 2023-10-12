@@ -52,7 +52,6 @@ const getScore = (item) => {
   if (item?.mode === 'mcq') {
     return item?.answers?.mcqBased?.score + ' / ' + item?.answers?.mcqBased?.answerKey.length;
   }
-
   return capitalizeFirstLetter(item?.answers?.timeBased?.score);
 };
 
@@ -61,8 +60,9 @@ const getStatus = async (item, config) => {
     return item?.answers?.mcqBased?.score >= config.data.passingMarks ? 'Pass' : 'Fail';
   }
   const response = await axios.get(`/evaluation/${item.id}`);
-
-  return item.answers?.timeBased.timeTaken < response?.data?.details?.evaluationDump.timeBased.bronzeTimeLimit
+  // If time taken is less than eval dump bronze time and if mistakes are less than eval dump mistakes allowed; then pass
+  return item.answers?.timeBased.timeTaken < response?.data?.details?.evaluationDump.timeBased.bronzeTimeLimit &&
+    item.answers?.timeBased?.mistakes?.length <= response?.data?.details?.evaluationDump?.timeBased?.mistakesAllowed
     ? 'Pass'
     : 'Fail';
 };
@@ -76,8 +76,8 @@ export const EvaluationsTable = ({ count = 0, items = [...FAKE_DATA], fetchingDa
     let status = 'Pending';
 
     if (item?.endTime) {
-      score = getScore(item);
       status = await getStatus(item, config);
+      score = status === 'Fail' && item?.mode === 'time' ? '-' : getScore(item); // If the status is fail and the mode is time, then the score should be "-"
     }
 
     return { ...item, score, status };
