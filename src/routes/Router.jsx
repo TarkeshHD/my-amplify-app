@@ -1,5 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
+import { useConfig } from '../hooks/useConfig';
 
 // Layout
 import DashboardLayout from '../layouts/DashboardLayout';
@@ -20,30 +21,37 @@ const Loadable = (Component) => (props) => {
   );
 };
 
-const Router = () => (
-  <Routes>
-    <Route
-      path="/"
-      element={
-        <AuthShield>
-          <DashboardLayout />
-        </AuthShield>
-      }
-    >
-      <Route index path="" element={<Dashboard />} />
-      <Route path="users" element={<Users />} />
-      <Route path="domains" element={<Domains />} />
-      <Route path="departments" element={<Departments />} />
-      <Route path="modules" element={<Modules />} />
-      <Route path="evaluations" element={<Evaluations />} />
-    </Route>
-    <Route path="auth">
-      <Route path="login" element={<Login />} />
-      <Route path="register" element={<div>Register</div>} />
-    </Route>
-    <Route path="*" element={<ErrorPage />} />
-  </Routes>
-);
+const Router = () => {
+  const config = useConfig();
+  const { data } = config;
+
+  const isKnowledgeRepEnabled = data?.features?.knowledgeRep?.state === 'on';
+  return (
+    <Routes>
+      <Route
+        path="/"
+        element={
+          <AuthShield>
+            <DashboardLayout />
+          </AuthShield>
+        }
+      >
+        <Route index path="" element={<Dashboard />} />
+        <Route path="users" element={<Users />} />
+        <Route path="domains" element={<Domains />} />
+        <Route path="departments" element={<Departments />} />
+        <Route path="modules" element={<Modules />} />
+        <Route path="evaluations" element={<Evaluations />} />
+        {isKnowledgeRepEnabled && <Route path="knowledge" element={<KnowledgeRep />} />}
+      </Route>
+      <Route path="auth">
+        <Route path="login" element={<Login />} />
+        <Route path="register" element={<div>Register</div>} />
+      </Route>
+      <Route path="*" element={<ErrorPage />} />
+    </Routes>
+  );
+};
 
 // Pages Import
 
@@ -55,5 +63,6 @@ const Users = Loadable(lazy(() => import('../pages/Users')));
 const Dashboard = Loadable(lazy(() => import('../pages/Dashboard')));
 const Login = Loadable(lazy(() => import('../pages/auth/Login')));
 const ErrorPage = Loadable(lazy(() => import('../pages/404')));
+const KnowledgeRep = Loadable(lazy(() => import('../pages/KnowledgeRep')));
 
 export default Router;

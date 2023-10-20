@@ -7,8 +7,7 @@ const Logo = () => {
   const config = useConfig();
   const { data } = config;
   let logo = '';
-
-  if (data?.clientName !== 'FrontEndFallbackConfig') {
+  if (data && data?.clientName !== 'FrontEndFallbackConfig') {
     logo = import.meta.env.VITE_BASE_URL + data.clientLogo;
   } else {
     logo = defaultLogo;

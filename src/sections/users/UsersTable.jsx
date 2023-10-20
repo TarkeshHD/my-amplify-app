@@ -14,28 +14,46 @@ export const UsersTable = ({ count = 0, items = [], fetchingData }) => {
   const config = useConfig();
   const { data } = config;
   const columns = useMemo(
-    () => [
-      {
-        accessorKey: 'name', // simple recommended way to define a column
-        header: 'Name',
-      },
-      {
-        accessorKey: 'username', // simple recommended way to define a column
-        header: 'Username',
-      },
-      {
-        accessorKey: 'role', // simple recommended way to define a column
-        header: 'Role',
-      },
-      {
-        accessorFn: (row) => row?.domainId?.name || 'NA', // simple recommended way to define a column
-        header: `${data?.labels?.domain?.singular || 'Domain'}`,
-      },
-      {
-        accessorFn: (row) => row?.departmentId?.name || 'NA', // simple recommended way to define a column
-        header: `${data?.labels?.department?.singular || 'Department'}`,
-      },
-    ],
+    () =>
+      [
+        {
+          accessorKey: 'name', // simple recommended way to define a column
+          header: 'Name',
+          filterVariant: 'multi-select',
+        },
+        {
+          accessorKey: 'username', // simple recommended way to define a column
+          header: 'Username',
+          filterVariant: 'multi-select',
+        },
+        {
+          accessorKey: 'role', // simple recommended way to define a column
+          header: 'Role',
+          filterVariant: 'multi-select',
+        },
+        {
+          accessorFn: (row) => row?.domainId?.name || 'NA', // simple recommended way to define a column
+          header: `${data?.labels?.domain?.singular || 'Domain'}`,
+          filterVariant: 'multi-select',
+        },
+        data?.features?.traineeType?.state === 'on'
+          ? {
+              accessorKey: 'traineeType', // simple recommended way to define a column
+              header: `${data?.features?.traineeType?.label?.singular || 'Trainee Type'}`,
+              filterVariant: 'multi-select',
+              size: 100,
+              Cell: ({ cell, column, row }) => {
+                console.log('here', row.original?.traineeType);
+                return <Typography>{row?.original?.traineeType || 'NA'}</Typography>;
+              },
+            }
+          : null,
+        {
+          accessorFn: (row) => row?.departmentId?.name || 'NA', // simple recommended way to define a column
+          header: `${data?.labels?.department?.singular || 'Department'}`,
+          filterVariant: 'multi-select',
+        },
+      ].filter((column) => column !== null), // Filter out null columns
     [],
   );
 
@@ -100,7 +118,7 @@ export const UsersTable = ({ count = 0, items = [], fetchingData }) => {
           state={{
             isLoading: fetchingData,
           }}
-          initialState={{ pagination: { pageSize: 5 }, showGlobalFilter: true }}
+          initialState={{ pagination: { pageSize: 5 }, showGlobalFilter: true, showColumnFilters: true }}
           muiTablePaginationProps={{
             rowsPerPageOptions: [5, 10, 15, 20, 25],
           }}
@@ -111,6 +129,7 @@ export const UsersTable = ({ count = 0, items = [], fetchingData }) => {
             sx: { minWidth: '300px' },
             variant: 'outlined',
           }}
+          enableFacetedValues
         />
       </Card>
 

@@ -173,7 +173,7 @@ export const SideNav = (props) => {
             target="_blank"
             variant="contained"
           >
-            Contact Us
+            Get Support
           </Button>
         </Box>
       </Box>

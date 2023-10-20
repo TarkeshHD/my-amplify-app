@@ -26,6 +26,11 @@ export default function TraineeForm({ isEdit, currentUser, domains = [], departm
   const navigate = useNavigate();
   const config = useConfig();
   const { data } = config;
+  let traineeTypes = [];
+  // add trainee types from config
+  if (data?.features?.traineeType?.state === 'on') {
+    traineeTypes = data?.features?.traineeType?.values;
+  }
 
   const NewUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
@@ -40,6 +45,16 @@ export default function TraineeForm({ isEdit, currentUser, domains = [], departm
       .notOneOf(['None'], `Select one ${data?.labels?.department?.singular || 'Department'}`),
     departmentId: Yup.string(),
     role: Yup.string().required(),
+    traineeType: Yup.string().test('condition', 'Trainee Type is required', function (value) {
+      if (data?.features?.traineeType?.state === 'on') {
+        // Make the field required if traineeType is 'on'
+        if (value === 'None') {
+          return false; // Fail validation when traineeType is 'on' and value is 'None'
+        }
+        return true;
+      }
+      return true; // Allow any value when traineeType is not 'on'
+    }),
   });
 
   const defaultValues = useMemo(
@@ -51,6 +66,7 @@ export default function TraineeForm({ isEdit, currentUser, domains = [], departm
       domainId: currentUser?.domainId || 'None',
       department: currentUser?.department || 'None',
       departmentId: currentUser?.departmentId || 'None',
+      traineeType: currentUser?.traineeType || 'None',
       role: 'user',
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -91,6 +107,9 @@ export default function TraineeForm({ isEdit, currentUser, domains = [], departm
       if (values.departmentId === 'None') {
         delete values.domainId;
       }
+      if (data?.features?.traineeType?.state !== 'on') {
+        delete values.traineeType;
+      }
       const response = await axios.post('/user/register', values);
       toast.success(!isEdit ? 'Create success!' : 'Update success!');
       navigate(0);
@@ -114,7 +133,6 @@ export default function TraineeForm({ isEdit, currentUser, domains = [], departm
               }}
             >
               <RHFTextField name="name" label="Display Name" />
-              <RHFTextField name="username" label="Employee Code" />
               {/* <RHFTextField name="password" label="Password" /> */}
 
               <RHFAutocomplete
@@ -129,7 +147,6 @@ export default function TraineeForm({ isEdit, currentUser, domains = [], departm
                   return option?.name || '';
                 }}
                 onChangeCustom={(value) => {
-                  console.log('Custom Change', value);
                   setValue('domain', value?.name);
                   setValue('domainId', value?._id);
                 }}
@@ -148,12 +165,31 @@ export default function TraineeForm({ isEdit, currentUser, domains = [], departm
                   return option?.name || '';
                 }}
                 onChangeCustom={(value) => {
-                  console.log('Custom Change', value);
                   setValue('department', value?.name);
                   setValue('departmentId', value?._id);
                 }}
                 renderOption={(props, option) => <li {...props}>{option?.name}</li>}
               />
+
+              {data?.features?.traineeType?.state === 'on' && (
+                <RHFAutocomplete
+                  name="traineeType"
+                  label={data?.features?.traineeType?.label?.singular || 'Trainee Type'}
+                  placeholder={data?.features?.traineeType?.label?.singular || 'Trainee Type'}
+                  options={[...traineeTypes, 'None']}
+                  getOptionLabel={(option) => {
+                    if (typeof option === 'string') {
+                      return option;
+                    }
+                    return option?.name || '';
+                  }}
+                  onChangeCustom={(value) => {
+                    setValue('traineeType', value);
+                  }}
+                  renderOption={(props, option) => <li {...props}>{option?.name}</li>}
+                />
+              )}
+              <RHFTextField name="username" label="Employee Code" />
             </Box>
 
             <Stack alignItems="flex-end" sx={{ mt: 3 }}>

@@ -41,3 +41,16 @@ export const calculatePercentageChange = (oldValue, newValue) => {
   const percentageChange = (change / Math.abs(oldValue)) * 100;
   return percentageChange.toFixed(0);
 };
+
+// Format bytes to kb, mb or gb
+export const formatBytes = (bytes) => {
+  if (bytes < 1024) {
+    return bytes + ' B';
+  } else if (bytes < 1048576) {
+    return (bytes / 1024).toFixed(0) + ' KB';
+  } else if (bytes < 1073741824) {
+    return (bytes / 1048576).toFixed(0) + ' MB';
+  } else {
+    return (bytes / 1073741824).toFixed(0) + ' GB';
+  }
+};
