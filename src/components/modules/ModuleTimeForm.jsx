@@ -96,17 +96,17 @@ export default function ModuleTimeForm({ isEdit, currentModule, fieldDisabled = 
       <Grid container spacing={3}>
         <Grid item xs={6}>
           {' '}
-          <RHFTextField name="goldTimeLimit" type="number" label="Gold Time Limit" disabled={fieldDisabled} />{' '}
+          <RHFTextField name="goldTimeLimit" type="number" label="Gold Time Limit" />
         </Grid>
         <Grid item xs={6}>
           {' '}
-          <RHFTextField name="silverTimeLimit" type="number" label="Silver Time Limit" disabled={fieldDisabled} />{' '}
+          <RHFTextField name="silverTimeLimit" type="number" label="Silver Time Limit" />
         </Grid>
         <Grid item xs={6}>
-          <RHFTextField name="bronzeTimeLimit" type="number" label="Bronze Time Limit" disabled={fieldDisabled} />
+          <RHFTextField name="bronzeTimeLimit" type="number" label="Bronze Time Limit" />
         </Grid>
         <Grid item xs={6}>
-          <RHFTextField name="mistakesAllowed" type="number" label="Mistakes Allowed" disabled={fieldDisabled} />{' '}
+          <RHFTextField name="mistakesAllowed" type="number" label="Mistakes Allowed" />
         </Grid>
         <Grid item xs={12}>
           <Typography variant="subtitle2" color={'text.secondary'} mb={1}>
@@ -117,7 +117,6 @@ export default function ModuleTimeForm({ isEdit, currentModule, fieldDisabled = 
             multiline
             name="note"
             label={fieldDisabled ? 'No notes added' : 'Any Note (OPTIONAL)'}
-            disabled={fieldDisabled}
           />
         </Grid>
 

@@ -12,9 +12,14 @@ import {
   ModelTraining,
   Poll,
 } from '@mui/icons-material';
+import EmojiObjectsIcon from '@mui/icons-material/EmojiObjects';
+
 import { SvgIcon } from '@mui/material';
+import { useConfig } from '../../hooks/useConfig';
 
 export function getItems(labels) {
+  const config = useConfig();
+  const { data } = config;
   const items = [
     {
       title: 'Dashboard',
@@ -76,6 +81,20 @@ export function getItems(labels) {
       ],
     },
   ];
+
+  // Add the "Knowledge Repository" item if it is enabled from the backend config.
+  if (data?.features?.knowledgeRep?.state === 'on') {
+    // Add the "Knowledge Repository" item as the fourth item.
+    items.splice(3, 0, {
+      title: 'Knowledge Repository',
+      path: '/knowledge',
+      icon: (
+        <SvgIcon fontSize="small">
+          <EmojiObjectsIcon />
+        </SvgIcon>
+      ),
+    });
+  }
 
   return items;
 }

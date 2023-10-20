@@ -44,14 +44,6 @@ const QuestionCard = ({
     return 'success';
   };
 
-  // Modify the options array to include the 'disabled' property
-  const modifiedOptions = notEditable
-    ? options.map((option) => ({
-        ...option,
-        disabled: true,
-      }))
-    : options;
-
   return (
     <Paper variant="outlined">
       <Paper sx={{ backgroundColor: 'lightgray', padding: 2 }}>
@@ -63,7 +55,7 @@ const QuestionCard = ({
             name="choice"
             selectedValue={showValues ? answeredValue : correctValue}
             selectedColor={getSelectedColor()}
-            options={modifiedOptions}
+            options={options}
             row={false}
           />
         </FormProvider>

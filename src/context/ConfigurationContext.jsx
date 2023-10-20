@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import BaseConfig from '../utils/BaseConfig.json';
 
 import axios from '../utils/axios';
+import { toast } from 'react-toastify';
 
 const initialState = {
   data: null,
@@ -42,6 +43,7 @@ function ConfigProvider({ children }) {
       console.log('Login');
     } catch (error) {
       responses = BaseConfig;
+      toast(`Please reload, ${error.message || 'Failed to fetch configuration'}`);
       console.log(error);
     } finally {
       setState((prev) => ({ ...prev, isConfigfileFetched: true, data: responses }));
