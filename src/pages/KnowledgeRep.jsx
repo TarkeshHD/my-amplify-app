@@ -10,8 +10,8 @@ import CustomDialog from '../components/CustomDialog';
 import { useConfig } from '../hooks/useConfig';
 import { FileTable } from '../sections/knowledgeReps/FileTable';
 
-import AddFileForm from '../components/login/AddFileForm';
-import { FAKE_DATA } from '../components/login/fakeData';
+import AddFileForm from '../components/knowledgeRep/AddFileForm';
+import { FAKE_DATA } from '../components/knowledgeRep/fakeData';
 
 const Page = () => {
   const [openFileUpload, setOpenFileUpload] = useState(false);
