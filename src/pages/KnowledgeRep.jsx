@@ -20,48 +20,33 @@ const Page = () => {
   const [workingDirectory, setWorkingDirectory] = useState([{ name: 'My Drive', index: 1 }]);
 
   const [fetchingData, setFetchingData] = useState(false);
-  const [data, setData] = useState([]);
+  const [data, setData] = useState(FAKE_DATA);
 
-  const config = useConfig();
-  const { data: configData } = config;
-
-  const getDatas = async () => {
-    try {
-      // Fetch datas from backend
-      //   const response = await axios.get('knowledgeRep/files/all');
-      setData(fakeData);
-    } catch (error) {
-      toast.error(error.message || `Failed to fetch ${data?.labels?.user?.plural?.toLowerCase() || 'users'}`);
-      console.log(error);
-    }
-  };
-
-  useEffect(() => {
-    getDatas();
-  }, []);
-
-  // Update new file to the fake data
   const updateNewFile = (newFile) => {
-    // Get the name of the last directory in workingDirectory, if last directory is root add the value to root
     const lastDirectoryName = workingDirectory[workingDirectory.length - 1]?.name;
-    if (lastDirectoryName === 'My Drive') setData((prevData) => [...prevData, newFile]);
-    else {
-      setFakeData((prevData) => {
-        // Create a function to update items if the directory name matches
-        const updateItems = (item) => {
-          if (item.name === lastDirectoryName && item.type === 'Folder') {
-            // Clone the item and add the newFile to its items, if the folder already  has items.
-            return {
-              ...item,
-              items: [...(item.items || []), newFile],
-            };
-          }
-          return item;
-        };
+    const directoryTree = workingDirectory.slice(1);
 
-        // Use map to update the data
-        return fakeData.map(updateItems);
-      });
+    if (lastDirectoryName === 'My Drive') {
+      // If the directory name is 'My Drive', add the new file to the root level.
+      setFakeData((prevData) => [...prevData, newFile]);
+    } else {
+      // If it's not 'My Drive', find the corresponding folder in the directory tree and add the file.
+      // Create a new copy of the data
+      const newFakeData = [...fakeData];
+      let currentFolder = newFakeData;
+
+      // Iterate through the directory tree to find the specified folders
+      for (const folderName of directoryTree) {
+        const folder = currentFolder.find((item) => item.name === folderName.name && item.type === 'Folder');
+        if (folder) {
+          currentFolder = folder.items || [];
+        }
+      }
+
+      // Add the newFile to the last specified folder
+      currentFolder.push(newFile);
+      // Update the state with the new data
+      setFakeData(newFakeData);
     }
   };
 
@@ -78,17 +63,21 @@ const Page = () => {
 
   const getFiles = (folders, targetFolderName) => {
     // Get the files in the target folder, (Recursive function, when its called first, use fake ata as folders)
-    if (targetFolderName === 'My Drive') return fakeData;
+    if (targetFolderName === 'My Drive') {
+      return fakeData;
+    }
 
     for (const folder of folders) {
       // loop through the folders
       if (folder.name === targetFolderName) {
-        return folder.items;
+        const newItem = [...folder.items]; // since while comparing, they use mem address, we need to create a new copy
+        return newItem;
       } else if (folder.type === 'Folder' && folder.items && folder.items.length > 0) {
         // if not, and if it's a folder, and has items inside, call the function again with the items as folders
         const foundInSubfolder = getFiles(folder.items, targetFolderName);
         if (foundInSubfolder) {
-          return foundInSubfolder;
+          const newItem = [...foundInSubfolder]; // since while comparing, they use mem address, we need to create a new copy
+          return newItem;
         }
       }
     }
@@ -96,7 +85,7 @@ const Page = () => {
   };
 
   useEffect(() => {
-    // change data, whenevr new data is added to fake files or working directory is changed
+    // change data, whenever new data is added to fake files or working directory is changed
     setData(getFiles(fakeData, workingDirectory[workingDirectory.length - 1].name));
   }, [workingDirectory, fakeData]);
 

@@ -13,6 +13,7 @@ import {
   Poll,
 } from '@mui/icons-material';
 import EmojiObjectsIcon from '@mui/icons-material/EmojiObjects';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 
 import { SvgIcon } from '@mui/material';
 import { useConfig } from '../../hooks/useConfig';
@@ -91,6 +92,20 @@ export function getItems(labels) {
       icon: (
         <SvgIcon fontSize="small">
           <EmojiObjectsIcon />
+        </SvgIcon>
+      ),
+    });
+  }
+
+  // Add the "Scheduling" item if it is enabled from the backend config.
+  if (data?.features?.schedule?.state === 'on') {
+    // Add the "Scheduling" item as the fifth item.
+    items.splice(4, 0, {
+      title: 'Schedule',
+      path: '/schedule',
+      icon: (
+        <SvgIcon fontSize="small">
+          <CalendarMonthIcon />
         </SvgIcon>
       ),
     });

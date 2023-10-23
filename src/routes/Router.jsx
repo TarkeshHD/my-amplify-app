@@ -26,6 +26,7 @@ const Router = () => {
   const { data } = config;
 
   const isKnowledgeRepEnabled = data?.features?.knowledgeRep?.state === 'on';
+  const isScheduleEnabled = data?.features?.schedule?.state === 'on';
   return (
     <Routes>
       <Route
@@ -43,6 +44,7 @@ const Router = () => {
         <Route path="modules" element={<Modules />} />
         <Route path="evaluations" element={<Evaluations />} />
         {isKnowledgeRepEnabled && <Route path="knowledge" element={<KnowledgeRep />} />}
+        {isScheduleEnabled && <Route path="schedule" element={<Schedule />} />}
       </Route>
       <Route path="auth">
         <Route path="login" element={<Login />} />
@@ -64,5 +66,6 @@ const Dashboard = Loadable(lazy(() => import('../pages/Dashboard')));
 const Login = Loadable(lazy(() => import('../pages/auth/Login')));
 const ErrorPage = Loadable(lazy(() => import('../pages/404')));
 const KnowledgeRep = Loadable(lazy(() => import('../pages/KnowledgeRep')));
+const Schedule = Loadable(lazy(() => import('../pages/Schedule')));
 
 export default Router;
