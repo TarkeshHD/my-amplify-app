@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   MRT_FullScreenToggleButton as MRTFullScreenToggleButton,
   MRT_ShowHideColumnsButton as MRTShowHideColumnsButton,
@@ -10,7 +10,7 @@ import {
 import { toast } from 'react-toastify';
 import moment from 'moment-timezone';
 import { Box, Button, Card, MenuItem, Skeleton, Stack, Typography } from '@mui/material';
-import { ExportToCsv } from 'export-to-csv';
+
 import { Delete, Edit, FileDownload } from '@mui/icons-material';
 import { capitalizeFirstLetter, getInitials } from '../../utils/utils';
 import SearchNotFound from '../../components/SearchNotFound';
@@ -22,6 +22,7 @@ import { useConfig } from '../../hooks/useConfig';
 import axios from '../../utils/axios';
 import TimeGrid from '../../components/modules/TimeGrid';
 import CustomDateRangePicker from '../../components/DatePicker/CustomDateRangePicker';
+import ExportOptions from '../../components/export/ExportOptions';
 
 const statusMap = {
   Pending: 'warning',
@@ -56,20 +57,41 @@ const getScore = (item) => {
 };
 
 const getStatus = async (item, config) => {
-  if (item?.mode === 'mcq') {
-    return item?.answers?.mcqBased?.score >= config.data.passingMarks ? 'Pass' : 'Fail';
-  }
   const response = await axios.get(`/evaluation/${item.id}`);
-  // If time taken is less than eval dump bronze time and if mistakes are less than eval dump mistakes allowed; then pass
+  if (item?.mode === 'mcq') {
+    // Get the percentage and find the pass mark
+    const passMark =
+      response?.data?.details?.evaluationDump.mcqBased.length * (item.passingCriteria.passPercentage / 100);
+    return item?.answers?.mcqBased?.score >= passMark ? 'Pass' : 'Fail';
+  }
+
+  // If time taken is less than eval dump bronze time and if mistakes are less than passing criteria mistakes allowed; then pass
   return item.answers?.timeBased.timeTaken < response?.data?.details?.evaluationDump.timeBased.bronzeTimeLimit &&
-    item.answers?.timeBased?.mistakes?.length <= response?.data?.details?.evaluationDump?.timeBased?.mistakesAllowed
+    item.answers?.timeBased?.mistakes?.length <= item.passingCriteria.mistakesAllowed
     ? 'Pass'
     : 'Fail';
 };
 
-export const EvaluationsTable = ({ count = 0, items = [...FAKE_DATA], fetchingData }) => {
+export const EvaluationsTable = ({
+  count = 0,
+  items = [...FAKE_DATA],
+  fetchingData,
+  exportBtnClicked,
+  exportBtnFalse,
+}) => {
+  const exportBtnRef = useRef(null);
+  const [exportRow, setExportRow] = useState([]);
+  const [openEvaluationData, setOpenEvalutationData] = useState(null);
+  const [openExportOptions, setOpenExportOptions] = useState(false);
   const config = useConfig();
   const { data } = config;
+
+  useEffect(() => {
+    if (exportBtnClicked) {
+      exportBtnRef.current.click();
+      exportBtnFalse();
+    }
+  }, [exportBtnClicked]);
 
   const fetchScoresAndStatuses = async (item) => {
     let score = '-';
@@ -205,20 +227,30 @@ export const EvaluationsTable = ({ count = 0, items = [...FAKE_DATA], fetchingDa
 
   // Set below flag as well as use it as 'Row' Object to be passed inside forms
 
-  const [openEvaluationData, setOpenEvalutationData] = useState(null);
+  const convertRowDatas = (rows) => {
+    return rows.map((row) => {
+      const tz = moment.tz.guess();
+      const startTime = moment.unix(row?.original?.startTime).tz(tz).format('DD/MM/YYYY HH:mm');
+      const endTime = row?.original?.endTime
+        ? moment.unix(row?.original?.endTime).tz(tz).format('DD/MM/YYYY HH:mm')
+        : 'Pending';
+      const values = row.original;
+      console.log('row datas -> eval table', values);
+      return [
+        values?.userId?.username || '-',
+        values?.moduleId?.name || '-',
+        values?.userId?.domainId?.name || '-',
+        values?.departmentId?.name || '-',
+        `${startTime} - ${endTime}`,
+        values?.score || '-',
+        values?.status || '-',
+      ];
+    });
+  };
 
-  // Helper functions
-  const csvExporter = new ExportToCsv({
-    fieldSeparator: ',',
-    quoteStrings: '"',
-    decimalSeparator: '.',
-    showLabels: true,
-    useBom: true,
-    useKeysAsHeaders: false,
-    headers: columns.map((c) => c.header),
-  });
-  const handleExportRows = (rows) => {
-    csvExporter.generateCsv(rows.map((row) => row.original));
+  const handleExportRows = (rows, type) => {
+    setOpenExportOptions(true);
+    setExportRow(convertRowDatas(rows));
   };
 
   const handleRowClick = async (row) => {
@@ -274,6 +306,8 @@ export const EvaluationsTable = ({ count = 0, items = [...FAKE_DATA], fetchingDa
               <MRTFullScreenToggleButton table={table} />
 
               <Button
+                ref={exportBtnRef}
+                sx={{ display: 'none' }}
                 disabled={table.getPrePaginationRowModel().rows.length === 0}
                 // export all rows, including from the next page, (still respects filtering and sorting)
                 onClick={() => {
@@ -347,6 +381,22 @@ export const EvaluationsTable = ({ count = 0, items = [...FAKE_DATA], fetchingDa
           enableFacetedValues
         />
       </Card>
+
+      {/* View export options */}
+      <CustomDialog
+        // sx={{ minWidth: '30vw' }}
+        onClose={() => {
+          setOpenExportOptions(false);
+        }}
+        open={Boolean(openExportOptions)}
+        title={<Typography variant="h5">Export Options</Typography>}
+      >
+        <ExportOptions
+          headers={columns.map((column) => column.header)}
+          exportRow={exportRow}
+          closeExportOptions={() => setOpenExportOptions(false)}
+        />
+      </CustomDialog>
 
       {/* View Evaluation Data */}
       <CustomDialog

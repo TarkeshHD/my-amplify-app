@@ -1,38 +1,50 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Box, Button, Container, DialogActions, IconButton, Stack, SvgIcon, Tooltip, Typography } from '@mui/material';
-import { Download, Add, CloseRounded } from '@mui/icons-material';
+import { Box, Button, Container, DialogActions, IconButton, Stack, SvgIcon, Typography } from '@mui/material';
+import { Download } from '@mui/icons-material';
 import { toast } from 'react-toastify';
-import { useSelection } from '../hooks/useSelection';
-import { applyPagination } from '../utils/utils';
-import { SearchBar } from '../components/SearchBar';
-import { UsersTable } from '../sections/users/UsersTable';
-import axios from '../utils/axios';
 import { useAuth } from '../hooks/useAuth';
-import CustomDialog from '../components/CustomDialog';
-import AdminForm from '../components/users/AdminForm';
-import TraineeForm from '../components/users/TraineeForm';
-import SuperAdminForm from '../components/users/SuperAdminForm';
-import { ModulesTable } from '../sections/modules/ModulesTable';
-import QuestionsGrid from '../components/modules/QuestionsGrid';
-import { EvaluationsTable } from '../sections/evaluations/EvaluationsTable';
 import { useConfig } from '../hooks/useConfig';
+import { ArchiveTable } from '../sections/archive/ArchiveTable';
+import axios from '../utils/axios';
 
 const Page = () => {
   const [fetchingData, setFetchingData] = useState(false);
   const [data, setData] = useState([]);
+  const [headers, setHeaders] = useState([]);
   const [exportBtnClicked, setExportBtnClicked] = useState(false);
 
   const config = useConfig();
   const { data: configData } = config;
+  const { user } = useAuth();
 
-  const getEvaluations = async () => {
+  const getDatas = async () => {
     try {
       setFetchingData(true);
-      const response = await axios.get('/evaluation/all');
-      // Sort the array in descending order by the "createdAt" property
-      const sortedData = [...response.data?.details].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      setData(sortedData);
+      const response = await axios.get('/archive');
+      console.log(response);
+      const keysWithoutId = [];
+      const keysWithId = [];
+      const responseData = response?.data?.details;
+
+      Object.keys(responseData[0]).forEach((key) => {
+        if (key.toLowerCase().includes('id')) {
+          keysWithId.push(key);
+        } else {
+          keysWithoutId.push(key);
+        }
+      });
+
+      // Concatenate arrays with desired order
+      const sortedKeys = [...keysWithoutId, ...keysWithId];
+
+      // Arrange data based on sorted keys
+      const filteredData = responseData.map((obj) => Object.fromEntries(sortedKeys.map((key) => [key, obj[key]])));
+
+      // Extract headers from the first object in the filtered array
+      const headerVal = Object.keys(filteredData[0]);
+      setData(filteredData);
+      setHeaders(headerVal);
     } catch (error) {
       toast.error(error.message || `Failed to fetch ${data?.labels?.user?.plural?.toLowerCase() || 'users'}`);
       console.log(error);
@@ -46,22 +58,20 @@ const Page = () => {
   };
 
   useEffect(() => {
-    getEvaluations();
+    getDatas();
   }, []);
-
-  const { user } = useAuth();
 
   return (
     <>
       <Helmet>
-        <title>{configData?.labels?.evaluation?.singular || 'Evaluation'} | VRse Builder</title>
+        <title>Archive | VRse Builder</title>
       </Helmet>
 
       <Container maxWidth="xl">
         <Stack spacing={3}>
           <Stack direction="row" justifyContent="space-between" spacing={4}>
             <Stack spacing={1}>
-              <Typography variant="h4">{configData?.labels?.evaluation?.singular || 'Evaluation'}</Typography>
+              <Typography variant="h4">Archive</Typography>
             </Stack>
             <Stack alignItems="center" direction="row" spacing={1}>
               <Button
@@ -80,12 +90,14 @@ const Page = () => {
             </Stack>
           </Stack>
 
-          <EvaluationsTable
+          {/* Change this to archive table */}
+          <ArchiveTable
             fetchingData={fetchingData}
             items={data}
             count={data.length}
             exportBtnClicked={exportBtnClicked}
             exportBtnFalse={exportBtnFalse}
+            headers={headers}
           />
         </Stack>
       </Container>

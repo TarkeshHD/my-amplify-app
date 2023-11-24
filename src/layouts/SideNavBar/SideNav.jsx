@@ -22,9 +22,14 @@ import { getItems } from './config';
 import { NAVBAR } from '../../config';
 import { SideNavNestedItems } from './SideNavNestedItems';
 import { useConfig } from '../../hooks/useConfig';
+import EditPasswordForm from '../../components/users/EditPasswordForm';
+import { useState } from 'react';
+import CustomDialog from '../../components/CustomDialog';
+import SupportRequestForm from '../../components/support/SupportRequestForm';
 
 export const SideNav = (props) => {
   const { open, onClose } = props;
+  const [openSprtForm, setOpenSprtForm] = useState(false);
   const { pathname } = useLocation();
   const lgUp = useMediaQuery((theme) => theme.breakpoints.up('lg'));
   const theme = useTheme();
@@ -168,15 +173,29 @@ export const SideNav = (props) => {
               </SvgIcon>
             }
             fullWidth
-            href={data?.client?.contactUrl}
+            // href={data?.client?.contactUrl}
+            onClick={() => {
+              setOpenSprtForm(true);
+            }}
             sx={{ mt: 2 }}
-            target="_blank"
+            // target="_blank"
             variant="contained"
           >
             Get Support
           </Button>
         </Box>
       </Box>
+      {/* Support Form */}
+      <CustomDialog
+        sx={{ minWidth: '40vw' }}
+        onClose={() => {
+          setOpenSprtForm(false);
+        }}
+        open={Boolean(openSprtForm)}
+        title={<Typography variant="h5">Submit A Request</Typography>}
+      >
+        <SupportRequestForm />
+      </CustomDialog>
     </Scrollbar>
   );
 

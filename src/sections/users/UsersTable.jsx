@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { MaterialReactTable } from 'material-react-table';
-import { Avatar, Box, Card, IconButton, MenuItem, Stack, Typography } from '@mui/material';
+import { Avatar, Box, Button, Card, IconButton, MenuItem, Stack, Typography } from '@mui/material';
 import { Delete, Edit } from '@mui/icons-material';
 import { Scrollbar } from '../../components/Scrollbar';
 import { getInitials } from '../../utils/utils';
@@ -9,10 +9,22 @@ import SearchNotFound from '../../components/SearchNotFound';
 import CustomDialog from '../../components/CustomDialog';
 import EditPasswordForm from '../../components/users/EditPasswordForm';
 import { useConfig } from '../../hooks/useConfig';
+import ExportOptions from '../../components/export/ExportOptions';
 
-export const UsersTable = ({ count = 0, items = [], fetchingData }) => {
+export const UsersTable = ({ count = 0, items = [], fetchingData, exportBtnClicked, exportBtnFalse }) => {
+  const exportBtnRef = useRef(null);
   const config = useConfig();
+  const [openExportOptions, setOpenExportOptions] = useState(false);
+  const [exportRow, setExportRow] = useState([]);
   const { data } = config;
+
+  useEffect(() => {
+    if (exportBtnClicked) {
+      exportBtnRef.current.click();
+      exportBtnFalse();
+    }
+  }, [exportBtnClicked]);
+
   const columns = useMemo(
     () =>
       [
@@ -43,7 +55,6 @@ export const UsersTable = ({ count = 0, items = [], fetchingData }) => {
               filterVariant: 'multi-select',
               size: 100,
               Cell: ({ cell, column, row }) => {
-                console.log('here', row.original?.traineeType);
                 return <Typography>{row?.original?.traineeType || 'NA'}</Typography>;
               },
             }
@@ -60,10 +71,48 @@ export const UsersTable = ({ count = 0, items = [], fetchingData }) => {
   // Set below flag as well as use it as 'Row' Object to be passed inside forms
   const [openEditPassForm, setOpenEditPass] = useState(null);
 
+  const convertRowDatas = (rows) => {
+    return rows.map((row) => {
+      const values = row?.original;
+      console.log('row datas -> user table', values);
+      const convertedValue = [
+        values?.name || 'NA',
+        values?.username || 'NA',
+        values?.role || 'NA',
+        values?.domainId?.name || 'NA',
+      ];
+
+      // Add trainee Type values, if it exist
+      if (data?.features?.traineeType?.state === 'on') {
+        convertedValue.push(values?.traineeType || 'NA');
+      }
+      convertedValue.push(values?.departmentId?.name || 'NA');
+      return convertedValue;
+    });
+  };
+
+  const handleExportRows = (rows, type) => {
+    setOpenExportOptions(true);
+    setExportRow(convertRowDatas(rows));
+  };
+
   return (
     <>
       <Card>
         <MaterialReactTable
+          renderToolbarInternalActions={({ table }) => (
+            <Box sx={{}}>
+              <Button
+                ref={exportBtnRef}
+                sx={{ display: 'none' }}
+                disabled={table.getPrePaginationRowModel().rows.length === 0}
+                // export all rows, including from the next page, (still respects filtering and sorting)
+                onClick={() => {
+                  handleExportRows(table.getPrePaginationRowModel().rows);
+                }}
+              ></Button>
+            </Box>
+          )}
           renderRowActionMenuItems={({ row, closeMenu, table }) => [
             <MenuItem
               key={0}
@@ -132,6 +181,21 @@ export const UsersTable = ({ count = 0, items = [], fetchingData }) => {
           enableFacetedValues
         />
       </Card>
+
+      {/* View export options */}
+      <CustomDialog
+        onClose={() => {
+          setOpenExportOptions(false);
+        }}
+        open={Boolean(openExportOptions)}
+        title={<Typography variant="h5">Export Options</Typography>}
+      >
+        <ExportOptions
+          headers={columns.map((column) => column.header)}
+          exportRow={exportRow}
+          closeExportOptions={() => setOpenExportOptions(false)}
+        />
+      </CustomDialog>
 
       {/* Edit Password Form */}
       <CustomDialog
