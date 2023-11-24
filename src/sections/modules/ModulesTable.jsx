@@ -129,8 +129,6 @@ export const ModulesTable = ({
               key={3}
               onClick={() => {
                 // onEditRow();
-
-                console.log(row.original);
                 setOpenAssignModules(row.original);
                 closeMenu();
               }}

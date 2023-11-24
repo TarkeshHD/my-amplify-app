@@ -14,8 +14,10 @@ import AdminForm from '../components/users/AdminForm';
 import TraineeForm from '../components/users/TraineeForm';
 import SuperAdminForm from '../components/users/SuperAdminForm';
 import { useConfig } from '../hooks/useConfig';
+import ImportDataForm from '../components/users/ImportDataForm';
 
 const Page = () => {
+  const [openImportDataForm, setOpenImportDataForm] = useState(false);
   const [openAdminForm, setOpenAdminForm] = useState(false);
   const [openSuperAdminForm, setOpenSuperAdminForm] = useState(false);
   const [openTraineeForm, setOpenTraineeForm] = useState(false);
@@ -28,8 +30,11 @@ const Page = () => {
     try {
       setFetchingData(true);
       const response = await axios.get('/user/all');
-      console.log(response.data);
-      setData(response?.data?.details?.users);
+      // Sort the array in descending order by the "createdAt" property
+      const sortedData = [...response.data?.details?.users].sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+      );
+      setData(sortedData);
     } catch (error) {
       toast.error(error.message || 'Failed to fetch users');
       console.log(error);
@@ -74,6 +79,11 @@ const Page = () => {
   const { user } = useAuth();
   const config = useConfig();
   const { data: configData } = config;
+  const [exportBtnClicked, setExportBtnClicked] = useState(false);
+
+  const exportBtnFalse = () => {
+    setExportBtnClicked(false);
+  };
 
   return (
     <>
@@ -90,6 +100,9 @@ const Page = () => {
             <Stack alignItems="center" direction="row" spacing={1}>
               <Button
                 variant="outlined"
+                onClick={() => {
+                  setOpenImportDataForm(true);
+                }}
                 startIcon={
                   <SvgIcon fontSize="small">
                     <Upload />
@@ -99,6 +112,9 @@ const Page = () => {
                 Import
               </Button>
               <Button
+                onClick={() => {
+                  setExportBtnClicked(true);
+                }}
                 variant="outlined"
                 startIcon={
                   <SvgIcon fontSize="small">
@@ -158,7 +174,25 @@ const Page = () => {
           </Stack>
           {/* <SearchBar /> */}
 
-          <UsersTable fetchingData={fetchingData} count={data.length} items={data} />
+          <UsersTable
+            fetchingData={fetchingData}
+            count={data.length}
+            items={data}
+            exportBtnClicked={exportBtnClicked}
+            exportBtnFalse={exportBtnFalse}
+          />
+
+          {/* Import User Data form */}
+          <CustomDialog
+            onClose={() => {
+              setOpenImportDataForm(false);
+            }}
+            minWidth="60vw"
+            open={openImportDataForm}
+            title={<Typography variant="h5">Import User Data</Typography>}
+          >
+            <ImportDataForm setOpenImportDataForm={setOpenImportDataForm} />
+          </CustomDialog>
 
           {/* SUPER ADMIN FORM */}
           <CustomDialog

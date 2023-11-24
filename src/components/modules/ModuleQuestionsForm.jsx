@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import * as Yup from 'yup';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 // form
@@ -8,7 +8,20 @@ import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 // @mui
 import { LoadingButton } from '@mui/lab';
-import { Box, Grid, Stack, Switch, Typography, FormControlLabel, Divider } from '@mui/material';
+import {
+  Box,
+  Grid,
+  Stack,
+  Switch,
+  Typography,
+  FormControlLabel,
+  Divider,
+  SvgIcon,
+  Button,
+  InputAdornment,
+  IconButton,
+  Tooltip,
+} from '@mui/material';
 
 import { FormProvider, RHFRadioGroup, RHFSelect, RHFSwitch, RHFTextField } from '../hook-form';
 import RHFAutocomplete from '../hook-form/RHFAutocomplete';
@@ -16,6 +29,8 @@ import axios from '../../utils/axios';
 import { RHFUploadSingleFile } from '../hook-form/RHFUpload';
 import { getFile } from '../../utils/utils';
 import { useConfig } from '../../hooks/useConfig';
+import { Add } from '@mui/icons-material';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 // ----------------------------------------------------------------------
 
@@ -44,8 +59,14 @@ export default function ModuleQuestionForm({ isEdit, currentModule }) {
           }),
         }),
       )
-      .required(`${data?.labels?.evaluation?.singular || 'Evaluation'} array is required`)
-      .length(10),
+      .required(`${data?.labels?.evaluation?.singular || 'Evaluation'} array is required`),
+    noOfQuestion: Yup.number().required('Number of assessment questions is required').min(1, 'Minimum value is 1'),
+    passPercentage: Yup.number()
+      .required('Pass percentage is required')
+      .min(1, 'Minimum value is 1')
+      .max(100, 'Maximum value is 100'),
+
+    // .length(formValues?.evaluation?.length || 0, 'Evaluation array length must be 10')), // Minimum value from config file from backend
   });
 
   const defaultValues = useMemo(
@@ -69,7 +90,8 @@ export default function ModuleQuestionForm({ isEdit, currentModule }) {
             // }
             return obj;
           })
-        : [...new Array(10)].map((v) => ({
+        : [...new Array(data.minQuestions)].map((v) => ({
+            // Get the minimum questions from config file from backend
             title: v?.title || 'sample',
             image: v?.image || null,
             answer: v?.answer || 'c',
@@ -80,6 +102,8 @@ export default function ModuleQuestionForm({ isEdit, currentModule }) {
               d: v?.options?.d || 'sample 5',
             },
           })),
+      noOfQuestion: isEdit ? currentModule?.noOfQuestion : 10,
+      passPercentage: isEdit ? currentModule?.passPercentage : 50,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [currentModule],
@@ -128,9 +152,22 @@ export default function ModuleQuestionForm({ isEdit, currentModule }) {
         evaluation.push(ques);
         return ques;
       });
+
+      if (evaluation.length < data.minQuestions) {
+        // If the questions are below minimum value
+        toast.error(`Minimum questions needed is ${data.minQuestions}`);
+        return;
+      }
       const reqObj = {
         evaluation,
+        passPercentage: values.passPercentage,
+        noOfQuestion: values.noOfQuestion,
       };
+
+      if (evaluation.length < values.noOfQuestion) {
+        toast.error('Number of assessment questions should be less than or equal to the total number of questions ');
+        return;
+      }
 
       const responseJson = await axios.post(`/module/questions/update/${currentModule._id?.toString()}`, reqObj);
 
@@ -169,19 +206,77 @@ export default function ModuleQuestionForm({ isEdit, currentModule }) {
     [setValue],
   );
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, insert, remove } = useFieldArray({
     control,
     name: 'evaluation',
   });
 
+  const addQuestion = (values) => {
+    // Specify the last index
+    const indexToInsert = values.evaluation.length;
+
+    // Insert a new item at the specified index
+    insert(indexToInsert, {
+      title: 'sample',
+      image: null,
+      answer: 'c',
+      options: {
+        a: 'sample -1',
+        b: 'sample -2 ',
+        c: 'sample 3',
+        d: 'sample 5',
+      },
+    });
+  };
+
+  const removeQuestion = (index) => {
+    // Remove the item at the specified index
+    remove(index);
+  };
+
   return (
     <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
-      {fields.map((item, index) => (
-        <Grid container mb={2} spacing={3} key={index}>
-          <Grid item xs={12}>
+      <Grid spacing={3} container sx={{ mb: 2 }}>
+        <Grid item xs={6}>
+          <Typography variant="subtitle2" color={'text.secondary'} mb={1}>
+            Number Of Assessment Questions
+          </Typography>
+          <RHFTextField name="noOfQuestion" placeholder="" type="number" />
+        </Grid>
+        <Grid item xs={6}>
+          <Typography variant="subtitle2" color={'text.secondary'} mb={1}>
+            Pass Percentage
+          </Typography>
+          <RHFTextField
+            name="passPercentage"
+            placeholder=""
+            type="number"
+            InputProps={{
+              endAdornment: <InputAdornment position="end">%</InputAdornment>,
+            }}
+          />
+        </Grid>
+      </Grid>
+      {fields.map((field, index) => (
+        <Grid container mb={2} spacing={3} key={field.id}>
+          {' '}
+          {/* Key should be field.id for useFieldArray remove function to work: It's the proper mui way*/}
+          <Grid display="flex" item xs={12} alignItems="center" justifyContent={'space-between'}>
             <Typography variant="subtitle1" color={'text'}>
               Question - {index + 1}{' '}
             </Typography>
+            {/* <Button
+              variant="outlined"
+              color="error"
+              onClick={() => removeQuestion(index)} // Pass the current form values to addQuestion
+            >
+              Delete
+            </Button> */}
+            <Tooltip title="Delete">
+              <IconButton>
+                <DeleteIcon sx={{ color: '#f86156', fontSize: '24px' }} onClick={() => removeQuestion(index)} />
+              </IconButton>
+            </Tooltip>
           </Grid>
           <Grid item xs={12}>
             <RHFTextField multiline rows={2} name={`evaluation[${index}].title`} label={`Question`} />
@@ -203,7 +298,6 @@ export default function ModuleQuestionForm({ isEdit, currentModule }) {
           <Grid item xs={6}>
             <RHFTextField name={`evaluation[${index}].options.d`} label={`d`} />
           </Grid>
-
           <Grid item xs={12}>
             <Typography variant="subtitle2" color={'text.disabled'}>
               Select correct option for the question
@@ -218,7 +312,6 @@ export default function ModuleQuestionForm({ isEdit, currentModule }) {
               ]}
             />
           </Grid>
-
           <Grid item xs={12}>
             <Typography variant="subtitle2" color={'text.disabled'}>
               Upload any file if available
@@ -233,15 +326,31 @@ export default function ModuleQuestionForm({ isEdit, currentModule }) {
               }}
             />
           </Grid>
-
           <Grid item xs={12}>
             <Divider sx={{ borderColor: 'text.disabled' }} />
           </Grid>
         </Grid>
       ))}
 
+      <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center' }}>
+        <Stack alignItems="center" sx={{ mt: 1 }}>
+          <LoadingButton
+            variant="outlined"
+            loading={isSubmitting}
+            startIcon={
+              <SvgIcon fontSize="small">
+                <Add />
+              </SvgIcon>
+            }
+            onClick={() => addQuestion(methods.getValues())} // Pass the current form values to addQuestion
+          >
+            Add A Question
+          </LoadingButton>
+        </Stack>
+      </Grid>
+
       <Grid item xs={12}>
-        <Stack alignItems="flex-end" sx={{ mt: 3 }}>
+        <Stack alignItems="flex-end" sx={{ mt: 2 }}>
           <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
             {!isEdit ? `Create ${data?.labels?.module?.singular || 'Module'}` : 'Save Changes'}
           </LoadingButton>
