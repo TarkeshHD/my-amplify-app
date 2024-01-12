@@ -1,8 +1,8 @@
-import React from 'react';
 import InfoIcon from '@mui/icons-material/Info';
+import { Fade, Typography } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
-import { Fade, Typography } from '@mui/material';
+import React from 'react';
 
 const InfoHover = ({ title, disabled = false }) => {
   title = title === '' ? 'No users assigned' : title;

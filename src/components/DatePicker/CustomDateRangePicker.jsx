@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Button, Popover, Box } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { DateRange } from 'react-date-range';
 import DateRangeIcon from '@mui/icons-material/DateRange';
+import { Box, Button, Popover } from '@mui/material';
+import React, { useState } from 'react';
+import { DateRange } from 'react-date-range';
 
 import 'react-date-range/dist/styles.css'; // Import the default styles
 import 'react-date-range/dist/theme/default.css';

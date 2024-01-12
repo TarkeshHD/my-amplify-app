@@ -1,6 +1,6 @@
 import { createTheme as createMuiTheme } from '@mui/material';
-import { createPalette } from './createPalette';
 import { createComponents } from './createComponents';
+import { createPalette } from './createPalette';
 import { createShadows } from './createShadows';
 import { createTypography } from './createTypography';
 

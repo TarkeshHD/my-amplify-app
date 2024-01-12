@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Helmet } from 'react-helmet-async';
+import { Add, CloseRounded, Download, PeopleAlt, Upload } from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -14,25 +13,26 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { Download, Upload, Add, CloseRounded, PeopleAlt } from '@mui/icons-material';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { toast } from 'react-toastify';
-import { useSelection } from '../hooks/useSelection';
-import { applyPagination } from '../utils/utils';
+import CustomDialog from '../components/CustomDialog';
 import { SearchBar } from '../components/SearchBar';
+import AssignModulesForm from '../components/modules/AssignModulesForm';
+import ModuleForm from '../components/modules/ModuleForm';
+import ModuleQuestionForm from '../components/modules/ModuleQuestionsForm';
+import ModuleTimeForm from '../components/modules/ModuleTimeForm';
+import QuestionsGrid from '../components/modules/QuestionsGrid';
+import AdminForm from '../components/users/AdminForm';
+import SuperAdminForm from '../components/users/SuperAdminForm';
+import TraineeForm from '../components/users/TraineeForm';
+import { useAuth } from '../hooks/useAuth';
+import { useConfig } from '../hooks/useConfig';
+import { useSelection } from '../hooks/useSelection';
+import { ModulesTable } from '../sections/modules/ModulesTable';
 import { UsersTable } from '../sections/users/UsersTable';
 import axios from '../utils/axios';
-import { useAuth } from '../hooks/useAuth';
-import CustomDialog from '../components/CustomDialog';
-import AdminForm from '../components/users/AdminForm';
-import TraineeForm from '../components/users/TraineeForm';
-import SuperAdminForm from '../components/users/SuperAdminForm';
-import { ModulesTable } from '../sections/modules/ModulesTable';
-import QuestionsGrid from '../components/modules/QuestionsGrid';
-import ModuleForm from '../components/modules/ModuleForm';
-import AssignModulesForm from '../components/modules/AssignModulesForm';
-import ModuleQuestionForm from '../components/modules/ModuleQuestionsForm';
-import { useConfig } from '../hooks/useConfig';
-import ModuleTimeForm from '../components/modules/ModuleTimeForm';
+import { applyPagination } from '../utils/utils';
 
 const Page = () => {
   const [openModuleForm, setOpenModuleForm] = useState(false);

@@ -1,18 +1,18 @@
 import InfoHover from '../InfoHover';
 
 import { LoadingButton } from '@mui/lab';
-import { Checkbox, Collapse, List, ListItem, ListItemButton, ListItemText, TextField, Typography } from '@mui/material';
+import { Checkbox, List, ListItem, ListItemText, TextField } from '@mui/material';
 import { Box, Stack } from '@mui/system';
+import _ from 'lodash';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useConfig } from '../../hooks/useConfig';
-import _ from 'lodash';
 
 import axios from '../../utils/axios';
 
-import { SeverityPill } from '../SeverityPill';
 import { toast } from 'react-toastify';
+import { SeverityPill } from '../SeverityPill';
 
 const DeptUserAssignModulesForm = ({
   isEdit = false,

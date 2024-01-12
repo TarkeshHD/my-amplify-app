@@ -1,5 +1,3 @@
-import PropTypes from 'prop-types';
-import * as Yup from 'yup';
 import { useState } from 'react';
 
 // @mui
@@ -7,8 +5,8 @@ import { TabContext, TabList, TabPanel } from '@mui/lab';
 import { Box, Grid, Tab } from '@mui/material';
 
 import { useAuth } from '../../hooks/useAuth';
-import DomainAssignModulesForm from './DomainAssignModulesForm';
 import DeptUserAssignModulesForm from './DeptUserAssignModulesForm';
+import DomainAssignModulesForm from './DomainAssignModulesForm';
 
 // ----------------------------------------------------------------------
 

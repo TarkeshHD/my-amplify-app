@@ -1,7 +1,7 @@
-import { Box, Grid, Typography } from '@mui/material';
+import { Grid, Typography } from '@mui/material';
 import React from 'react';
-import QuestionCard from './QuestionCard';
 import { SeverityPill } from '../SeverityPill';
+import QuestionCard from './QuestionCard';
 
 const statusMap = {
   Pending: 'warning',

@@ -1,7 +1,6 @@
 import { ThemeProvider } from '@emotion/react';
 
-import React, { useContext } from 'react';
-import { ConfigContext } from '../context/ConfigurationContext';
+import React from 'react';
 import { useConfig } from '../hooks/useConfig';
 import { createTheme } from '../theme';
 

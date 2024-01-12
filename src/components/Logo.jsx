@@ -1,7 +1,7 @@
 import React from 'react';
 
-import { useConfig } from '../hooks/useConfig';
 import defaultLogo from '../assets/AVrseLogo.png';
+import { useConfig } from '../hooks/useConfig';
 
 const Logo = () => {
   const config = useConfig();

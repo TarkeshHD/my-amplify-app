@@ -1,7 +1,7 @@
-import { createContext, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import { isTokenValid, setSession } from '../utils/jwt';
+import { createContext, useEffect, useState } from 'react';
 import axios from '../utils/axios';
+import { isTokenValid, setSession } from '../utils/jwt';
 
 const initialState = {
   isAuthenticated: false,

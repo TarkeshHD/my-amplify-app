@@ -43,11 +43,17 @@ const styles = {
   // Make description column wider
 };
 
-const TimeCard = ({ tableData, status }) => {
-  const messageForNoMistakes =
-    status === 'Pass'
-      ? 'You got everything right! Kudos! 👏'
-      : 'No mistakes made! 👍, but you have to improve your speed! ⚡';
+const TimeCard = ({ tableData, status, message = undefined }) => {
+  let messageForNoMistakes = '';
+  if (!message) {
+    messageForNoMistakes =
+      status === 'Pass'
+        ? 'You got everything right! Kudos! 👏'
+        : 'No mistakes made! 👍, but you have to improve your speed! ⚡';
+  } else {
+    messageForNoMistakes = message;
+  }
+
   const tableValues = tableData?.map((row, index) => (
     <TableRow key={index}>
       <TableCell style={{ ...styles.descriptionCell, ...styles.dataCell }}>{row.description}</TableCell>

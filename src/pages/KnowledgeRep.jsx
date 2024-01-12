@@ -1,14 +1,14 @@
+import { Add, CloseRounded, Upload } from '@mui/icons-material';
+import { Box, Button, Container, DialogActions, IconButton, Stack, SvgIcon, Tooltip, Typography } from '@mui/material';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Box, Button, Container, DialogActions, IconButton, Stack, SvgIcon, Tooltip, Typography } from '@mui/material';
-import { Upload, Add, CloseRounded } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 
-import axios from '../utils/axios';
-import { useAuth } from '../hooks/useAuth';
 import CustomDialog from '../components/CustomDialog';
+import { useAuth } from '../hooks/useAuth';
 import { useConfig } from '../hooks/useConfig';
 import { FileTable } from '../sections/knowledgeReps/FileTable';
+import axios from '../utils/axios';
 
 import AddFileForm from '../components/knowledgeRep/AddFileForm';
 import { FAKE_DATA } from '../components/knowledgeRep/fakeData';

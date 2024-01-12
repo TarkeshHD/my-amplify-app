@@ -13,19 +13,19 @@ import {
 } from '@mui/material';
 import PropTypes from 'prop-types';
 
-import { Link, useLocation } from 'react-router-dom';
 import { ArrowOutwardRounded, ChevronRightRounded } from '@mui/icons-material';
-import { Scrollbar } from '../../components/Scrollbar';
-import Logo from '../../components/Logo';
-import { SideNavItem } from './SideNavItem';
-import { getItems } from './config';
-import { NAVBAR } from '../../config';
-import { SideNavNestedItems } from './SideNavNestedItems';
-import { useConfig } from '../../hooks/useConfig';
-import EditPasswordForm from '../../components/users/EditPasswordForm';
 import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import CustomDialog from '../../components/CustomDialog';
+import Logo from '../../components/Logo';
+import { Scrollbar } from '../../components/Scrollbar';
 import SupportRequestForm from '../../components/support/SupportRequestForm';
+import EditPasswordForm from '../../components/users/EditPasswordForm';
+import { NAVBAR } from '../../config';
+import { useConfig } from '../../hooks/useConfig';
+import { SideNavItem } from './SideNavItem';
+import { SideNavNestedItems } from './SideNavNestedItems';
+import { getItems } from './config';
 
 export const SideNav = (props) => {
   const { open, onClose } = props;

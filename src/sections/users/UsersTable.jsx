@@ -1,15 +1,15 @@
+import { Delete, Edit } from '@mui/icons-material';
+import { Avatar, Box, Button, Card, IconButton, MenuItem, Stack, Typography } from '@mui/material';
+import { MaterialReactTable } from 'material-react-table';
 import PropTypes from 'prop-types';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { MaterialReactTable } from 'material-react-table';
-import { Avatar, Box, Button, Card, IconButton, MenuItem, Stack, Typography } from '@mui/material';
-import { Delete, Edit } from '@mui/icons-material';
-import { Scrollbar } from '../../components/Scrollbar';
-import { getInitials } from '../../utils/utils';
-import SearchNotFound from '../../components/SearchNotFound';
 import CustomDialog from '../../components/CustomDialog';
+import { Scrollbar } from '../../components/Scrollbar';
+import SearchNotFound from '../../components/SearchNotFound';
+import ExportOptions from '../../components/export/ExportOptions';
 import EditPasswordForm from '../../components/users/EditPasswordForm';
 import { useConfig } from '../../hooks/useConfig';
-import ExportOptions from '../../components/export/ExportOptions';
+import { getInitials } from '../../utils/utils';
 
 export const UsersTable = ({ count = 0, items = [], fetchingData, exportBtnClicked, exportBtnFalse }) => {
   const exportBtnRef = useRef(null);
@@ -74,7 +74,6 @@ export const UsersTable = ({ count = 0, items = [], fetchingData, exportBtnClick
   const convertRowDatas = (rows) => {
     return rows.map((row) => {
       const values = row?.original;
-      console.log('row datas -> user table', values);
       const convertedValue = [
         values?.name || 'NA',
         values?.username || 'NA',

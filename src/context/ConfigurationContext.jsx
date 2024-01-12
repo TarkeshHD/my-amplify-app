@@ -1,9 +1,9 @@
-import { createContext, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
+import { createContext, useEffect, useState } from 'react';
 import BaseConfig from '../utils/BaseConfig.json';
 
-import axios from '../utils/axios';
 import { toast } from 'react-toastify';
+import axios from '../utils/axios';
 
 const initialState = {
   data: null,

@@ -1,15 +1,15 @@
-import PropTypes from 'prop-types';
-import { useMemo } from 'react';
-import { MaterialReactTable } from 'material-react-table';
-import { Avatar, Box, Card, IconButton, MenuItem, Stack, SvgIcon, Typography } from '@mui/material';
 import { Delete, Download } from '@mui/icons-material';
-import { Scrollbar } from '../../components/Scrollbar';
-import { getInitials } from '../../utils/utils';
-import SearchNotFound from '../../components/SearchNotFound';
-import CustomDialog from '../../components/CustomDialog';
 import FolderIcon from '@mui/icons-material/Folder';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
+import { Avatar, Box, Card, IconButton, MenuItem, Stack, SvgIcon, Typography } from '@mui/material';
+import { MaterialReactTable } from 'material-react-table';
 import moment from 'moment-timezone';
+import PropTypes from 'prop-types';
+import { useMemo } from 'react';
+import CustomDialog from '../../components/CustomDialog';
+import { Scrollbar } from '../../components/Scrollbar';
+import SearchNotFound from '../../components/SearchNotFound';
+import { getInitials } from '../../utils/utils';
 
 export const FileTable = ({ items = [], fetchingData, addWorkingDirectory }) => {
   const handleDownload = () => {

@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
-import { useLocation } from 'react-router-dom';
-import PropTypes from 'prop-types';
 import { Collapse, List } from '@mui/material';
+import PropTypes from 'prop-types';
+import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { SideNavItem } from './SideNavItem';
 
 export const SideNavNestedItems = ({ item, ...props }) => {

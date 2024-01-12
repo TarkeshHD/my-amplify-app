@@ -1,84 +1,54 @@
 import PropTypes from 'prop-types';
-import {
-  Box,
-  Button,
-  Card,
-  CardActions,
-  CardHeader,
-  Divider,
-  SvgIcon,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-} from '@mui/material';
-import { ArrowRight } from '@mui/icons-material';
-import { Scrollbar } from '../../components/Scrollbar';
-import { SeverityPill } from '../../components/SeverityPill';
 
-const statusMap = {
-  pending: 'warning',
-  delivered: 'success',
-  refunded: 'error',
-};
+import { ArrowDownward, ArrowUpward, CurrencyRupee } from '@mui/icons-material';
+import { Avatar, Card, CardContent, Stack, SvgIcon, Typography } from '@mui/material';
 
-export const DashboardLatestOrders = (props) => {
-  const { orders = [], sx } = props;
+export const DashboardDiffCard = (props) => {
+  const { difference, positive = false, sx, value, icon, title, iconColor = 'success.main' } = props;
 
   return (
     <Card sx={sx}>
-      <CardHeader title="Latest Orders" />
-      <Scrollbar sx={{ flexGrow: 1 }}>
-        <Box sx={{ minWidth: 800 }}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Order</TableCell>
-                <TableCell>Customer</TableCell>
-                <TableCell sortDirection="desc">Date</TableCell>
-                <TableCell>Status</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {orders.map((order) => {
-                const createdAt = order.createdAt || 'Date';
-
-                return (
-                  <TableRow hover key={order.id}>
-                    <TableCell>{order.ref}</TableCell>
-                    <TableCell>{order.customer.name}</TableCell>
-                    <TableCell>{createdAt}</TableCell>
-                    <TableCell>
-                      <SeverityPill color={statusMap[order.status]}>{order.status}</SeverityPill>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </Box>
-      </Scrollbar>
-      <Divider />
-      <CardActions sx={{ justifyContent: 'flex-end' }}>
-        <Button
-          color="inherit"
-          endIcon={
-            <SvgIcon fontSize="small">
-              <ArrowRight />
-            </SvgIcon>
-          }
-          size="small"
-          variant="text"
-        >
-          View all
-        </Button>
-      </CardActions>
+      <CardContent>
+        <Stack alignItems="flex-start" direction="row" justifyContent="space-between" spacing={3}>
+          <Stack spacing={1}>
+            <Typography color="text.secondary" variant="overline">
+              {title}
+            </Typography>
+            <Typography variant="h4">{value}</Typography>
+          </Stack>
+          <Avatar
+            sx={{
+              backgroundColor: iconColor,
+              height: 56,
+              width: 56,
+            }}
+          >
+            <SvgIcon>{icon}</SvgIcon>
+          </Avatar>
+        </Stack>
+        {(difference || difference === 0) && ( // Only when value is false
+          <Stack alignItems="center" direction="row" spacing={2} sx={{ mt: 2 }}>
+            <Stack alignItems="center" direction="row" spacing={0.5}>
+              <SvgIcon color={positive ? 'success' : 'error'} fontSize="small">
+                {positive ? <ArrowUpward /> : <ArrowDownward />}
+              </SvgIcon>
+              <Typography color={positive ? 'success.main' : 'error.main'} variant="body2">
+                {difference}%
+              </Typography>
+            </Stack>
+            <Typography color="text.secondary" variant="caption">
+              Since last month
+            </Typography>
+          </Stack>
+        )}
+      </CardContent>
     </Card>
   );
 };
 
-DashboardLatestOrders.prototype = {
-  orders: PropTypes.array,
+DashboardDiffCard.prototypes = {
+  difference: PropTypes.number,
+  positive: PropTypes.bool,
   sx: PropTypes.object,
+  value: PropTypes.string.isRequired,
 };

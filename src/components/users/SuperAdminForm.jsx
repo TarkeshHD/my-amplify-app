@@ -1,19 +1,18 @@
 import PropTypes from 'prop-types';
-import * as Yup from 'yup';
-import { useCallback, useEffect, useMemo } from 'react';
-import { toast } from 'react-toastify';
+import { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import * as Yup from 'yup';
 // form
-import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useForm } from 'react-hook-form';
 // @mui
 import { LoadingButton } from '@mui/lab';
-import { Box, Grid, Stack, Switch, Typography, FormControlLabel } from '@mui/material';
+import { Box, Grid, Stack } from '@mui/material';
 
-import { FormProvider, RHFSelect, RHFSwitch, RHFTextField } from '../hook-form';
-import RHFAutocomplete from '../hook-form/RHFAutocomplete';
-import axios from '../../utils/axios';
 import { useConfig } from '../../hooks/useConfig';
+import axios from '../../utils/axios';
+import { FormProvider, RHFTextField } from '../hook-form';
 
 // ----------------------------------------------------------------------
 
@@ -73,7 +72,6 @@ export default function SuperAdminForm({ isEdit, currentUser }) {
 
   const onSubmit = async (values) => {
     try {
-      console.log('Values', values);
       const response = await axios.post('/user/register', values);
       toast.success(!isEdit ? 'Create success!' : 'Update success!');
       navigate(0);

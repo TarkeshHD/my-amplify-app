@@ -1,20 +1,20 @@
-import React from 'react';
-import * as Yup from 'yup';
-import { Controller, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
 import { LoadingButton } from '@mui/lab';
-import { Alert, Button, FormHelperText, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Stack, Typography } from '@mui/material';
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import * as Yup from 'yup';
 import { useAuth } from '../../hooks/useAuth';
-import { FormProvider, RHFSelect, RHFSwitch, RHFTextField } from '../hook-form';
+import { FormProvider, RHFTextField } from '../hook-form';
 
 const BasicLoginForm = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const loginSchema = Yup.object({
-    username: Yup.string().email('Must be a valid email').max(255).required('Username is required'),
+    username: Yup.string().max(255).required('Username is required'),
     password: Yup.string().max(255).required('Password is required'),
   });
 

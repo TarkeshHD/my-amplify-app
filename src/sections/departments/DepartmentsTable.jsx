@@ -1,13 +1,13 @@
+import { Delete, Edit } from '@mui/icons-material';
+import { Avatar, Box, Card, IconButton, MenuItem, Stack, Typography } from '@mui/material';
+import { MaterialReactTable } from 'material-react-table';
 import PropTypes from 'prop-types';
 import { useMemo, useState } from 'react';
-import { MaterialReactTable } from 'material-react-table';
-import { Avatar, Box, Card, IconButton, MenuItem, Stack, Typography } from '@mui/material';
-import { Delete, Edit } from '@mui/icons-material';
-import { Scrollbar } from '../../components/Scrollbar';
-import { getInitials } from '../../utils/utils';
-import SearchNotFound from '../../components/SearchNotFound';
 import CustomDialog from '../../components/CustomDialog';
+import { Scrollbar } from '../../components/Scrollbar';
+import SearchNotFound from '../../components/SearchNotFound';
 import { useConfig } from '../../hooks/useConfig';
+import { getInitials } from '../../utils/utils';
 
 export const DepartmentsTable = ({ count = 0, items = [], fetchingData }) => {
   const config = useConfig();

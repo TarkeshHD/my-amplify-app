@@ -1,11 +1,11 @@
-import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
+import { Calendar, momentLocalizer } from 'react-big-calendar';
 
 const localizer = momentLocalizer(moment);
 
-import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { Button, ButtonGroup, Toolbar, Typography } from '@mui/material';
 import { useCallback } from 'react';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 // Custom toolbar for calendar
 const CustomToolbar = ({ view, onView, onNavigate, label }) => {

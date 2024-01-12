@@ -1,18 +1,16 @@
+import { Box, Grid, Stack, Tab, Tabs, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import * as Yup from 'yup';
-import { Alert, Box, Button, FormHelperText, Grid, Stack, Tab, Tabs, TextField, Typography } from '@mui/material';
+import { Link, useNavigate } from 'react-router-dom';
+import VRIllustration from '../../assets/vr-boy-illustration.svg';
+import Logo from '../../components/Logo';
+import BaseLoginForm from '../../components/login/BaseLoginForm';
+import BasicLoginForm from '../../components/login/BasicLoginForm';
 import { useAuth } from '../../hooks/useAuth';
 import { useConfig } from '../../hooks/useConfig';
-import Logo from '../../components/Logo';
-import VRIllustration from '../../assets/vr-boy-illustration.svg';
-import BasicLoginForm from '../../components/login/BasicLoginForm';
-import BaseLoginForm from '../../components/login/BaseLoginForm';
 
 const Page = () => {
   const config = useConfig();
-  console.log('config', config);
   const navigate = useNavigate();
   const auth = useAuth();
 
@@ -25,8 +23,6 @@ const Page = () => {
 
   useEffect(() => {
     if (config?.isConfigfileFetched) {
-      console.log('Updating data');
-
       setMethod(TEST_CONFIG[0]); // config?.data?.features?.auth?.types?.[0]
     }
   }, [config.isConfigfileFetched]);

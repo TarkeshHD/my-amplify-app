@@ -1,20 +1,19 @@
 import PropTypes from 'prop-types';
-import * as Yup from 'yup';
 import { useCallback, useEffect, useMemo } from 'react';
-import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import * as Yup from 'yup';
 // form
-import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useForm } from 'react-hook-form';
 // @mui
 import { LoadingButton } from '@mui/lab';
-import { Box, Grid, Stack, Switch, Typography, FormControlLabel, FormLabel, RadioGroup, Radio } from '@mui/material';
+import { Box, Grid, Stack, Typography } from '@mui/material';
 
-import { FormProvider, RHFRadioGroup, RHFSelect, RHFSwitch, RHFTextField } from '../hook-form';
-import RHFAutocomplete from '../hook-form/RHFAutocomplete';
-import axios from '../../utils/axios';
-import { RHFUploadSingleFile } from '../hook-form/RHFUpload';
 import { useConfig } from '../../hooks/useConfig';
+import axios from '../../utils/axios';
+import { FormProvider, RHFRadioGroup, RHFTextField } from '../hook-form';
+import { RHFUploadSingleFile } from '../hook-form/RHFUpload';
 
 // ----------------------------------------------------------------------
 

@@ -1,13 +1,12 @@
+import { Download } from '@mui/icons-material';
+import { Box, Button, Container, DialogActions, IconButton, Stack, SvgIcon, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Box, Button, Container, DialogActions, IconButton, Stack, SvgIcon, Typography } from '@mui/material';
-import { Download } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { useAuth } from '../hooks/useAuth';
 import { useConfig } from '../hooks/useConfig';
 import { ArchiveTable } from '../sections/archive/ArchiveTable';
 import axios from '../utils/axios';
-
 const Page = () => {
   const [fetchingData, setFetchingData] = useState(false);
   const [data, setData] = useState([]);
@@ -18,11 +17,10 @@ const Page = () => {
   const { data: configData } = config;
   const { user } = useAuth();
 
-  const getDatas = async () => {
+  const getData = async () => {
     try {
       setFetchingData(true);
       const response = await axios.get('/archive');
-      console.log(response);
       const keysWithoutId = [];
       const keysWithId = [];
       const responseData = response?.data?.details;
@@ -58,7 +56,7 @@ const Page = () => {
   };
 
   useEffect(() => {
-    getDatas();
+    getData();
   }, []);
 
   return (

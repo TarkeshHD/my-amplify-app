@@ -1,9 +1,8 @@
-import { Box, Grid, Typography } from '@mui/material';
+import { Grid, Typography } from '@mui/material';
+import moment from 'moment-timezone';
 import React from 'react';
-import QuestionCard from './QuestionCard';
 import { SeverityPill } from '../SeverityPill';
 import TimeCard from './TimeCard';
-import moment from 'moment-timezone';
 
 const statusMap = {
   Pending: 'warning',
@@ -44,14 +43,22 @@ const TimeGrid = ({ showValues = false, evalData, evaluation = EVAL_SAMPLE }) =>
           <Grid item textAlign={'right'} xs={4}>
             <SeverityPill color={statusMap[evalData?.status]}>{evalData?.status}</SeverityPill>
             <Typography color={'text.disabled'} fontWeight={'bold'} variant="body2" display={'block'}>
-              Score: {evalData?.score} | Time: {secondsToHHMMSS(evalData?.endTime - evalData?.startTime)}
+              Score: {evalData?.score} | Time: {secondsToHHMMSS(evalData?.endTime - evalData?.startTime || 0)}
             </Typography>
           </Grid>
         </>
       )}
 
       <Grid item xs={12}>
-        <TimeCard tableData={evalData.mistakes} status={evalData.status} />
+        {evalData?.endTime ? (
+          <TimeCard tableData={evalData.mistakes} status={evalData.status} />
+        ) : (
+          <TimeCard
+            tableData={[]}
+            status={evalData.status}
+            message="The evaluation is still pending✌️, awaiting completion."
+          />
+        )}
       </Grid>
     </Grid>
   );

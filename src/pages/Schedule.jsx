@@ -1,5 +1,3 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Helmet } from 'react-helmet-async';
 import {
   Alert,
   Box,
@@ -12,12 +10,14 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 
-import { MyCalendar } from './MyCalendar';
 import CustomDialog from '../components/CustomDialog';
+import { MyCalendar } from './MyCalendar';
 
-import AddEventForm from '../components/schedule/AddEventForm';
 import moment from 'moment-timezone';
+import AddEventForm from '../components/schedule/AddEventForm';
 import EventDetails from '../components/schedule/EventDetails';
 
 // Fake events list

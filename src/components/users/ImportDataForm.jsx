@@ -1,19 +1,17 @@
-import { yupResolver } from '@hookform/resolvers/yup';
-import { Alert, Box, Grid, Stack, SvgIcon, Typography } from '@mui/material';
+import { Alert, Box, Grid, Stack, Typography } from '@mui/material';
 import React, { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { read, utils, writeFile } from 'xlsx';
+import { toast } from 'react-toastify';
+import { read, utils } from 'xlsx';
 import { FormProvider } from '../hook-form';
 import { RHFUploadSingleFile } from '../hook-form/RHFUpload';
-import { toast } from 'react-toastify';
 
-import DownloadIcon from '@mui/icons-material/Download';
 import { LoadingButton } from '@mui/lab';
 
 import ExcelJS from 'exceljs';
-import axios from '../../utils/axios';
 import { useNavigate } from 'react-router-dom';
 import { useConfig } from '../../hooks/useConfig';
+import axios from '../../utils/axios';
 
 const expectedValues = ['Name', 'Employee Code', 'Domain', 'Department'];
 

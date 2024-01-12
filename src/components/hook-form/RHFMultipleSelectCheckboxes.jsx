@@ -1,7 +1,7 @@
-import PropTypes from 'prop-types';
-import { useFormContext, Controller } from 'react-hook-form';
-import { FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText, Chip } from '@mui/material';
+import { Checkbox, Chip, FormControl, InputLabel, ListItemText, MenuItem, Select } from '@mui/material';
 import { Box } from '@mui/system';
+import PropTypes from 'prop-types';
+import { Controller, useFormContext } from 'react-hook-form';
 
 RHFMultipleSelectCheckboxes.propTypes = {
   name: PropTypes.string,

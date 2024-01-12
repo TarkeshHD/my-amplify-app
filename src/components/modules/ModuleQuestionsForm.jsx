@@ -1,36 +1,21 @@
 import PropTypes from 'prop-types';
-import * as Yup from 'yup';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { toast } from 'react-toastify';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import * as Yup from 'yup';
 // form
-import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useFieldArray, useForm } from 'react-hook-form';
 // @mui
 import { LoadingButton } from '@mui/lab';
-import {
-  Box,
-  Grid,
-  Stack,
-  Switch,
-  Typography,
-  FormControlLabel,
-  Divider,
-  SvgIcon,
-  Button,
-  InputAdornment,
-  IconButton,
-  Tooltip,
-} from '@mui/material';
+import { Divider, Grid, IconButton, InputAdornment, Stack, SvgIcon, Tooltip, Typography } from '@mui/material';
 
-import { FormProvider, RHFRadioGroup, RHFSelect, RHFSwitch, RHFTextField } from '../hook-form';
-import RHFAutocomplete from '../hook-form/RHFAutocomplete';
-import axios from '../../utils/axios';
-import { RHFUploadSingleFile } from '../hook-form/RHFUpload';
-import { getFile } from '../../utils/utils';
-import { useConfig } from '../../hooks/useConfig';
 import { Add } from '@mui/icons-material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { useConfig } from '../../hooks/useConfig';
+import axios from '../../utils/axios';
+import { FormProvider, RHFRadioGroup, RHFTextField } from '../hook-form';
+import { RHFUploadSingleFile } from '../hook-form/RHFUpload';
 
 // ----------------------------------------------------------------------
 
