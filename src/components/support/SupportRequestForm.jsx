@@ -1,17 +1,17 @@
-import React, { useCallback, useMemo, useEffect } from 'react';
-import * as Yup from 'yup';
-import { useNavigate } from 'react-router-dom';
-import { useConfig } from '../../hooks/useConfig';
-import { useForm } from 'react-hook-form';
-import { toast } from 'react-toastify';
-import { FormProvider, RHFRadioGroup, RHFTextField } from '../hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { LoadingButton } from '@mui/lab';
 import { Grid, Typography } from '@mui/material';
 import { Box, Stack } from '@mui/system';
-import { RHFUploadSingleFile } from '../hook-form/RHFUpload';
-import { LoadingButton } from '@mui/lab';
-import { yupResolver } from '@hookform/resolvers/yup';
+import axios from '../../utils/axios';
+import React, { useCallback, useEffect, useMemo } from 'react';
+import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import * as Yup from 'yup';
+import { useConfig } from '../../hooks/useConfig';
+import { FormProvider, RHFRadioGroup, RHFTextField } from '../hook-form';
 import RHFAutocomplete from '../hook-form/RHFAutocomplete';
-import axios from 'axios';
+import { RHFUploadSingleFile } from '../hook-form/RHFUpload';
 
 const SupportRequestForm = () => {
   const navigate = useNavigate();
@@ -21,7 +21,12 @@ const SupportRequestForm = () => {
   const NewModuleSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     description: Yup.string().required('Description is required'),
-    email: Yup.string().required('Email is required'),
+    email: Yup.string()
+      .test('email', 'Email is not valid', (value) => {
+        const emailRegex = /^[\w-]+(\.[\w-]+)*@[\w-]+(\.[\w-]+)*(\.[a-zA-Z]{2,})$/;
+        return emailRegex.test(value);
+      })
+      .required('Email is required'),
     attatchment: Yup.mixed(),
     type: Yup.string().required('Type is required'),
     priority: Yup.string().required('Priority is required'),
@@ -32,16 +37,15 @@ const SupportRequestForm = () => {
     resolver: yupResolver(NewModuleSchema),
   });
 
-  const typeOfRequest = [
-    'Installation Setup',
-    'Hardware Issues',
-    'Bug Fixes',
-    'Demo Support',
-    'Server Hosting',
-    'New Feature Request',
-    'Misc',
-  ];
-
+  const typeOfRequestValue = {
+    'Installation Setup': 'installation_setup',
+    'Hardware Issues': 'hardware_issues',
+    'Bug Fixes': 'bug_fixes',
+    'Demo Support': 'demo_support',
+    'Server Hosting': 'server_hosting',
+    'New Feature Request': 'new_request',
+    Misc: 'misc',
+  };
   const priorityOfRequest = ['Low', 'Medium', 'High'];
 
   const {
@@ -58,36 +62,25 @@ const SupportRequestForm = () => {
   const onSubmit = async (values) => {
     try {
       const formData = new FormData();
-      console.log('data', data);
 
       Object.keys(values).map((key) => formData.append(key, values[key]));
 
-      console.log('FormData', formData.values);
-
       const requestBody = {
-        ticket: {
-          anonymous_requester_email: formData.get('email'),
-          project_name: data?.clientName,
-          annonymous_requester_name: formData.get('name'),
-          request_type: formData.get('type'),
-          priority: formData.get('priority'),
-          subject: formData.get('subject'),
-          description: formData.get('description'),
-          attatchment: formData.get('attatchment') || null,
-        },
+        email: formData.get('email'),
+        projectName: data?.clientName,
+        name: formData.get('name'),
+        type: typeOfRequestValue[formData.get('type')],
+        priority: formData.get('priority'),
+        subject: formData.get('subject'),
+        description: formData.get('description'),
+        attachment: formData.get('attachment') || null,
       };
 
-      const bearerToken = import.meta.env.VITE_ZENDESK_TOKEN;
-      const response = await axios.post(`${import.meta.env.VITE_ZENDESK_URL}`, requestBody, {
-        headers: {
-          Authorization: `Bearer ${bearerToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      console.log('response', response);
+      await axios.post('/support/send-ticket', requestBody);
       toast.success('Support Request Created Successfully!');
-      navigate(0);
+      setTimeout(() => {
+        navigate(0);
+      }, 700);
     } catch (error) {
       console.error(error);
       toast.error(error.message || 'Something went wrong!');
@@ -137,7 +130,7 @@ const SupportRequestForm = () => {
               name="type"
               label=""
               placeholder="Select Type Of Request"
-              options={[...typeOfRequest, 'None']}
+              options={[...Object.keys(typeOfRequestValue), 'None']}
               getOptionLabel={(option) => {
                 if (typeof option === 'string') {
                   return option;

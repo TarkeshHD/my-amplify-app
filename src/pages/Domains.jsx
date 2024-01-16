@@ -1,19 +1,19 @@
+import { Add, CloseRounded, Download, Upload } from '@mui/icons-material';
+import { Box, Button, Container, DialogActions, IconButton, Stack, SvgIcon, Tooltip, Typography } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Box, Button, Container, DialogActions, IconButton, Stack, SvgIcon, Tooltip, Typography } from '@mui/material';
-import { Download, Upload, Add, CloseRounded } from '@mui/icons-material';
 import { toast } from 'react-toastify';
-import { useSelection } from '../hooks/useSelection';
-import { applyPagination } from '../utils/utils';
-import { SearchBar } from '../components/SearchBar';
-import axios from '../utils/axios';
-import { useAuth } from '../hooks/useAuth';
 import CustomDialog from '../components/CustomDialog';
+import { SearchBar } from '../components/SearchBar';
+import DomainForm from '../components/domains/DomainForm';
 import AdminForm from '../components/users/AdminForm';
 import TraineeForm from '../components/users/TraineeForm';
-import { DomainsTable } from '../sections/domains/DomainsTable';
-import DomainForm from '../components/domains/DomainForm';
+import { useAuth } from '../hooks/useAuth';
 import { useConfig } from '../hooks/useConfig';
+import { useSelection } from '../hooks/useSelection';
+import { DomainsTable } from '../sections/domains/DomainsTable';
+import axios from '../utils/axios';
+import { applyPagination } from '../utils/utils';
 
 const Page = () => {
   const [openDomainForm, setOpenDomainForm] = useState(false);

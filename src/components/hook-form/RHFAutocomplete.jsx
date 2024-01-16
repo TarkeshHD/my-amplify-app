@@ -1,5 +1,4 @@
 import { Autocomplete, TextField } from '@mui/material';
-import { useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 
 export default function RHFAutocomplete({ onChangeCustom = undefined, name, rules, options, getOptionLabel, ...rest }) {

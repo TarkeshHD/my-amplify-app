@@ -1,6 +1,6 @@
-import { Container, Unstable_Grid2 as Grid, Button, Alert } from '@mui/material';
-import { Helmet } from 'react-helmet-async';
 import { EventAvailable, HourglassEmpty, TrendingUp } from '@mui/icons-material';
+import { Alert, Button, Container, Unstable_Grid2 as Grid } from '@mui/material';
+import { Helmet } from 'react-helmet-async';
 
 import { DashboardDiffCard } from '../sections/dashboard/DashboardDiffCard';
 
@@ -8,12 +8,12 @@ import { DashboardBarChart } from '../sections/dashboard/DashboardBarChart';
 
 import { DashboardTasksProgress } from '../sections/dashboard/DashboardTasksProgress';
 
-import { DashboardPieChart } from '../sections/dashboard/DashboardPieChart';
-import { useConfig } from '../hooks/useConfig';
 import { useEffect, useState } from 'react';
-import axios from '../utils/axios';
-import { useAuth } from '../hooks/useAuth';
 import { toast } from 'react-toastify';
+import { useAuth } from '../hooks/useAuth';
+import { useConfig } from '../hooks/useConfig';
+import { DashboardPieChart } from '../sections/dashboard/DashboardPieChart';
+import axios from '../utils/axios';
 import { calculatePercentageChange } from '../utils/utils';
 
 const now = new Date();

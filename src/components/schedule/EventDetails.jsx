@@ -2,7 +2,6 @@ import { Box, Grid, List, ListItem, ListItemText, Paper, TextField, Typography }
 import React, { useCallback, useEffect, useState } from 'react';
 
 import _ from 'lodash';
-import moment from 'moment-timezone';
 
 const statusMap = {
   Pending: 'warning',

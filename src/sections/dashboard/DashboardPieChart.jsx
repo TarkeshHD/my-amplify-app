@@ -1,6 +1,6 @@
-import PropTypes from 'prop-types';
 import { Computer, DeviceHub, Phone } from '@mui/icons-material';
 import { Box, Card, CardContent, CardHeader, Stack, SvgIcon, Typography, useTheme } from '@mui/material';
+import PropTypes from 'prop-types';
 import { Chart } from '../../components/Chart';
 
 const useChartOptions = (labels) => {

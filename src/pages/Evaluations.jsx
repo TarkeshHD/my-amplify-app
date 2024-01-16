@@ -1,22 +1,22 @@
+import { Add, CloseRounded, Download } from '@mui/icons-material';
+import { Box, Button, Container, DialogActions, IconButton, Stack, SvgIcon, Tooltip, Typography } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Box, Button, Container, DialogActions, IconButton, Stack, SvgIcon, Tooltip, Typography } from '@mui/material';
-import { Download, Add, CloseRounded } from '@mui/icons-material';
 import { toast } from 'react-toastify';
-import { useSelection } from '../hooks/useSelection';
-import { applyPagination } from '../utils/utils';
+import CustomDialog from '../components/CustomDialog';
 import { SearchBar } from '../components/SearchBar';
+import QuestionsGrid from '../components/modules/QuestionsGrid';
+import AdminForm from '../components/users/AdminForm';
+import SuperAdminForm from '../components/users/SuperAdminForm';
+import TraineeForm from '../components/users/TraineeForm';
+import { useAuth } from '../hooks/useAuth';
+import { useConfig } from '../hooks/useConfig';
+import { useSelection } from '../hooks/useSelection';
+import { EvaluationsTable } from '../sections/evaluations/EvaluationsTable';
+import { ModulesTable } from '../sections/modules/ModulesTable';
 import { UsersTable } from '../sections/users/UsersTable';
 import axios from '../utils/axios';
-import { useAuth } from '../hooks/useAuth';
-import CustomDialog from '../components/CustomDialog';
-import AdminForm from '../components/users/AdminForm';
-import TraineeForm from '../components/users/TraineeForm';
-import SuperAdminForm from '../components/users/SuperAdminForm';
-import { ModulesTable } from '../sections/modules/ModulesTable';
-import QuestionsGrid from '../components/modules/QuestionsGrid';
-import { EvaluationsTable } from '../sections/evaluations/EvaluationsTable';
-import { useConfig } from '../hooks/useConfig';
+import { applyPagination } from '../utils/utils';
 
 const Page = () => {
   const [fetchingData, setFetchingData] = useState(false);

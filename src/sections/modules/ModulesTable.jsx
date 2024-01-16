@@ -1,18 +1,21 @@
-import PropTypes from 'prop-types';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { MaterialReactTable } from 'material-react-table';
-import { Avatar, Box, Card, IconButton, MenuItem, Stack, Typography } from '@mui/material';
 import { Delete, Edit, QuestionAnswer, Quiz } from '@mui/icons-material';
 import TimerIcon from '@mui/icons-material/Timer';
-import { Scrollbar } from '../../components/Scrollbar';
-import { getFile, getInitials } from '../../utils/utils';
-import SearchNotFound from '../../components/SearchNotFound';
+import { Avatar, Box, Card, IconButton, MenuItem, Stack, Typography } from '@mui/material';
+import { MaterialReactTable } from 'material-react-table';
+import PropTypes from 'prop-types';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import CustomDialog from '../../components/CustomDialog';
-import EditPasswordForm from '../../components/users/EditPasswordForm';
-import QuestionsGrid from '../../components/modules/QuestionsGrid';
+import { Scrollbar } from '../../components/Scrollbar';
+import SearchNotFound from '../../components/SearchNotFound';
 import AssignModulesForm from '../../components/modules/AssignModulesForm';
 import ModuleQuestionForm from '../../components/modules/ModuleQuestionsForm';
 import ModuleTimeForm from '../../components/modules/ModuleTimeForm';
+import QuestionsGrid from '../../components/modules/QuestionsGrid';
+import EditPasswordForm from '../../components/users/EditPasswordForm';
+import { getFile, getInitials } from '../../utils/utils';
+import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
+import axios from '../../utils/axios';
 
 const FAKE_DATA = [
   {
@@ -72,6 +75,21 @@ export const ModulesTable = ({
   const [openQuestionsForm, setOpenQuestionsForm] = useState(null);
   const [openTimeForm, setOpenTimeForm] = useState(null);
 
+  const navigate = useNavigate();
+
+  const onDeleteRow = async (row) => {
+    try {
+      await axios.post(`/module/archive/${row.id}`);
+      toast.success('Module deleted successfully');
+      setTimeout(() => {
+        navigate(0);
+      }, 700);
+    } catch (error) {
+      console.log(error);
+      toast.error(error.message || 'Failed to delete evaluation');
+    }
+  };
+
   // State Listeners
 
   useEffect(() => {
@@ -86,7 +104,7 @@ export const ModulesTable = ({
             <MenuItem
               key={0}
               onClick={() => {
-                // onDeleteRow();
+                onDeleteRow(row.original);
                 closeMenu();
               }}
               sx={{ color: 'error.main' }}

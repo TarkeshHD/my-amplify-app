@@ -1,12 +1,12 @@
 import PropTypes from 'prop-types';
 import { useDropzone } from 'react-dropzone';
 // @mui
+import { Box, Button, Stack } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { Box, Stack, Button } from '@mui/material';
 //
 import BlockContent from './BlockContent';
-import RejectionFiles from './RejectionFiles';
 import MultiFilePreview from './MultiFilePreview';
+import RejectionFiles from './RejectionFiles';
 
 // ----------------------------------------------------------------------
 

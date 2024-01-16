@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 
+import { ArrowRight, More } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -14,7 +15,6 @@ import {
   ListItemText,
   SvgIcon,
 } from '@mui/material';
-import { ArrowRight, More } from '@mui/icons-material';
 
 export const DashboardLatestProducts = (props) => {
   const { products = [], sx } = props;

@@ -1,5 +1,5 @@
-import { Card, InputAdornment, OutlinedInput, SvgIcon } from '@mui/material';
 import { Search } from '@mui/icons-material';
+import { Card, InputAdornment, OutlinedInput, SvgIcon } from '@mui/material';
 
 export const SearchBar = ({ placeholder }) => (
   <Card sx={{ p: 2 }}>

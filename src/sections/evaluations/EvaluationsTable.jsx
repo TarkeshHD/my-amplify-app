@@ -1,28 +1,29 @@
-import PropTypes from 'prop-types';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Box, Button, Card, MenuItem, Skeleton, Stack, Typography } from '@mui/material';
 import {
   MRT_FullScreenToggleButton as MRTFullScreenToggleButton,
   MRT_ShowHideColumnsButton as MRTShowHideColumnsButton,
-  MRT_ToggleFiltersButton as MRTToggleFiltersButton,
   MRT_ToggleDensePaddingButton as MRTToggleDensePaddingButton,
+  MRT_ToggleFiltersButton as MRTToggleFiltersButton,
   MaterialReactTable,
 } from 'material-react-table';
-import { toast } from 'react-toastify';
 import moment from 'moment-timezone';
-import { Box, Button, Card, MenuItem, Skeleton, Stack, Typography } from '@mui/material';
+import PropTypes from 'prop-types';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'react-toastify';
 
 import { Delete, Edit, FileDownload } from '@mui/icons-material';
-import { capitalizeFirstLetter, getInitials } from '../../utils/utils';
-import SearchNotFound from '../../components/SearchNotFound';
 import CustomDialog from '../../components/CustomDialog';
-import EditPasswordForm from '../../components/users/EditPasswordForm';
-import QuestionsGrid from '../../components/modules/QuestionsGrid';
+import CustomDateRangePicker from '../../components/DatePicker/CustomDateRangePicker';
+import SearchNotFound from '../../components/SearchNotFound';
 import { SeverityPill } from '../../components/SeverityPill';
+import ExportOptions from '../../components/export/ExportOptions';
+import QuestionsGrid from '../../components/modules/QuestionsGrid';
+import TimeGrid from '../../components/modules/TimeGrid';
+import EditPasswordForm from '../../components/users/EditPasswordForm';
 import { useConfig } from '../../hooks/useConfig';
 import axios from '../../utils/axios';
-import TimeGrid from '../../components/modules/TimeGrid';
-import CustomDateRangePicker from '../../components/DatePicker/CustomDateRangePicker';
-import ExportOptions from '../../components/export/ExportOptions';
+import { capitalizeFirstLetter, getInitials } from '../../utils/utils';
+import { useNavigate } from 'react-router-dom';
 
 const statusMap = {
   Pending: 'warning',
@@ -83,6 +84,9 @@ export const EvaluationsTable = ({
   const [exportRow, setExportRow] = useState([]);
   const [openEvaluationData, setOpenEvalutationData] = useState(null);
   const [openExportOptions, setOpenExportOptions] = useState(false);
+
+  const navigate = useNavigate();
+
   const config = useConfig();
   const { data } = config;
 
@@ -235,7 +239,6 @@ export const EvaluationsTable = ({
         ? moment.unix(row?.original?.endTime).tz(tz).format('DD/MM/YYYY HH:mm')
         : 'Pending';
       const values = row.original;
-      console.log('row datas -> eval table', values);
       return [
         values?.userId?.username || '-',
         values?.moduleId?.name || '-',
@@ -295,6 +298,19 @@ export const EvaluationsTable = ({
     }
   };
 
+  const onDeleteRow = async (row) => {
+    try {
+      await axios.post(`/evaluation/archive/${row.id}`);
+      toast.success('Evaluation deleted successfully');
+      setTimeout(() => {
+        navigate(0);
+      }, 700);
+    } catch (error) {
+      console.log(error);
+      toast.error(error.message || 'Failed to delete evaluation');
+    }
+  };
+
   return (
     <>
       <Card>
@@ -324,6 +340,7 @@ export const EvaluationsTable = ({
             <MenuItem
               key={0}
               onClick={() => {
+                onDeleteRow(row.original);
                 // onDeleteRow();
                 closeMenu();
               }}

@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 
-import { Avatar, Card, CardContent, Stack, SvgIcon, Typography } from '@mui/material';
 import { ArrowDownward, ArrowUpward, CurrencyRupee } from '@mui/icons-material';
+import { Avatar, Card, CardContent, Stack, SvgIcon, Typography } from '@mui/material';
 
 export const DashboardDiffCard = (props) => {
   const { difference, positive = false, sx, value, icon, title, iconColor = 'success.main' } = props;

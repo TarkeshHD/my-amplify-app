@@ -1,9 +1,9 @@
-import PropTypes from 'prop-types';
-import { FormControl, InputLabel } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { FormControl } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
-import * as React from 'react';
 import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import PropTypes from 'prop-types';
+import * as React from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 
 RHFDatePicker.propTypes = {

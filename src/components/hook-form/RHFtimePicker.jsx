@@ -1,11 +1,11 @@
-import React from 'react';
 import { FormControl } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
-import { useForm, Controller, useFormContext } from 'react-hook-form';
 import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
-import PropTypes from 'prop-types';
 import moment from 'moment-timezone';
+import PropTypes from 'prop-types';
+import React from 'react';
+import { Controller, useFormContext } from 'react-hook-form';
 
 RHFTimerPicker.propTypes = {
   name: PropTypes.string,

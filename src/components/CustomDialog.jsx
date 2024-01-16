@@ -1,17 +1,17 @@
 import PropTypes from 'prop-types';
 // @mui
-import {
-  Dialog,
-  Box,
-  Paper,
-  DialogActions,
-  Tooltip,
-  IconButton,
-  DialogTitle,
-  DialogContent,
-  Stack,
-} from '@mui/material';
 import { CloseRounded } from '@mui/icons-material';
+import {
+  Box,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Paper,
+  Stack,
+  Tooltip,
+} from '@mui/material';
 
 // ----------------------------------------------------------------------
 

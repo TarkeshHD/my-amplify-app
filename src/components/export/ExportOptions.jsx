@@ -2,8 +2,8 @@ import { Box } from '@mui/material';
 import React from 'react';
 
 import FileCopyIcon from '@mui/icons-material/FileCopy';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import MicrosoftIcon from '@mui/icons-material/Microsoft';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import { handleExportCsv, handleExportExcel, handleExportPdf } from '../../utils/exportTable';
 import ExportButton from './ExportBtn';
 
@@ -18,7 +18,6 @@ const ExportOptions = ({ headers, exportRow, closeExportOptions }) => {
     >
       <ExportButton
         onClick={() => {
-          console.log(exportRow);
           handleExportCsv(headers, exportRow);
           closeExportOptions();
         }}

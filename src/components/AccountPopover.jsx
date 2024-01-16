@@ -1,7 +1,7 @@
+import { Box, Divider, MenuItem, MenuList, Popover, Typography } from '@mui/material';
+import PropTypes from 'prop-types';
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import PropTypes from 'prop-types';
-import { Box, Divider, MenuItem, MenuList, Popover, Typography } from '@mui/material';
 import { useAuth } from '../hooks/useAuth';
 
 export const AccountPopover = (props) => {

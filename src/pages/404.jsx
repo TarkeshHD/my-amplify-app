@@ -1,7 +1,7 @@
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Box, Button, Container, SvgIcon, Typography } from '@mui/material';
-import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { Link } from 'react-router-dom';
 import Error404 from '../assets/errors/error-404.png';
 
 const Page = () => (

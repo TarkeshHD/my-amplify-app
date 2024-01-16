@@ -1,6 +1,6 @@
-import PropTypes from 'prop-types';
 import { FormatListBulleted } from '@mui/icons-material';
 import { Avatar, Box, Card, CardContent, LinearProgress, Stack, SvgIcon, Typography } from '@mui/material';
+import PropTypes from 'prop-types';
 
 export const DashboardTasksProgress = (props) => {
   const { value, sx, title } = props;

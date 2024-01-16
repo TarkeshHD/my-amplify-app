@@ -1,20 +1,20 @@
 import {
+  AccountTreeRounded,
   BarChartRounded,
+  Domain,
   ErrorRounded,
   GroupRounded,
   LockRounded,
+  ModelTraining,
   PersonAddRounded,
   PersonRounded,
+  Poll,
   SettingsRounded,
   Shop2Rounded,
-  Domain,
-  AccountTreeRounded,
-  ModelTraining,
-  Poll,
 } from '@mui/icons-material';
-import EmojiObjectsIcon from '@mui/icons-material/EmojiObjects';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import ArchiveIcon from '@mui/icons-material/Archive';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import EmojiObjectsIcon from '@mui/icons-material/EmojiObjects';
 
 import { SvgIcon } from '@mui/material';
 import { useConfig } from '../../hooks/useConfig';

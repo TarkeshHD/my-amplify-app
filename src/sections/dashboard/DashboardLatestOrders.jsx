@@ -1,4 +1,4 @@
-import PropTypes from 'prop-types';
+import { ArrowRight } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -13,7 +13,7 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material';
-import { ArrowRight } from '@mui/icons-material';
+import PropTypes from 'prop-types';
 import { Scrollbar } from '../../components/Scrollbar';
 import { SeverityPill } from '../../components/SeverityPill';
 

@@ -1,10 +1,10 @@
+import { Avatar, Box, Card, Typography } from '@mui/material';
+import { MaterialReactTable } from 'material-react-table';
 import PropTypes from 'prop-types';
 import { useMemo } from 'react';
-import { MaterialReactTable } from 'material-react-table';
-import { Avatar, Box, Card, Typography } from '@mui/material';
 import { Scrollbar } from '../../components/Scrollbar';
-import { getInitials } from '../../utils/utils';
 import SearchNotFound from '../../components/SearchNotFound';
+import { getInitials } from '../../utils/utils';
 
 export const DomainsTable = ({ count = 0, items = [], fetchingData }) => {
   const columns = useMemo(

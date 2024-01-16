@@ -1,7 +1,7 @@
-import PropTypes from 'prop-types';
-import { Notifications, Group, Search, Menu } from '@mui/icons-material';
+import { Group, Menu, Notifications, Search } from '@mui/icons-material';
 import { Avatar, Badge, Box, IconButton, Stack, SvgIcon, Tooltip, useMediaQuery } from '@mui/material';
 import { alpha } from '@mui/material/styles';
+import PropTypes from 'prop-types';
 import { HEADER, NAVBAR } from '../../config';
 
 import logo from '../../assets/account-icon.jpg';
