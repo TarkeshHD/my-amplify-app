@@ -9,14 +9,31 @@ import SearchNotFound from '../../components/SearchNotFound';
 import ExportOptions from '../../components/export/ExportOptions';
 import EditPasswordForm from '../../components/users/EditPasswordForm';
 import { useConfig } from '../../hooks/useConfig';
-import { getInitials } from '../../utils/utils';
+import { addToHistory, getInitials } from '../../utils/utils';
+import axios from '../../utils/axios';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { useAuth } from '../../hooks/useAuth';
+import TraineeForm from '../../components/users/TraineeForm';
+import AdminForm from '../../components/users/AdminForm';
+import SuperAdminForm from '../../components/users/SuperAdminForm';
 
-export const UsersTable = ({ count = 0, items = [], fetchingData, exportBtnClicked, exportBtnFalse }) => {
+export const UsersTable = ({
+  count = 0,
+  items = [],
+  fetchingData,
+  exportBtnClicked,
+  exportBtnFalse,
+  domains,
+  departments,
+}) => {
   const exportBtnRef = useRef(null);
   const config = useConfig();
   const [openExportOptions, setOpenExportOptions] = useState(false);
   const [exportRow, setExportRow] = useState([]);
   const { data } = config;
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (exportBtnClicked) {
@@ -70,6 +87,7 @@ export const UsersTable = ({ count = 0, items = [], fetchingData, exportBtnClick
 
   // Set below flag as well as use it as 'Row' Object to be passed inside forms
   const [openEditPassForm, setOpenEditPass] = useState(null);
+  const [openEditForm, setOpenEditForm] = useState(null);
 
   const convertRowDatas = (rows) => {
     return rows.map((row) => {
@@ -95,6 +113,36 @@ export const UsersTable = ({ count = 0, items = [], fetchingData, exportBtnClick
     setExportRow(convertRowDatas(rows));
   };
 
+  const onDeleteRow = async (row) => {
+    try {
+      // Delete row
+      const response = await axios.delete(`/user/archive/${row?.original?.id}`);
+      toast.success('User deleted successfully');
+      setTimeout(() => {
+        navigate(0);
+      }, 1000);
+    } catch (error) {
+      console.log(error);
+      toast.error(error.message || 'Failed to delete user');
+    }
+  };
+
+  const user = useAuth();
+
+  const onEditRow = (row) => {
+    if (user.user.role === 'admin' && row.original.role !== 'user') {
+      toast.error('You are not authorized to edit this user');
+      return;
+    }
+    setOpenEditForm(row);
+  };
+
+  const handleRowClick = (row) => {
+    addToHistory();
+    // Navigate to user evaluation page with user id
+    navigate(`/evaluations/${row.original.id}`);
+  };
+
   return (
     <>
       <Card>
@@ -116,7 +164,7 @@ export const UsersTable = ({ count = 0, items = [], fetchingData, exportBtnClick
             <MenuItem
               key={0}
               onClick={() => {
-                // onDeleteRow();
+                onDeleteRow(row);
                 closeMenu();
               }}
               sx={{ color: 'error.main' }}
@@ -129,7 +177,7 @@ export const UsersTable = ({ count = 0, items = [], fetchingData, exportBtnClick
             <MenuItem
               key={1}
               onClick={() => {
-                // onEditRow();
+                onEditRow(row);
                 closeMenu();
               }}
             >
@@ -142,8 +190,12 @@ export const UsersTable = ({ count = 0, items = [], fetchingData, exportBtnClick
               key={3}
               onClick={() => {
                 // onEditRow();
-                setOpenEditPass(row);
                 closeMenu();
+                if (row.original.role === 'user') {
+                  toast.error("Trainee's password cannot be edited");
+                  return;
+                }
+                setOpenEditPass(row);
               }}
             >
               <Stack spacing={2} direction={'row'}>
@@ -178,6 +230,12 @@ export const UsersTable = ({ count = 0, items = [], fetchingData, exportBtnClick
             variant: 'outlined',
           }}
           enableFacetedValues
+          muiTableBodyRowProps={({ row }) => ({
+            onClick: () => {
+              handleRowClick(row);
+            },
+            sx: { cursor: 'pointer' },
+          })}
         />
       </Card>
 
@@ -205,6 +263,24 @@ export const UsersTable = ({ count = 0, items = [], fetchingData, exportBtnClick
         title={<Typography variant="h5">Edit Password</Typography>}
       >
         <EditPasswordForm user={openEditPassForm?.original} />
+      </CustomDialog>
+
+      {/* Edit User Form */}
+      <CustomDialog
+        onClose={() => {
+          setOpenEditForm(false);
+        }}
+        open={Boolean(openEditForm)}
+        title={<Typography variant="h5">Edit User</Typography>}
+      >
+        {openEditForm?.original?.role === 'user' ? (
+          <TraineeForm isEdit={true} currentUser={openEditForm?.original} domains={domains} departments={departments} />
+        ) : openEditForm?.original?.role === 'admin' ? (
+          <AdminForm isEdit={true} currentUser={openEditForm?.original} domains={domains} />
+        ) : (
+          <SuperAdminForm isEdit={true} currentUser={openEditForm?.original} />
+        )}
+        {/* <EditUserForm user={openEditForm?.original} /> */}
       </CustomDialog>
     </>
   );

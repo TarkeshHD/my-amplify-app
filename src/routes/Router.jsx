@@ -44,6 +44,11 @@ const Router = () => {
         <Route path="departments" element={<Departments />} />
         <Route path="modules" element={<Modules />} />
         <Route path="evaluations" element={<Evaluations />} />
+        <Route path="evaluations/:userIdParam" element={<UserEvaluation />} />
+        <Route path="past-session" element={<PastSession />} />
+        <Route path="create-session" element={<CreateSession />} />
+        <Route path="session-details/:sessionId" element={<SessionDetails />} />
+
         {isKnowledgeRepEnabled && <Route path="knowledge" element={<KnowledgeRep />} />}
         {isScheduleEnabled && <Route path="schedule" element={<Schedule />} />}
         {isArchiveEnabled && <Route path="archive" element={<Archive />} />}
@@ -61,6 +66,7 @@ const Router = () => {
 
 const Modules = Loadable(lazy(() => import('../pages/Modules')));
 const Evaluations = Loadable(lazy(() => import('../pages/Evaluations')));
+const UserEvaluation = Loadable(lazy(() => import('../pages/UserEvaluation')));
 const Departments = Loadable(lazy(() => import('../pages/Departments')));
 const Domains = Loadable(lazy(() => import('../pages/Domains')));
 const Users = Loadable(lazy(() => import('../pages/Users')));
@@ -70,5 +76,8 @@ const ErrorPage = Loadable(lazy(() => import('../pages/404')));
 const KnowledgeRep = Loadable(lazy(() => import('../pages/KnowledgeRep')));
 const Schedule = Loadable(lazy(() => import('../pages/Schedule')));
 const Archive = Loadable(lazy(() => import('../pages/Archive')));
+const PastSession = Loadable(lazy(() => import('../pages/PastSession')));
+const CreateSession = Loadable(lazy(() => import('../pages/CreateSession')));
+const SessionDetails = Loadable(lazy(() => import('../pages/SessionDetails')));
 
 export default Router;

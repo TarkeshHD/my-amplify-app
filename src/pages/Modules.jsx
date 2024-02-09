@@ -55,7 +55,9 @@ const Page = () => {
       setFetchingData(true);
       const response = await axios.get('/module/all');
       // Sort the array in descending order by the "createdAt" property
-      const sortedData = [...response.data?.details].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      const sortedData = [...(response.data?.details ?? [])].sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+      );
       setData(sortedData);
     } catch (error) {
       toast.error(error.message || `Failed to fetch ${data?.labels?.user?.plural?.toLowerCase() || 'users'}`);

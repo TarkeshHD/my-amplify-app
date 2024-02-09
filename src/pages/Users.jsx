@@ -31,7 +31,7 @@ const Page = () => {
       setFetchingData(true);
       const response = await axios.get('/user/all');
       // Sort the array in descending order by the "createdAt" property
-      const sortedData = [...response.data?.details?.users].sort(
+      const sortedData = [...(response.data?.details?.users ?? [])].sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
       );
       setData(sortedData);
@@ -180,6 +180,8 @@ const Page = () => {
             items={data}
             exportBtnClicked={exportBtnClicked}
             exportBtnFalse={exportBtnFalse}
+            domains={domains}
+            departments={departments}
           />
 
           {/* Import User Data form */}

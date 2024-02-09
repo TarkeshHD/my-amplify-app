@@ -12,6 +12,7 @@ import ExcelJS from 'exceljs';
 import { useNavigate } from 'react-router-dom';
 import { useConfig } from '../../hooks/useConfig';
 import axios from '../../utils/axios';
+import { readExcelFile } from '../../utils/utils';
 
 const expectedValues = ['Name', 'Employee Code', 'Domain', 'Department'];
 
@@ -34,81 +35,74 @@ const ImportDataForm = ({ setOpenImportDataForm }) => {
     expectedValues.push('Trainee Type');
   }
 
+  const validateHeaders = (workbook, sheet, lastCell) => {
+    const headersRange = 'A1:' + lastCell;
+    const headers = utils.sheet_to_json(sheet, {
+      range: headersRange,
+      header: 1,
+    })[0];
+    const sortedHeaders = headers.slice().sort();
+    const sortedExpectedValues = expectedValues.slice().sort();
+    return JSON.stringify(sortedHeaders) === JSON.stringify(sortedExpectedValues);
+  };
+
+  const validateDataRows = (sheetData) => {
+    for (const row of sheetData) {
+      if (!row.Name || !row['Employee Code'] || !row.Domain || !row.Department) {
+        return false;
+      }
+      if (data?.features?.traineeType?.state === 'on' && !row['Trainee Type']) {
+        return false;
+      }
+    }
+    return true;
+  };
+
   const handleDrop = useCallback(
-    (acceptedFiles, name) => {
+    async (acceptedFiles, name) => {
       const file = acceptedFiles[0];
 
-      if (file) {
-        if (file.type !== 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
-          toast.error('Please upload a valid .xlsx file. File type is not .xlsx');
+      if (!file) return;
+
+      if (file.type !== 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+        toast.error('Please upload a valid .xlsx file. File type is not .xlsx');
+        return;
+      }
+
+      try {
+        const workbook = await readExcelFile(file);
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const lastCell = sheet['!ref'].split(':').pop();
+
+        if (!validateHeaders(workbook, sheet, lastCell)) {
+          toast.error('Please upload a valid .xlsx format. Headers are in the wrong order/format');
           return;
         }
 
-        const reader = new FileReader();
+        const dataRows = utils.sheet_to_json(sheet, { range: 'A1:' + lastCell });
+        if (!validateDataRows(dataRows)) {
+          toast.error('Please upload a valid Excel format. Values are missing');
+          return;
+        }
 
-        reader.onload = (e) => {
-          const data = new Uint8Array(e.target.result);
-          const workbook = read(data, { type: 'array' });
-          const sheetName = workbook.SheetNames[0];
-          const sheet = workbook.Sheets[sheetName];
-          const lastCell = sheet['!ref'].split(':').pop();
-          // Extract the headers from 'A1' to the last cell in the first row
-          const headersRange = 'A1:' + lastCell;
-          // Extract headers using the specified range
-          const headers = utils.sheet_to_json(sheet, {
-            range: headersRange,
-            header: 1, // Treat the first row as headers
-          })[0];
-          // Sort the arrays for comparison
-          const sortedArrayToCheck = headers.slice().sort();
-          const sortedExpectedValues = expectedValues.slice().sort();
+        setSendFiles(dataRows);
 
-          // Check if the sorted arrays are equal
-          const arraysMatch = JSON.stringify(sortedExpectedValues) === JSON.stringify(sortedArrayToCheck);
-          //   Check if all the expected headers are present
-          if (!arraysMatch) {
-            console.log('Error from error match');
-            toast.error('Please upload a valid .xlsx format. Headers are in the wrong order/format');
-            return;
-          }
-          // Define the range for data rows, starting from the first row
-          const dataRange = 'A1:' + lastCell;
-          // Extract data rows using the specified range
-          const dataRows = utils.sheet_to_json(sheet, {
-            range: dataRange,
-          });
-
-          //   Check all the required fields are present
-          for (const row of dataRows) {
-            if (
-              !row.Name ||
-              !row['Employee Code'] ||
-              !row.Domain ||
-              !row.Department ||
-              (data?.features?.traineeType?.state === 'on' && !row['Trainee Type'])
-            ) {
-              toast.error('Please upload a valid Excel format. Values are missing');
-              return;
-            }
-          }
-
-          setSendFiles(dataRows);
-
-          setValue(
-            name,
-            Object.assign(file, {
-              preview: URL.createObjectURL(file),
-            }),
-          );
-        };
-
-        reader.readAsArrayBuffer(file);
+        setValue(
+          name,
+          Object.assign(file, {
+            preview: URL.createObjectURL(file),
+          }),
+        );
+      } catch (error) {
+        console.error('Error reading the file:', error);
+        toast.error('An error occurred while processing the file. Please try again.');
       }
     },
     [setValue],
   );
 
-  const handleDownloadExcelTemplate = () => {
+  const handleDownloadExcelTemplate = async () => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Sheet 1');
 

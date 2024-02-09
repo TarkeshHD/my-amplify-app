@@ -30,10 +30,17 @@ export default function DomainForm({ isEdit, currentDomain, domains = [] }) {
 
   const NewDomainSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
-    domainPassword: Yup.string().required('Password is required'),
+    domainPassword: Yup.string(),
     parentId: Yup.string(), // Required while creating subdomains
     parentDomain: Yup.string(),
   });
+
+  // Making password required if only in create mode
+  const domainFormSchema = isEdit
+    ? NewDomainSchema
+    : NewDomainSchema.shape({
+        domainPassword: Yup.string().required('Password is required'),
+      });
 
   const defaultValues = useMemo(
     () => ({
@@ -47,7 +54,7 @@ export default function DomainForm({ isEdit, currentDomain, domains = [] }) {
   );
 
   const methods = useForm({
-    resolver: yupResolver(NewDomainSchema),
+    resolver: yupResolver(domainFormSchema),
     defaultValues,
   });
 
@@ -77,7 +84,14 @@ export default function DomainForm({ isEdit, currentDomain, domains = [] }) {
       if (values.parentId === 'None') {
         delete values.parentId;
       }
-      const response = await axios.post('/domain/register', values);
+      if (!isEdit) {
+        const response = await axios.post('/domain/register', values);
+      } else {
+        // Remove password from values
+        delete values.domainPassword;
+        await axios.post(`/domain/update/${currentDomain._id}`, values);
+      }
+
       toast.success(!isEdit ? 'Create success!' : 'Update success!');
       navigate(0);
     } catch (error) {
@@ -101,7 +115,9 @@ export default function DomainForm({ isEdit, currentDomain, domains = [] }) {
             >
               <RHFTextField name="name" label={`${data?.labels?.domain?.singular || 'Domain'} Name`} />
 
-              <RHFTextField name="domainPassword" label={`${data?.labels?.domain?.singular || 'Domain'} Password`} />
+              {!isEdit && (
+                <RHFTextField name="domainPassword" label={`${data?.labels?.domain?.singular || 'Domain'} Password`} />
+              )}
 
               {/* List of all domains, disabled and prefilled for Admin */}
               <RHFAutocomplete

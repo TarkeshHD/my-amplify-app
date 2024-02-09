@@ -89,7 +89,7 @@ const Page = () => {
             </Stack>
           </Stack>
 
-          <DepartmentsTable count={data.length} items={data} fetchingData={fetchingData} />
+          <DepartmentsTable count={data.length} items={data} fetchingData={fetchingData} domains={domains} />
 
           {/* ADD DOMAIN */}
           <CustomDialog

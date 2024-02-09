@@ -39,7 +39,6 @@ function AuthProvider({ children }) {
 
           response = res.data.details;
 
-          console.log('State updated on intitalise', response);
           setState((prev) => ({ ...prev, isAuthenticated: true, isInitialized: true, user: response.user }));
         } else {
           setSession(null);

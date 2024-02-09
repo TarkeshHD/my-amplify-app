@@ -39,8 +39,6 @@ function ConfigProvider({ children }) {
       // If the response doesn't have the required fields, use the default config file
 
       responses = response?.data?.details || BaseConfig;
-
-      console.log('Login');
     } catch (error) {
       responses = BaseConfig;
       toast(`Please reload, ${error.message || 'Failed to fetch configuration'}`);
@@ -63,3 +61,5 @@ function ConfigProvider({ children }) {
 }
 
 export { ConfigContext, ConfigProvider };
+
+// TypeError: Cannot read properties of undefined (reading 'dark')

@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import * as Yup from 'yup';
@@ -76,7 +76,12 @@ export default function DepartmentForm({ isEdit, currentDepartment, domains = []
       if (values.domainId === 'None') {
         delete values.domainId;
       }
-      const response = await axios.post('/department/register', values);
+      if (!isEdit) {
+        const response = await axios.post('/department/register', values);
+      } else {
+        await axios.post(`/department/update/${currentDepartment._id}`, values);
+      }
+
       toast.success(!isEdit ? 'Create success!' : 'Update success!');
       navigate(0);
     } catch (error) {

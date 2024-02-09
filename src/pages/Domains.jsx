@@ -56,6 +56,7 @@ const Page = () => {
   }, []);
 
   const { user } = useAuth();
+  console.log(user);
 
   return (
     <>
@@ -69,24 +70,27 @@ const Page = () => {
             <Stack spacing={1}>
               <Typography variant="h4">{configData?.labels?.domain?.plural || 'Domains'}</Typography>
             </Stack>
-            <Stack alignItems="center" direction="row" spacing={1}>
-              <Button
-                startIcon={
-                  <SvgIcon fontSize="small">
-                    <Add />
-                  </SvgIcon>
-                }
-                variant="contained"
-                onClick={() => {
-                  setOpenDomainForm(true);
-                }}
-              >
-                Add {configData?.labels?.domain?.singular || 'Domain'}
-              </Button>
-            </Stack>
+            {user?.role === 'superAdmin' ||
+              (user?.role === 'productAdmin' && (
+                <Stack alignItems="center" direction="row" spacing={1}>
+                  <Button
+                    startIcon={
+                      <SvgIcon fontSize="small">
+                        <Add />
+                      </SvgIcon>
+                    }
+                    variant="contained"
+                    onClick={() => {
+                      setOpenDomainForm(true);
+                    }}
+                  >
+                    Add {configData?.labels?.domain?.singular || 'Domain'}
+                  </Button>
+                </Stack>
+              ))}
           </Stack>
 
-          <DomainsTable count={data.length} items={data} fetchingData={fetchingData} />
+          <DomainsTable count={data.length} items={data} fetchingData={fetchingData} domains={flatDomains} />
           {/* ADD DOMAIN */}
           <CustomDialog
             onClose={() => {

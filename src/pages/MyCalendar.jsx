@@ -60,11 +60,8 @@ const CustomToolbar = ({ view, onView, onNavigate, label }) => {
   );
 };
 
-export const MyCalendar = ({ myEventsList, handleSlotSelect, handleEventSelect }) => {
+export const MyCalendar = ({ myEventsList, handleEventSelect }) => {
   // When the user clicks on a date, we want to pop up event creation form
-  const onDrillDown = useCallback((newDate) => {
-    handleSlotSelect(newDate);
-  }, []);
 
   return (
     <div>
@@ -78,15 +75,11 @@ export const MyCalendar = ({ myEventsList, handleSlotSelect, handleEventSelect }
           toolbar: CustomToolbar,
         }}
         style={{ height: 500 }}
-        onSelectSlot={(slotInfo) => {
-          handleSlotSelect(slotInfo.start);
-        }}
         selectable
         onShowMore={(events, date) => {}}
         onSelectEvent={(event) => {
           handleEventSelect(event);
         }}
-        onDrillDown={onDrillDown}
       />
     </div>
   );

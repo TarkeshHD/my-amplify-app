@@ -43,8 +43,8 @@ export default function AdminForm({ isEdit, currentUser, domains = [] }) {
       username: currentUser?.username || '',
       name: currentUser?.name || '',
       password: currentUser?.password || '',
-      domain: currentUser?.domain || 'None',
-      domainId: currentUser?.domainId || 'None',
+      domain: currentUser?.domainId?.name || 'None',
+      domainId: currentUser?.domainId?._id || 'None',
       role: 'admin',
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -82,7 +82,11 @@ export default function AdminForm({ isEdit, currentUser, domains = [] }) {
       if (values.domainId === 'None') {
         delete values.domainId;
       }
-      const response = await axios.post('/user/register', values);
+      if (!isEdit) {
+        const response = await axios.post('/user/register', values);
+      } else {
+        await axios.post(`/user/update/${currentUser._id}`, values);
+      }
       toast.success(!isEdit ? 'Create success!' : 'Update success!');
       navigate(0);
     } catch (error) {
@@ -106,7 +110,7 @@ export default function AdminForm({ isEdit, currentUser, domains = [] }) {
             >
               <RHFTextField name="name" label="Display Name" />
               <RHFTextField name="username" label="Username" />
-              <RHFTextField name="password" label="Password" />
+              {!isEdit && <RHFTextField name="password" label="Password" />}
 
               <RHFAutocomplete
                 name="domain"
@@ -120,7 +124,6 @@ export default function AdminForm({ isEdit, currentUser, domains = [] }) {
                   return option?.name || '';
                 }}
                 onChangeCustom={(value) => {
-                  console.log('Custom Change', value);
                   setValue('domain', value?.name);
                   setValue('domainId', value?._id);
                 }}

@@ -62,10 +62,10 @@ export default function TraineeForm({ isEdit, currentUser, domains = [], departm
       username: currentUser?.username || '',
       name: currentUser?.name || '',
       // password: currentUser?.password || '',
-      domain: currentUser?.domain || 'None',
-      domainId: currentUser?.domainId || 'None',
-      department: currentUser?.department || 'None',
-      departmentId: currentUser?.departmentId || 'None',
+      domain: currentUser?.domainId?.name || 'None',
+      domainId: currentUser?.domainId?._id || 'None',
+      department: currentUser?.departmentId?.name || 'None',
+      departmentId: currentUser?.departmentId?._id || 'None',
       traineeType: currentUser?.traineeType || 'None',
       role: 'user',
     }),
@@ -110,7 +110,12 @@ export default function TraineeForm({ isEdit, currentUser, domains = [], departm
       if (data?.features?.traineeType?.state !== 'on') {
         delete values.traineeType;
       }
-      const response = await axios.post('/user/register', values);
+      if (!isEdit) {
+        const response = await axios.post('/user/register', values);
+      } else {
+        await axios.post(`/user/update/${currentUser._id}`, values);
+      }
+
       toast.success(!isEdit ? 'Create success!' : 'Update success!');
       navigate(0);
     } catch (error) {
