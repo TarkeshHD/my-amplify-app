@@ -11,7 +11,6 @@ import AssignModulesForm from '../../components/modules/AssignModulesForm';
 import ModuleQuestionForm from '../../components/modules/ModuleQuestionsForm';
 import ModuleTimeForm from '../../components/modules/ModuleTimeForm';
 import QuestionsGrid from '../../components/modules/QuestionsGrid';
-import EditPasswordForm from '../../components/users/EditPasswordForm';
 import { getFile, getInitials } from '../../utils/utils';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';

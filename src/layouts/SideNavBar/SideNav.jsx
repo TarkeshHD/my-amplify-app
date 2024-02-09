@@ -20,7 +20,6 @@ import CustomDialog from '../../components/CustomDialog';
 import Logo from '../../components/Logo';
 import { Scrollbar } from '../../components/Scrollbar';
 import SupportRequestForm from '../../components/support/SupportRequestForm';
-import EditPasswordForm from '../../components/users/EditPasswordForm';
 import { NAVBAR } from '../../config';
 import { useConfig } from '../../hooks/useConfig';
 import { SideNavItem } from './SideNavItem';

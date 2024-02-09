@@ -3,12 +3,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 
 import _ from 'lodash';
 
-const statusMap = {
-  Pending: 'warning',
-  Pass: 'success',
-  Fail: 'error',
-};
-
 const EventDetails = ({ showValues = true, events }) => {
   const [searchValue, setSearchValue] = useState('');
   const [searchedList, setSearchedList] = useState([]);
@@ -22,7 +16,7 @@ const EventDetails = ({ showValues = true, events }) => {
 
     if (!attendeesList) return trueKeys;
 
-    // Make an array of attendees name with true value
+    // Convert the attendee list  of attendees name with true value
     for (const key in attendeesList) {
       if (attendeesList[key] === true) {
         trueKeys.push(key);

@@ -8,36 +8,54 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm } from 'react-hook-form';
 // @mui
 import { LoadingButton } from '@mui/lab';
-import { Box, Grid, Stack, Typography } from '@mui/material';
+import { Box, Card, CardContent, CardHeader, Grid, IconButton, Stack, Typography } from '@mui/material';
 
-import { useConfig } from '../../hooks/useConfig';
-import axios from '../../utils/axios';
-import { FormProvider, RHFTextField } from '../hook-form';
+import { useConfig } from '../../hooks/useConfig.js';
+import axios from '../../utils/axios.js';
+import { FormProvider, RHFTextField } from '../hook-form/index.jsx';
 
 import moment from 'moment-timezone';
 
-import { RHFDatePicker } from '../hook-form/RHFDatePicker';
+import { RHFDatePicker } from '../hook-form/RHFDatePicker.jsx';
 import { RHFMultipleSelectCheckboxes } from '../hook-form/RHFMultipleSelectCheckboxes.jsx';
-import { RHFTimerPicker } from '../hook-form/RHFtimePicker';
+import { RHFTimerPicker } from '../hook-form/RHFtimePicker.jsx';
+import { Collapse } from '@mui/material';
+import { ExpandLess, ExpandMore } from '@mui/icons-material';
+import { MyCalendar } from '../../pages/MyCalendar.jsx';
+import { addToHistory } from '../../utils/utils.js';
 
 // ----------------------------------------------------------------------
 
-AddEventForm.propTypes = {
+AddSessionForm.propTypes = {
   user: PropTypes.object,
 };
 
-export default function AddEventForm({ addNewEventList, closeEventForm, defaultDate = undefined }) {
+export default function AddSessionForm({ myEventsList, addNewEventList, closeEventForm, defaultDate = undefined }) {
   const navigate = useNavigate();
   const config = useConfig();
   const { data } = config;
 
   const [users, setUsers] = useState({});
+  const [modules, setModules] = useState([]);
 
-  const getDefaultValues = (userValue) => {
+  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [sessionLists, setSessionLists] = useState(myEventsList);
+  const [userNameAndId, setUserNameAndId] = useState([]);
+  const [modulesIdAndName, setModulesIdAndName] = useState([]);
+
+  useEffect(() => {
+    setSessionLists(myEventsList);
+  }, [myEventsList]);
+
+  const handleToggleCollapse = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+
+  const getDefaultValues = (values) => {
     // Converting user values to name: false format
     const defaultObject = {};
-    userValue.forEach((username) => {
-      defaultObject[username] = false;
+    values.forEach((value) => {
+      defaultObject[value] = false;
     });
     return defaultObject;
   };
@@ -46,7 +64,14 @@ export default function AddEventForm({ addNewEventList, closeEventForm, defaultD
     try {
       const response = await axios.get('/user/all');
       // Getting all the trainee users | role = user
-      const traineeUser = response?.data?.details.users.filter((user) => user.role === 'user').map((user) => user.name);
+      const traineeUser = response?.data?.details.users.map((user) => user.username);
+      const traineeUsersIdAndName = response?.data?.details.users.map((user) => ({
+        id: user._id,
+        name: user.username,
+      }));
+
+      setUserNameAndId(traineeUsersIdAndName);
+
       const userObj = getDefaultValues(traineeUser);
       setUsers(userObj);
     } catch (error) {
@@ -55,8 +80,27 @@ export default function AddEventForm({ addNewEventList, closeEventForm, defaultD
     }
   };
 
+  const getModules = async () => {
+    try {
+      const response = await axios.get('/module/all');
+      const modulesObj = getDefaultValues(response?.data?.details?.map((module) => module.name));
+      const modulesIdAndName = response?.data?.details?.map((module) => ({
+        id: module.id,
+        name: module.name,
+      }));
+
+      setModulesIdAndName(modulesIdAndName);
+
+      setModules(modulesObj);
+    } catch (error) {
+      toast.error(error.message || `Failed to fetch ${data?.labels?.module?.plural?.toLowerCase() || 'modules'}`);
+      console.log(error);
+    }
+  };
+
   useEffect(() => {
     getUsers();
+    getModules();
   }, []);
 
   const NewModuleSchema = Yup.object().shape({
@@ -67,6 +111,7 @@ export default function AddEventForm({ addNewEventList, closeEventForm, defaultD
   const defaultValues = useMemo(
     () => ({
       attendees: users || None,
+      modules: modules || None,
       startTime: moment().set({ hour: 0, minute: 0, second: 0 }),
       endTime: moment().set({ hour: 23, minute: 59, second: 59 }),
       date: defaultDate || moment(),
@@ -104,23 +149,37 @@ export default function AddEventForm({ addNewEventList, closeEventForm, defaultD
         return;
       }
 
-      const startTime = moment(formData.get('startTime')).format('HH:mm:ss');
-      const endTime = moment(formData.get('endTime')).format('HH:mm:ss');
-      const sendDate = moment(formData.get('date')).format('YYYY-MM-DD');
+      const startDate = moment(
+        `${formData.get('date')} ${formData.get('startTime')} `,
+        'ddd MMM DD YYYY HH:mm:ss Z',
+      ).unix();
+      const endDate = moment(
+        `${formData.get('date')} ${formData.get('endTime')} `,
+        'ddd MMM DD YYYY HH:mm:ss Z',
+      ).unix();
+
+      const userIds = userNameAndId.filter((user) => users[user.name] === true).map((user) => user.id);
+      const moduleIds = modulesIdAndName.filter((module) => modules[module.name] === true).map((module) => module.id);
 
       addNewEventList({
-        start: moment(`${sendDate} ${startTime}`).toDate(),
-        end: moment(`${sendDate} ${endTime}`).toDate(),
-        attendees: users,
-        title: formData.get('title'),
+        startDate,
+        endDate,
+        userIds,
+        moduleIds,
+        name: formData.get('title'),
         venue: formData.get('venue'),
       });
-      toast.success('Create event success');
+
       closeEventForm();
     } catch (error) {
       console.error(error);
-      toast.error(error.message || 'Something went wrong!');
+      // toast.error(error.message || 'Something went wrong!');
     }
+  };
+
+  const handleEventSelect = (event) => {
+    addToHistory();
+    navigate(`/session-details/${event?.id}`);
   };
 
   return (
@@ -128,11 +187,27 @@ export default function AddEventForm({ addNewEventList, closeEventForm, defaultD
       <Grid container spacing={3}>
         <Grid item xs={6}>
           {' '}
-          <RHFTextField name="title" label="Event Title" />{' '}
+          <RHFTextField name="title" label="Session Title" />{' '}
         </Grid>
         <Grid item xs={6}>
           {' '}
           <RHFTextField name="venue" label="Venue Name" />{' '}
+        </Grid>
+        <Grid item xs={12}>
+          <Typography sx={{ mb: 1 }} variant="subtitle2" color={'text.disabled'}>
+            Add Training Modules
+          </Typography>
+          <RHFMultipleSelectCheckboxes
+            name="modules"
+            label="Modules"
+            onChangeCustom={(value) => {
+              const oldValues = getValues('modules');
+              // Adding the new value to the old values, by inverting true/false
+              setValue('modules', { ...oldValues, [value]: !oldValues[value] });
+              setModules((prevState) => ({ ...prevState, [value]: !prevState[value] }));
+            }}
+            options={{ ...modules }}
+          />
         </Grid>
         <Grid item xs={12}>
           <Typography sx={{ mb: 1 }} variant="subtitle2" color={'text.disabled'}>
@@ -153,7 +228,7 @@ export default function AddEventForm({ addNewEventList, closeEventForm, defaultD
 
         <Grid item xs={12}>
           <Typography sx={{ mb: 1 }} variant="subtitle2" color={'text.disabled'}>
-            Select the date and time for the event
+            Select the date and time for the session
           </Typography>
           <RHFDatePicker
             name={'date'}
@@ -185,12 +260,32 @@ export default function AddEventForm({ addNewEventList, closeEventForm, defaultD
             endTime
           />
         </Grid>
+        <Grid item xs={12}>
+          <Card>
+            <CardHeader
+              title="My Schedule"
+              action={
+                <IconButton onClick={handleToggleCollapse}>{isCollapsed ? <ExpandMore /> : <ExpandLess />}</IconButton>
+              }
+            />
+            <Collapse in={!isCollapsed}>
+              <CardContent>
+                {/* <Typography variant="body1"></Typography> */}
+                <MyCalendar
+                  myEventsList={sessionLists}
+                  handleSlotSelect={() => {}}
+                  handleEventSelect={handleEventSelect}
+                />
+              </CardContent>
+            </Collapse>
+          </Card>
+        </Grid>
 
         <Grid item xs={12}>
           <Box>
             <Stack alignItems="flex-end" sx={{ mt: 3 }}>
               <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
-                Add Event
+                Create
               </LoadingButton>
             </Stack>
           </Box>

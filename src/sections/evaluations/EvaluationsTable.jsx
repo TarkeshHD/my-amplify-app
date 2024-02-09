@@ -14,16 +14,16 @@ import { toast } from 'react-toastify';
 import { Delete, Edit, FileDownload } from '@mui/icons-material';
 import CustomDialog from '../../components/CustomDialog';
 import CustomDateRangePicker from '../../components/DatePicker/CustomDateRangePicker';
-import SearchNotFound from '../../components/SearchNotFound';
 import { SeverityPill } from '../../components/SeverityPill';
 import ExportOptions from '../../components/export/ExportOptions';
 import QuestionsGrid from '../../components/modules/QuestionsGrid';
 import TimeGrid from '../../components/modules/TimeGrid';
-import EditPasswordForm from '../../components/users/EditPasswordForm';
 import { useConfig } from '../../hooks/useConfig';
 import axios from '../../utils/axios';
 import { capitalizeFirstLetter, getInitials } from '../../utils/utils';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+
+import { fetchScoresAndStatuses } from '../../utils/utils';
 
 const statusMap = {
   Pending: 'warning',
@@ -50,42 +50,15 @@ const FAKE_DATA = [
   },
 ];
 
-const getScore = (item) => {
-  if (item?.mode === 'mcq') {
-    return item?.answers?.mcqBased?.score + ' / ' + item?.answers?.mcqBased?.answerKey.length;
-  }
-  return capitalizeFirstLetter(item?.answers?.timeBased?.score);
-};
-
-const getStatus = async (item, config) => {
-  const response = await axios.get(`/evaluation/${item.id}`);
-  if (item?.mode === 'mcq') {
-    // Get the percentage and find the pass mark
-    const passMark =
-      response?.data?.details?.evaluationDump.mcqBased.length * (item.passingCriteria.passPercentage / 100);
-    return item?.answers?.mcqBased?.score >= passMark ? 'Pass' : 'Fail';
-  }
-
-  // If time taken is less than eval dump bronze time and if mistakes are less than passing criteria mistakes allowed; then pass
-  return item.answers?.timeBased.timeTaken < response?.data?.details?.evaluationDump.timeBased.bronzeTimeLimit &&
-    item.answers?.timeBased?.mistakes?.length <= item.passingCriteria.mistakesAllowed
-    ? 'Pass'
-    : 'Fail';
-};
-
-export const EvaluationsTable = ({
-  count = 0,
-  items = [...FAKE_DATA],
-  fetchingData,
-  exportBtnClicked,
-  exportBtnFalse,
-}) => {
+export const EvaluationsTable = ({ count = 0, items = FAKE_DATA, fetchingData, exportBtnClicked, exportBtnFalse }) => {
   const exportBtnRef = useRef(null);
   const [exportRow, setExportRow] = useState([]);
   const [openEvaluationData, setOpenEvalutationData] = useState(null);
   const [openExportOptions, setOpenExportOptions] = useState(false);
 
   const navigate = useNavigate();
+
+  const { userIdParam } = useParams();
 
   const config = useConfig();
   const { data } = config;
@@ -97,18 +70,6 @@ export const EvaluationsTable = ({
     }
   }, [exportBtnClicked]);
 
-  const fetchScoresAndStatuses = async (item) => {
-    let score = '-';
-    let status = 'Pending';
-
-    if (item?.endTime) {
-      status = await getStatus(item, config);
-      score = status === 'Fail' && item?.mode === 'time' ? '-' : getScore(item); // If the status is fail and the mode is time, then the score should be "-"
-    }
-
-    return { ...item, score, status };
-  };
-
   const [updatedItems, setUpdatedItems] = useState(items);
   const updateItems = async () => {
     const newItems = await Promise.all(items.map(fetchScoresAndStatuses));
@@ -119,19 +80,9 @@ export const EvaluationsTable = ({
   useEffect(() => {
     updateItems();
   }, [items]);
-
   // const scoresList =
-  const columns = useMemo(
-    () => [
-      {
-        accessorKey: 'userId.username', // simple recommended way to define a column
-        header: `${data?.labels?.user?.singular || 'User'}`,
-        filterVariant: 'multi-select',
-        size: 100,
-        Cell: ({ cell, column, row }) => {
-          return <Typography>{row?.original?.userId?.username || '-'}</Typography>;
-        },
-      },
+  const columns = useMemo(() => {
+    const baseColumns = [
       {
         accessorKey: 'moduleId.name', // simple recommended way to define a column
         header: `${data?.labels?.module?.singular || 'Module'}`,
@@ -225,9 +176,23 @@ export const EvaluationsTable = ({
         },
         filterVariant: 'multi-select',
       },
-    ],
-    [],
-  );
+    ];
+
+    // Conditionally add the userId.username column if userId is present
+    if (!userIdParam) {
+      baseColumns.unshift({
+        accessorKey: 'userId?.username' || 'Hello',
+        header: `${data?.labels?.user?.singular || 'User'}`,
+        filterVariant: 'multi-select',
+        size: 100,
+        Cell: ({ cell, column, row }) => {
+          return <Typography>{row?.original?.userId?.username || '-'}</Typography>;
+        },
+      });
+    }
+
+    return baseColumns;
+  }, []);
 
   // Set below flag as well as use it as 'Row' Object to be passed inside forms
 

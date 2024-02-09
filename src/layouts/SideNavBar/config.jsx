@@ -24,7 +24,7 @@ export function getItems(labels) {
   const { data } = config;
   const items = [
     {
-      title: 'Dashboard',
+      title: 'Sessions and Analytics',
       path: '/',
       icon: (
         <SvgIcon fontSize="small">

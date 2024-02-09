@@ -8,10 +8,15 @@ import { Scrollbar } from '../../components/Scrollbar';
 import SearchNotFound from '../../components/SearchNotFound';
 import { useConfig } from '../../hooks/useConfig';
 import { getInitials } from '../../utils/utils';
+import { toast } from 'react-toastify';
+import axios from '../../utils/axios';
+import { useNavigate } from 'react-router-dom';
+import DepartmentForm from '../../components/departments/DepartmentForm';
 
-export const DepartmentsTable = ({ count = 0, items = [], fetchingData }) => {
+export const DepartmentsTable = ({ count = 0, items = [], fetchingData, domains }) => {
   const config = useConfig();
   const { data } = config;
+  const [openEditForm, setOpenEditForm] = useState(null);
   const columns = useMemo(
     () => [
       {
@@ -30,6 +35,21 @@ export const DepartmentsTable = ({ count = 0, items = [], fetchingData }) => {
     [],
   );
 
+  const navigate = useNavigate();
+
+  const onDeleteRow = async (row) => {
+    try {
+      await axios.delete(`/department/${row?.original?._id}`);
+      toast.success('Department deleted successfully');
+      setTimeout(() => {
+        navigate(0);
+      }, 1000);
+    } catch (error) {
+      toast.error(error.message || 'Failed to delete department');
+      console.log(error);
+    }
+  };
+
   return (
     <>
       <Card>
@@ -38,7 +58,7 @@ export const DepartmentsTable = ({ count = 0, items = [], fetchingData }) => {
             <MenuItem
               key={0}
               onClick={() => {
-                // onDeleteRow();
+                onDeleteRow(row);
                 closeMenu();
               }}
               sx={{ color: 'error.main' }}
@@ -51,7 +71,7 @@ export const DepartmentsTable = ({ count = 0, items = [], fetchingData }) => {
             <MenuItem
               key={1}
               onClick={() => {
-                // onEditRow();
+                setOpenEditForm(row);
                 closeMenu();
               }}
             >
@@ -88,6 +108,16 @@ export const DepartmentsTable = ({ count = 0, items = [], fetchingData }) => {
           }}
         />
       </Card>
+      {/* Edit Domain Form */}
+      <CustomDialog
+        onClose={() => {
+          setOpenEditForm(false);
+        }}
+        open={Boolean(openEditForm)}
+        title={<Typography variant="h5">Edit Department</Typography>}
+      >
+        <DepartmentForm isEdit={true} currentDepartment={openEditForm?.original} domains={domains} />
+      </CustomDialog>
     </>
   );
 };

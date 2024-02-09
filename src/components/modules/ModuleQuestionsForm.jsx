@@ -259,7 +259,7 @@ export default function ModuleQuestionForm({ isEdit, currentModule }) {
             </Button> */}
             <Tooltip title="Delete">
               <IconButton>
-                <DeleteIcon sx={{ color: '#f86156', fontSize: '24px' }} onClick={() => removeQuestion(index)} />
+                <DeleteIcon sx={{ fontSize: '24px' }} onClick={() => removeQuestion(index)} color="error" />
               </IconButton>
             </Tooltip>
           </Grid>

@@ -4,6 +4,7 @@ import {
   Button,
   Container,
   DialogActions,
+  Grid,
   IconButton,
   Stack,
   SvgIcon,
@@ -17,109 +18,47 @@ import CustomDialog from '../components/CustomDialog';
 import { MyCalendar } from './MyCalendar';
 
 import moment from 'moment-timezone';
-import AddEventForm from '../components/schedule/AddEventForm';
+import AddSessionForm from '../components/schedule/AddSession';
 import EventDetails from '../components/schedule/EventDetails';
-
-// Fake events list
-const myEventsList = [
-  {
-    start: moment('2023-10-07 10:00:00').toDate(),
-    end: moment('2023-10-07 11:00:00').toDate(),
-    title: 'My event',
-    venue: 'Bangalore',
-    attendees: {
-      'John Doe': true,
-      'Jane Doe': false,
-      'John Smith': true,
-      'Amanda Doe': true,
-    },
-  },
-  {
-    start: moment('2023-10-07 12:00:00').toDate(),
-    end: moment('2023-10-07 13:00:00').toDate(),
-    title: 'Second event',
-    venue: 'Bangalore',
-  },
-  {
-    start: moment('2023-10-17 10:00:00').toDate(),
-    end: moment('2023-10-17 11:00:00').toDate(),
-    title: 'Schedule event',
-    venue: 'Mumbai',
-    attendees: {
-      'John Doe': true,
-      'Jane Doe': false,
-      'John Smith': true,
-      'Amanda Doe': true,
-    },
-  },
-  {
-    start: moment('2023-10-18 10:00:00').toDate(),
-    end: moment('2023-10-18 18:00:00').toDate(),
-    title: 'Deadline',
-    venue: 'Bangalore',
-    attendees: {
-      'John Doe': true,
-      'Jane Doe': false,
-      'John Smith': true,
-      'Amanda Doe': true,
-      'Ethan Hunt': true,
-    },
-  },
-  {
-    start: moment('2023-10-18 10:00:00').toDate(),
-    end: moment('2023-10-18 18:00:00').toDate(),
-    title: 'Deadline',
-    venue: 'Mumbai',
-    attendees: {
-      'John Doe': true,
-      'Jane Doe': false,
-      'John Smith': true,
-      'Amanda Doe': true,
-      Mohan: true,
-    },
-  },
-  {
-    start: moment('2023-10-18 10:00:00').toDate(),
-    end: moment('2023-10-18 18:00:00').toDate(),
-    title: 'Deadline',
-    venue: 'Bangalore',
-    attendees: {
-      'John Doe': true,
-      'Jane Doe': false,
-      'John Smith': true,
-    },
-  },
-  {
-    start: moment('2023-10-24 10:00:00').toDate(),
-    end: moment('2023-10-24 14:00:00').toDate(),
-    title: 'Houston Event',
-    venue: 'Houston',
-    attendees: {
-      Anuj: true,
-      Ashwin: true,
-    },
-  },
-];
+import { convertResponseToSessionList } from './CreateSession';
+import { toast } from 'react-toastify';
+import axios from '../utils/axios';
+import { addToHistory } from '../utils/utils';
+import { useNavigate } from 'react-router-dom';
 
 const Page = () => {
   const [openEventUpdate, setOpenEventUpdate] = useState(false);
   const [openEventDetails, setOpenEventDetails] = useState(false);
-  const [eventLists, setEventLists] = useState(myEventsList);
+  const [eventLists, setEventLists] = useState([]);
   const [date, setDate] = useState(undefined);
   const [event, setEvent] = useState(undefined);
 
-  const addNewEventList = (value) => {
-    setEventLists((prev) => [...prev, value]);
+  const navigate = useNavigate();
+
+  const getAllEvents = async () => {
+    try {
+      const response = await axios.get('/cohort/all');
+      // Sort the array in descending order by the "createdAt" property
+      const sortedData = [...(response.data?.details ?? [])].sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+      );
+
+      const sessionLists = convertResponseToSessionList(sortedData);
+      setEventLists(sessionLists);
+    } catch (error) {
+      toast.error(error.message || `Failed to fetch upcoming sessions`);
+      console.log(error);
+    }
   };
 
-  const handleSlotSelect = (startDate) => {
-    setOpenEventUpdate(true);
-    setDate(moment(startDate));
-  };
+  useEffect(() => {
+    getAllEvents();
+  }, []);
 
   const handleEventSelect = (event) => {
-    setEvent(event);
-    setOpenEventDetails(true);
+    addToHistory();
+    console.log(event);
+    navigate(`/session-details/${event?.id}`);
   };
   return (
     <>
@@ -134,32 +73,13 @@ const Page = () => {
               <Typography variant="h4">Schedule</Typography>
             </Stack>
           </Stack>
+          <Grid item lg={12} xs={12}>
+            <Alert severity="info">
+              Select the date to get the day's schedule. Click on the event to view details.
+            </Alert>
+          </Grid>
+          <MyCalendar myEventsList={eventLists} handleEventSelect={handleEventSelect} />
 
-          <Alert severity="info">
-            <Typography variant="subtitle2">Click on a date to schedule a VR session</Typography>
-          </Alert>
-
-          <MyCalendar
-            myEventsList={eventLists}
-            handleSlotSelect={handleSlotSelect}
-            handleEventSelect={handleEventSelect}
-          />
-
-          {/* ADD Event */}
-          <CustomDialog
-            onClose={() => {
-              setOpenEventUpdate(false);
-            }}
-            open={openEventUpdate}
-            title={<>Create Event </>}
-          >
-            <AddEventForm
-              addNewEventList={addNewEventList}
-              closeEventForm={() => setOpenEventUpdate(false)}
-              defaultDate={date}
-            />
-          </CustomDialog>
-          {/* Event Details */}
           <CustomDialog
             sx={{ minWidth: '30vw' }}
             onClose={() => {

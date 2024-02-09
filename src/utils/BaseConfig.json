@@ -11,7 +11,9 @@
   "theme": {
     "palette": {
       "primary": "#45a8bc",
-      "secondary": "#93fjbc"
+      "secondary": "#93fjbc",
+      "main": "#6366F1",
+      "dark": "#4338CA"
     }
   },
   "features": {
