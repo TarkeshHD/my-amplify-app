@@ -113,7 +113,7 @@ export const removeFromHistory = () => {
   return removedElement;
 };
 
-export const convertTimeToDescription = (time) => {
+export const convertTimeToDescription = (time, minify = false) => {
   let formattedDuration = '';
 
   if (time === 0) return '0 seconds';
@@ -124,12 +124,22 @@ export const convertTimeToDescription = (time) => {
   const minutes = duration.minutes();
   const seconds = duration.seconds();
 
+  // If minify is true, return the minified version of the duration
   if (hours > 0) {
+    if (minify) {
+      return (formattedDuration += `${hours}h`);
+    }
     formattedDuration += `${hours} hour${hours > 1 ? 's' : ''}`;
     if (minutes > 0 || seconds > 0) {
+      if (minify) {
+        return (formattedDuration += ` ${minutes}m`);
+      }
       formattedDuration += ` ${minutes} minute${minutes > 1 ? 's' : ''}`;
     }
     if (seconds > 0) {
+      if (minify) {
+        return ` ${seconds}s`;
+      }
       formattedDuration += ` ${seconds} second${seconds > 1 ? 's' : ''}`;
     }
   } else if (minutes > 0) {
