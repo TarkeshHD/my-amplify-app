@@ -10,7 +10,14 @@ const useChartOptions = (labels) => {
     chart: {
       background: 'transparent',
     },
-    colors: [theme.palette.primary.main, theme.palette.success.main, theme.palette.warning.main],
+    colors: [
+      theme.palette.primary.main,
+      theme.palette.success.main,
+      theme.palette.warning.main,
+      theme.palette.info.main,
+      theme.palette.error.main,
+      theme.palette.secondary.main,
+    ],
     dataLabels: {
       enabled: false,
     },

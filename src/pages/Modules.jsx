@@ -180,7 +180,7 @@ const Page = () => {
           <Alert severity="info">
             <Typography variant="subtitle2">
               Select {configData?.labels?.module?.singular || 'Module'} to assign them to{' '}
-              {configData?.labels?.domain?.plural?.toLowerCase() || 'domains'} and
+              {configData?.labels?.domain?.plural?.toLowerCase() || 'domains'} and{' '}
               {configData?.labels?.department?.plural?.toLowerCase() || 'departments'}
             </Typography>
           </Alert>

@@ -2,10 +2,15 @@ import PropTypes from 'prop-types';
 
 import { ArrowDownward, ArrowUpward, CurrencyRupee } from '@mui/icons-material';
 import { Avatar, Card, CardContent, Stack, SvgIcon, Typography } from '@mui/material';
+import React from 'react';
 
 export const DashboardDiffCard = (props) => {
-  const { difference, positive = false, sx, value, icon, title, iconColor = 'success.main' } = props;
+  const { difference = null, positive, sx, value, title, icon, iconColor } = props;
 
+  let subtextTitle = 'h4';
+  if (!icon) {
+    subtextTitle = 'h6';
+  }
   return (
     <Card sx={sx}>
       <CardContent>
@@ -14,19 +19,24 @@ export const DashboardDiffCard = (props) => {
             <Typography color="text.secondary" variant="overline">
               {title}
             </Typography>
-            <Typography variant="h4">{value}</Typography>
+            <Typography variant={subtextTitle}>{value}</Typography>
           </Stack>
-          <Avatar
-            sx={{
-              backgroundColor: iconColor,
-              height: 56,
-              width: 56,
-            }}
-          >
-            <SvgIcon>{icon}</SvgIcon>
-          </Avatar>
+
+          {icon && (
+            <Avatar
+              sx={{
+                backgroundColor: iconColor,
+                top: 8,
+                right: 8,
+                height: 48,
+                width: 48,
+              }}
+            >
+              {icon}
+            </Avatar>
+          )}
         </Stack>
-        {(difference || difference === 0) && ( // Only when value is false
+        {difference !== null && ( // Only render if difference is provided (not null)
           <Stack alignItems="center" direction="row" spacing={2} sx={{ mt: 2 }}>
             <Stack alignItems="center" direction="row" spacing={0.5}>
               <SvgIcon color={positive ? 'success' : 'error'} fontSize="small">
@@ -46,9 +56,20 @@ export const DashboardDiffCard = (props) => {
   );
 };
 
-DashboardDiffCard.prototypes = {
-  difference: PropTypes.number,
+DashboardDiffCard.propTypes = {
+  difference: PropTypes.number, // difference can now be null or a number
   positive: PropTypes.bool,
   sx: PropTypes.object,
   value: PropTypes.string.isRequired,
+  title: PropTypes.string.isRequired,
+  icon: PropTypes.element, // icon can now be null or an element
+  iconColor: PropTypes.string,
+};
+
+DashboardDiffCard.defaultProps = {
+  difference: null, // Default difference to null
+  positive: false,
+  sx: {},
+  icon: null, // Default icon to null
+  iconColor: 'success.main',
 };
