@@ -24,6 +24,7 @@ import { capitalizeFirstLetter, getInitials } from '../../utils/utils';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { fetchScoresAndStatuses } from '../../utils/utils';
+import QuestionsActionGrid from '../../components/modules/QuestionActionGrid';
 
 const statusMap = {
   Pending: 'warning',
@@ -227,6 +228,7 @@ export const EvaluationsTable = ({ count = 0, items = FAKE_DATA, fetchingData, e
       const doc = row?.original;
       const response = await axios.get(`/evaluation/${doc.id}`);
       const responseObj = response?.data?.details;
+      console.log('this one', responseObj);
 
       const tz = moment.tz.guess();
       const startTime = moment.unix(row?.original?.startTime).tz(tz).format('DD/MM/YYYY HH:mm');
@@ -248,6 +250,13 @@ export const EvaluationsTable = ({ count = 0, items = FAKE_DATA, fetchingData, e
           return {
             ...v,
             answeredValue: answers.mcqBased.answerKey[index],
+          };
+        });
+      } else if (responseObj.mode === 'questionAction') {
+        responseObj.evaluationDump = responseObj.evaluationDump.questionActionBased.map((v, index) => {
+          return {
+            ...v,
+            answeredValue: answers.questionActionBased.answerKey[index],
           };
         });
       } else {
@@ -397,8 +406,14 @@ export const EvaluationsTable = ({ count = 0, items = FAKE_DATA, fetchingData, e
           </Box>
         ) : openEvaluationData?.mode === 'mcq' ? (
           <QuestionsGrid showValues evalData={openEvaluationData} evaluation={openEvaluationData?.evaluationDump} />
-        ) : (
+        ) : openEvaluationData?.mode === 'time' ? (
           <TimeGrid showValues evalData={openEvaluationData} evaluation={openEvaluationData?.answers} />
+        ) : (
+          <QuestionsActionGrid
+            showValues
+            evalData={openEvaluationData}
+            evaluation={openEvaluationData?.evaluationDump}
+          />
         )}
       </CustomDialog>
     </>

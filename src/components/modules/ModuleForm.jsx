@@ -114,6 +114,9 @@ export default function ModuleForm({ isEdit, currentModule }) {
   const radioOptions = [
     { label: 'MCQ', value: 'question' },
     { label: 'Time', value: 'time' },
+    ...(data?.features?.questionActionEvaluation?.state === 'on'
+      ? [{ label: 'Question And Action', value: 'questionAction' }]
+      : []), // QuestionAction added using feature flag from backend
   ];
 
   return (
