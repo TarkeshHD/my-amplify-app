@@ -77,6 +77,9 @@ export const getStatus = async (item, config) => {
     // Get the percentage and find the pass mark
     const passMark = item?.evaluationDump.mcqBased.length * (item.passingCriteria.passPercentage / 100);
     return item?.answers?.mcqBased?.score >= passMark ? 'Pass' : 'Fail';
+  } else if (item?.mode === 'questionAction') {
+    const passMark = item?.evaluationDump.questionActionBased.length * (item.passingCriteria.passPercentage / 100);
+    return item?.answers?.questionActionBased?.score >= passMark ? 'Pass' : 'Fail';
   }
 
   // If time taken is less than eval dump bronze time and if mistakes are less than passing criteria mistakes allowed; then pass
@@ -89,6 +92,8 @@ export const getStatus = async (item, config) => {
 export const getScore = (item) => {
   if (item?.mode === 'mcq') {
     return item?.answers?.mcqBased?.score + ' / ' + item?.answers?.mcqBased?.answerKey.length;
+  } else if (item?.mode === 'questionAction') {
+    return item?.answers?.questionActionBased?.score + '/' + item?.answers?.questionActionBased?.answerKey.length;
   }
   return capitalizeFirstLetter(item?.answers?.timeBased?.score);
 };

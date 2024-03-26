@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { Avatar, Card, CardContent, List, ListItem, ListItemText, Typography } from '@mui/material';
+import { Avatar, Card, CardContent, List, ListItem, ListItemText, Typography, Box } from '@mui/material';
 import React from 'react';
 import { Stack } from '@mui/system';
 
@@ -11,33 +11,41 @@ export const DashboardRankingCard = ({ title, items, Icon, iconColor }) => {
           {title}
         </Typography>
         <Stack direction="row" justifyContent="space-between" alignItems="center">
-          <List sx={{ padding: 0 }}>
-            {items.map((item, index) => (
-              <ListItem
-                key={index}
-                disableGutters
-                sx={{
-                  py: 0, // Removes vertical padding
-                  my: 0, // Removes vertical margins
-                  alignItems: 'flex-start', // Align items to the top of the container
-                }}
-              >
-                <ListItemText
-                  primary={`${index + 1}. ${item.name}`}
-                  secondary={item.detail}
-                  primaryTypographyProps={{
-                    fontSize: '0.875rem', // Smaller font size for primary text
-                    lineHeight: '1.25', // Adjusted line-height for primary text
+          {items.length > 0 ? (
+            <List sx={{ padding: 0, width: '100%' }}>
+              {items.map((item, index) => (
+                <ListItem
+                  key={index}
+                  disableGutters
+                  sx={{
+                    py: 0,
+                    my: 0,
+                    alignItems: 'flex-start',
                   }}
-                  secondaryTypographyProps={{
-                    fontSize: '0.775rem', // Smaller font size for secondary text
-                    lineHeight: '1.25', // Adjusted line-height for secondary text
-                  }}
-                />
-              </ListItem>
-            ))}
-          </List>
-          {Icon && ( // Only render the Avatar if an icon is provided
+                >
+                  <ListItemText
+                    primary={`${index + 1}. ${item.name}`}
+                    secondary={item.detail}
+                    primaryTypographyProps={{
+                      fontSize: '0.875rem',
+                      lineHeight: '1.25',
+                    }}
+                    secondaryTypographyProps={{
+                      fontSize: '0.775rem',
+                      lineHeight: '1.25',
+                    }}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+              <Typography variant="subtitle1" color="text.secondary">
+                Analytics still pending...
+              </Typography>
+            </Box>
+          )}
+          {Icon && (
             <Avatar
               sx={{
                 backgroundColor: iconColor,
@@ -45,7 +53,7 @@ export const DashboardRankingCard = ({ title, items, Icon, iconColor }) => {
                 width: 48,
               }}
             >
-              {Icon} {/* Render the icon */}
+              {Icon}
             </Avatar>
           )}
         </Stack>
@@ -62,10 +70,10 @@ DashboardRankingCard.propTypes = {
       detail: PropTypes.string,
     }),
   ).isRequired,
-  IconComponent: PropTypes.elementType,
+  Icon: PropTypes.element,
   iconColor: PropTypes.string,
 };
 
 DashboardRankingCard.defaultProps = {
-  iconColor: 'primary.main', // Default color for the icon background
+  iconColor: 'primary.main',
 };

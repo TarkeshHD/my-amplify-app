@@ -1,4 +1,4 @@
-import { Delete, Edit, QuestionAnswer, Quiz } from '@mui/icons-material';
+import { Delete, Edit, QuestionAnswer, Quiz, EditNote } from '@mui/icons-material';
 import TimerIcon from '@mui/icons-material/Timer';
 import { Avatar, Box, Card, IconButton, MenuItem, Stack, Typography } from '@mui/material';
 import { MaterialReactTable } from 'material-react-table';
@@ -15,20 +15,12 @@ import { getFile, getInitials } from '../../utils/utils';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import axios from '../../utils/axios';
-
-const FAKE_DATA = [
-  {
-    id: '000102',
-    index: '2.2',
-    name: 'Automotive Training',
-    description: 'This module trains you on how to fixe leaked engine and  put new brakes',
-    thumbnail: 'https://picsum.photos/200',
-  },
-];
+import ModuleQuestionActionForm from '../../components/modules/ModuleQuestionActionForm';
+import QuestionsActionGrid from '../../components/modules/QuestionActionGrid';
 
 export const ModulesTable = ({
   count = 0,
-  items = [...FAKE_DATA],
+  items = [{}],
   fetchingData,
   handleRowSelection,
   domains = [],
@@ -73,6 +65,7 @@ export const ModulesTable = ({
   const [openEvaluationData, setOpenEvalutationData] = useState(null);
   const [openQuestionsForm, setOpenQuestionsForm] = useState(null);
   const [openTimeForm, setOpenTimeForm] = useState(null);
+  const [openQuestionActionForm, setOpenQuestionActionForm] = useState(null);
 
   const navigate = useNavigate();
 
@@ -127,7 +120,7 @@ export const ModulesTable = ({
                   <Typography>Add/Edit Questions </Typography>
                 </Stack>
               </MenuItem>
-            ) : (
+            ) : row.original.evaluationType === 'time' ? (
               <MenuItem
                 key={4}
                 onClick={() => {
@@ -139,6 +132,20 @@ export const ModulesTable = ({
                 <Stack spacing={2} direction={'row'}>
                   <TimerIcon />
                   <Typography>Add/Edit Time Evaluation</Typography>
+                </Stack>
+              </MenuItem>
+            ) : (
+              <MenuItem
+                key={2}
+                onClick={() => {
+                  // onEditRow();
+                  setOpenQuestionActionForm(row.original);
+                  closeMenu();
+                }}
+              >
+                <Stack spacing={2} direction={'row'}>
+                  <EditNote />
+                  <Typography>Add/Edit Question Action Evaluation</Typography>
                 </Stack>
               </MenuItem>
             ),
@@ -236,6 +243,21 @@ export const ModulesTable = ({
         <ModuleTimeForm isEdit={openTimeForm?.evaluation?.length !== 0} currentModule={openTimeForm} />
       </CustomDialog>
 
+      {/* Question Action Form */}
+      <CustomDialog
+        onClose={() => {
+          setOpenQuestionActionForm(false);
+        }}
+        sx={{ minWidth: '40vw' }}
+        open={Boolean(openQuestionActionForm)}
+        title={<Typography variant="h5">Question Action Form</Typography>}
+      >
+        <ModuleQuestionActionForm
+          isEdit={openQuestionActionForm?.evaluation?.length !== 0}
+          currentModule={openQuestionActionForm}
+        />
+      </CustomDialog>
+
       {/* View Module Data */}
       <CustomDialog
         onClose={() => {
@@ -251,8 +273,10 @@ export const ModulesTable = ({
       >
         {openEvaluationData?.evaluationType === 'question' ? (
           <QuestionsGrid evaluation={openEvaluationData?.evaluation} />
-        ) : (
+        ) : openEvaluationData?.evaluationType === 'time' ? (
           <ModuleTimeForm isEdit={false} currentModule={openEvaluationData} fieldDisabled={true} />
+        ) : (
+          <QuestionsActionGrid evaluation={openEvaluationData?.evaluation} />
         )}
       </CustomDialog>
     </>

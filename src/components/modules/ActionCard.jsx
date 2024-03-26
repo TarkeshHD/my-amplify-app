@@ -3,17 +3,13 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { FormProvider, RHFRadioGroup } from '../hook-form';
 
-const QuestionCard = ({
+const ActionCard = ({
   question,
   options = [],
   showValues = false,
   correctValue,
   answeredValue,
   notEditable = false,
-  action = false,
-  timeRequired = 0,
-  descriptionSuccess = '',
-  timeTaken = 0,
 }) => {
   const defaultValues = {
     choice: showValues ? answeredValue : correctValue,
@@ -48,29 +44,10 @@ const QuestionCard = ({
     return 'success';
   };
 
-  let correctValueToDisplay = correctValue;
-  if (correctValue === 'success') {
-    correctValueToDisplay = descriptionSuccess;
-  }
   return (
     <Paper variant="outlined">
-      <Paper sx={{ backgroundColor: 'lightgray', padding: 2, display: 'flex', justifyContent: 'space-between' }}>
+      <Paper sx={{ backgroundColor: 'lightgray', padding: 2 }}>
         <Typography>{question}</Typography>
-        <span>
-          {timeRequired > 0 && (
-            <>
-              <Typography color={''} variant="body2">
-                Time Required: {timeRequired} seconds
-              </Typography>
-              {timeTaken > 0 && (
-                <Typography variant="body2">
-                  Time Taken:
-                  <span style={{ color: timeTaken > timeRequired ? 'red' : 'green' }}> {timeTaken} seconds</span>
-                </Typography>
-              )}
-            </>
-          )}
-        </span>
       </Paper>
       <Box sx={{ padding: 2 }}>
         <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
@@ -88,12 +65,12 @@ const QuestionCard = ({
           {correctValue === answeredValue ? (
             <Alert severity="success">
               <span style={{ fontWeight: 'bold' }}> Right Answer </span>, Correct option is{' '}
-              <span style={{ fontWeight: 'bold' }}>{correctValueToDisplay}</span>
+              <span style={{ fontWeight: 'bold' }}>{correctValue}</span>
             </Alert>
           ) : (
             <Alert severity="error">
               <span style={{ fontWeight: 'bold' }}> Wrong Answer </span>, Correct option is{' '}
-              <span style={{ fontWeight: 'bold' }}>{correctValueToDisplay}</span>
+              <span style={{ fontWeight: 'bold' }}>{correctValue}</span>
             </Alert>
           )}
         </Box>
@@ -102,4 +79,4 @@ const QuestionCard = ({
   );
 };
 
-export default QuestionCard;
+export default ActionCard;
