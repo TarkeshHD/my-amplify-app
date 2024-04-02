@@ -9,14 +9,9 @@ const isTokenValid = async (accessToken) => {
   }
   const decodedToken = jwtDecode(accessToken);
   const currentTime = Date.now() / 1000;
-  console.log('decoded Token', decodedToken);
 
   return decodedToken.exp > currentTime;
 };
-
-// Current time 1689339789.71
-// Expiry time 1689382989
-//  Time left 43199.28999996185
 
 const handleTokenExpired = async (exp) => {
   const currentTime = Date.now();
@@ -40,7 +35,6 @@ const setSession = (accessToken) => {
 
     // This function below will handle when token is expired
     const { exp } = jwtDecode(accessToken); // ~3 days by minimals server
-    console.log('EXP', exp);
     handleTokenExpired(exp);
   } else {
     localStorage.removeItem('accessToken');

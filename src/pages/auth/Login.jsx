@@ -8,11 +8,15 @@ import BaseLoginForm from '../../components/login/BaseLoginForm';
 import BasicLoginForm from '../../components/login/BasicLoginForm';
 import { useAuth } from '../../hooks/useAuth';
 import { useConfig } from '../../hooks/useConfig';
+import { useAuth0 } from '@auth0/auth0-react';
+import { displayPendingToast, setItemWithExpiration } from '../../utils/utils';
+import { LoadingButton } from '@mui/lab';
 
 const Page = () => {
   const config = useConfig();
   const navigate = useNavigate();
   const auth = useAuth();
+  const [inviteToken, setInviteToken] = useState('');
 
   const [method, setMethod] = useState('');
   const handleMethodChange = useCallback((event, value) => {
@@ -23,9 +27,19 @@ const Page = () => {
 
   useEffect(() => {
     if (config?.isConfigfileFetched) {
-      setMethod(TEST_CONFIG[0]); // config?.data?.features?.auth?.types?.[0]
+      setMethod(config?.data?.features?.auth?.types?.[0]);
     }
   }, [config.isConfigfileFetched]);
+
+  useEffect(() => {
+    displayPendingToast();
+    const params = new URLSearchParams(window.location.search);
+    setInviteToken(params.get('invite'));
+  }, []);
+
+  const { loginWithRedirect } = useAuth0();
+
+  const { user, isAuthenticated, isLoading } = useAuth0();
 
   return (
     <Box
@@ -94,20 +108,20 @@ const Page = () => {
               <div>
                 <Stack spacing={1} sx={{ mb: 3 }}>
                   <Typography variant="h4">Login</Typography>
-                  <Typography color="text.secondary" variant="body2">
+                  {/* <Typography color="text.secondary" variant="body2">
                     Don&apos;t have an account? &nbsp;
                     <Link component={Link} href="/auth/register" underline="hover" variant="subtitle2">
                       Register
                     </Link>
-                  </Typography>
+                  </Typography> */}
                 </Stack>
                 {config?.isConfigfileFetched && method !== '' ? (
                   <>
-                    <Tabs onChange={handleMethodChange} sx={{ mb: 3 }} value={method}>
+                    <Tabs onChange={handleMethodChange} sx={{ mb: 2 }} value={method}>
                       {config?.data?.features?.auth?.state === 'on' &&
-                        TEST_CONFIG.map((v, i) => <Tab key={i} label={'Basic'} value={v} />)}
+                        TEST_CONFIG.map((v, i) => <Tab key={0} label={method} value={v} />)}
                     </Tabs>
-                    {method && getLoginComponents(method)}
+                    {method && getLoginComponents(method, inviteToken)}
                   </>
                 ) : (
                   <Typography variant="body2"> Wait till we get your login type... </Typography>
@@ -158,7 +172,8 @@ const Page = () => {
   );
 };
 
-const getLoginComponents = (value) => {
+const getLoginComponents = (value, inviteToken) => {
+  const { loginWithRedirect } = useAuth0();
   switch (value) {
     case 'BasicAuth':
       return <BasicLoginForm />;
@@ -168,8 +183,27 @@ const getLoginComponents = (value) => {
       return <BaseLoginForm />;
     case 'TwoFactorAuth':
       return <BaseLoginForm />;
+    case 'SsoAuth':
+      return (
+        <LoadingButton
+          // loading={isSubmitting}
+
+          size="medium"
+          sx={{ mt: 1 }}
+          type="submit"
+          variant="outlined"
+          onClick={() => {
+            setItemWithExpiration('inviteLink', inviteToken, 1000 * 60 * 5);
+            console.log('here');
+            // Expiration with 5 minutes for testing
+            loginWithRedirect();
+          }}
+        >
+          Log In / Sign Up Using OKTA
+        </LoadingButton>
+      );
     default:
-      return <BaseLoginForm />;
+      return <BasicLoginForm />;
   }
 };
 

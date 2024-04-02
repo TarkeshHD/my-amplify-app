@@ -54,6 +54,7 @@ const Router = () => {
         {isArchiveEnabled && <Route path="archive" element={<Archive />} />}
       </Route>
       <Route path="auth">
+        <Route path="sso-redirect" element={<SsoRedirect />} />
         <Route path="login" element={<Login />} />
         <Route path="register" element={<div>Register</div>} />
       </Route>
@@ -79,5 +80,6 @@ const Archive = Loadable(lazy(() => import('../pages/Archive')));
 const PastSession = Loadable(lazy(() => import('../pages/PastSession')));
 const CreateSession = Loadable(lazy(() => import('../pages/CreateSession')));
 const SessionDetails = Loadable(lazy(() => import('../pages/SessionDetails')));
+const SsoRedirect = Loadable(lazy(() => import('../pages/auth/SsoRedirect')));
 
 export default Router;

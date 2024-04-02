@@ -15,6 +15,9 @@ import { useSelection } from '../hooks/useSelection';
 import { UsersTable } from '../sections/users/UsersTable';
 import axios from '../utils/axios';
 import { applyPagination } from '../utils/utils';
+import SuperAdminFormSso from '../components/users/SuperAdminFormSso';
+import AdminFormSso from '../components/users/AdminFormSso';
+import TraineeFormSso from '../components/users/TraineeFormSso';
 
 const Page = () => {
   const [openImportDataForm, setOpenImportDataForm] = useState(false);
@@ -25,6 +28,11 @@ const Page = () => {
   const [data, setData] = useState([]);
   const [domains, setDomains] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [ssoOn, setSsoOn] = useState(false);
+
+  useEffect(() => {
+    setSsoOn(config?.data?.features?.auth?.types?.[0] === 'SsoAuth');
+  }, []);
 
   const getUsers = async () => {
     try {
@@ -204,7 +212,7 @@ const Page = () => {
             open={openSuperAdminForm}
             title={<Typography variant="h5">Super Admin</Typography>}
           >
-            <SuperAdminForm />
+            {ssoOn === true ? <SuperAdminFormSso /> : <SuperAdminForm />}
           </CustomDialog>
 
           {/* ADMIN FORM */}
@@ -215,7 +223,7 @@ const Page = () => {
             open={openAdminForm}
             title={<Typography variant="h5">Add Admin</Typography>}
           >
-            <AdminForm domains={domains} />
+            {ssoOn === true ? <AdminFormSso domains={domains} /> : <AdminForm domains={domains} />}
           </CustomDialog>
 
           {/* TRAINEE FORM */}
@@ -226,7 +234,11 @@ const Page = () => {
             open={openTraineeForm}
             title={<Typography variant="h5">Add Trainee</Typography>}
           >
-            <TraineeForm domains={domains} departments={departments} />
+            {ssoOn === true ? (
+              <TraineeFormSso domains={domains} departments={departments} />
+            ) : (
+              <TraineeForm domains={domains} departments={departments} />
+            )}
           </CustomDialog>
         </Stack>
       </Container>
