@@ -9,11 +9,14 @@ import { Button, SvgIcon, Typography } from '@mui/material';
 import { EvaluationsTable } from '../../sections/evaluations/EvaluationsTable';
 import { SessionTable } from '../../sections/sessions/SessionTable';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 
 const UpcomingSession = () => {
   const [fetchingData, setFetchingData] = useState(false);
   const [data, setData] = useState([]);
   const [exportBtnClicked, setExportBtnClicked] = useState(false);
+
+  const { user } = useAuth();
 
   const navigate = useNavigate();
 

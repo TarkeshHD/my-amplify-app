@@ -282,8 +282,6 @@ export default function ModuleQuestionActionForm({ isEdit, currentModule }) {
         </Grid>
       </Grid>
       {fields.map((field, index) =>
-        // console.log(field, index);
-
         field.type === 'question' ? (
           <Grid container mb={2} spacing={3} key={field.id}>
             {/* Key should be field.id for useFieldArray remove function to work: It's the proper mui way*/}

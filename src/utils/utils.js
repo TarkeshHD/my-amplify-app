@@ -1,6 +1,7 @@
 import moment from 'moment-timezone';
 import axios from './axios';
 import { read, utils } from 'xlsx';
+import { toast } from 'react-toastify';
 
 export const applyPagination = (documents, page, rowsPerPage) => {
   return documents.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
@@ -170,4 +171,57 @@ export const readExcelFile = (file) => {
     reader.onerror = (error) => reject(error);
     reader.readAsArrayBuffer(file);
   });
+};
+
+export const getItemWithExpiration = (key) => {
+  const itemStr = localStorage.getItem(key);
+  if (!itemStr) {
+    return null;
+  }
+  const item = JSON.parse(itemStr);
+  const now = moment().unix();
+  if (now > item.expiry) {
+    localStorage.removeItem(key);
+    return null;
+  }
+
+  return item.value;
+};
+
+export const setItemWithExpiration = (key, value, timeout) => {
+  const now = moment().unix();
+
+  // `item` is an object which contains the original value
+  // plus the expiration time
+  const item = {
+    value: value,
+    expiry: now + timeout,
+  };
+
+  // Store the item as a string
+  localStorage.setItem(key, JSON.stringify(item));
+};
+
+export const setToastWithExpiration = (message, timeout) => {
+  const defaultKey = 'toastMessage';
+  const now = moment().unix();
+  const item = {
+    message,
+    expiry: now + timeout,
+  };
+  localStorage.setItem(defaultKey, JSON.stringify(item));
+};
+export const displayPendingToast = () => {
+  const defaultKey = 'toastMessage';
+  const itemStr = localStorage.getItem(defaultKey);
+  if (!itemStr) {
+    return;
+  }
+  const item = JSON.parse(itemStr);
+  const now = moment().unix();
+  if (now <= item.expiry) {
+    toast(item.message);
+    // Remove the toast message from localStorage after displaying it
+    localStorage.removeItem(defaultKey);
+  }
 };

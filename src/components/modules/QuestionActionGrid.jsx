@@ -73,8 +73,8 @@ const QuestionsActionGrid = ({ showValues = false, evalData, evaluation = EVAL_S
               showValues={showValues}
               action={true}
               descriptionSuccess={v.descriptionSuccess}
-              timeRequired={v.timeRequired || 0}
-              timeTaken={v.timeTaken || 0}
+              timeRequired={20}
+              timeTaken={10}
             />
           )}
         </Grid>
