@@ -194,7 +194,6 @@ const getLoginComponents = (value, inviteToken) => {
           variant="outlined"
           onClick={() => {
             setItemWithExpiration('inviteLink', inviteToken, 1000 * 60 * 5);
-            console.log('here');
             // Expiration with 5 minutes for testing
             loginWithRedirect();
           }}

@@ -79,7 +79,11 @@ export const getStatus = async (item, config) => {
     const passMark = item?.evaluationDump.mcqBased.length * (item.passingCriteria.passPercentage / 100);
     return item?.answers?.mcqBased?.score >= passMark ? 'Pass' : 'Fail';
   } else if (item?.mode === 'questionAction') {
-    const passMark = item?.evaluationDump.questionActionBased.length * (item.passingCriteria.passPercentage / 100);
+    let fullScore = 0;
+    item?.evaluationDump.questionActionBased.forEach((question) => {
+      fullScore += question.weightage;
+    });
+    const passMark = fullScore * (item.passingCriteria.passPercentage / 100);
     return item?.answers?.questionActionBased?.score >= passMark ? 'Pass' : 'Fail';
   }
 
@@ -94,7 +98,12 @@ export const getScore = (item) => {
   if (item?.mode === 'mcq') {
     return item?.answers?.mcqBased?.score + ' / ' + item?.answers?.mcqBased?.answerKey.length;
   } else if (item?.mode === 'questionAction') {
-    return item?.answers?.questionActionBased?.score + '/' + item?.answers?.questionActionBased?.answerKey.length;
+    // Loop through thee evaluation dump and calculate the weightage to get full score
+    let fullScore = 0;
+    item?.evaluationDump.questionActionBased.forEach((question) => {
+      fullScore += question.weightage;
+    });
+    return item?.answers?.questionActionBased?.score + '/' + fullScore;
   }
   return capitalizeFirstLetter(item?.answers?.timeBased?.score);
 };

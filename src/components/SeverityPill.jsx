@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 const SeverityPillRoot = styled('span')(({ theme, ownerState }) => {
   const backgroundColor = theme.palette[ownerState.color].alpha12;
-  const color = (theme.palette.mode = theme.palette[ownerState.color].main);
+  const color = theme.palette[ownerState.color].main;
   return {
     alignItems: 'center',
     backgroundColor,

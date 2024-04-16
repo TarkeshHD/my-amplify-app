@@ -91,6 +91,7 @@ export default function ModuleQuestionActionForm({ isEdit, currentModule }) {
                     descriptionSuccess: v.descriptionSuccess || '',
                     descriptionFailure: v.descriptionFailure || '',
                     timeRequired: v?.timeRequired || null,
+                    weightage: v?.weightage || 1,
                   }
                 : {
                     // This is for 'question' type or any type not explicitly handled above
@@ -105,6 +106,7 @@ export default function ModuleQuestionActionForm({ isEdit, currentModule }) {
                       d: v.options?.d || '',
                     },
                     timeRequired: v?.timeRequired || null,
+                    weightage: v?.weightage || 1,
                   };
 
             // The commented out async axios call to get the file cannot be directly used inside the map function without additional async handling
@@ -130,6 +132,7 @@ export default function ModuleQuestionActionForm({ isEdit, currentModule }) {
               d: v?.options?.d || 'sample 5',
             },
             timeRequired: isEdit ? v?.timeRequired : null,
+            weightage: isEdit ? v?.weightage : 1,
           })),
       passPercentage: isEdit ? currentModule?.passPercentage : 50,
     }),
@@ -244,6 +247,7 @@ export default function ModuleQuestionActionForm({ isEdit, currentModule }) {
         c: 'sample 3',
         d: 'sample 5',
       },
+      weightage: 1,
     });
   };
 
@@ -255,6 +259,7 @@ export default function ModuleQuestionActionForm({ isEdit, currentModule }) {
       title: 'sample action title',
       descriptionSuccess: 'sample success description',
       descriptionFailure: 'sample failure description',
+      weightage: 1,
       type: 'action', // Default type for actions
     });
   };
@@ -342,6 +347,17 @@ export default function ModuleQuestionActionForm({ isEdit, currentModule }) {
               </Typography>
               <RHFTextField name={`evaluation[${index}].timeRequired`} label={``} />
             </Grid>
+            <Grid item xs={6}>
+              <Typography variant="subtitle2" color={'text.disabled'}>
+                points for the question (Default to 1)
+              </Typography>
+              <RHFTextField
+                name={`evaluation[${index}].weightage`}
+                label={``}
+                type="number"
+                InputProps={{ inputProps: { min: 1 } }}
+              />
+            </Grid>
             <Grid item xs={12}>
               <Typography variant="subtitle2" color={'text.disabled'}>
                 Upload any file if available
@@ -388,6 +404,17 @@ export default function ModuleQuestionActionForm({ isEdit, currentModule }) {
             </Grid>
             <Grid item xs={6}>
               <RHFTextField name={`evaluation[${index}].descriptionFailure`} label="Description Failure" />
+            </Grid>
+            <Grid item xs={6}>
+              <Typography variant="subtitle2" color={'text.disabled'}>
+                Points for the action (Default to 1)
+              </Typography>
+              <RHFTextField
+                name={`evaluation[${index}].weightage`}
+                label={``}
+                type="number"
+                InputProps={{ inputProps: { min: 1 } }}
+              />
             </Grid>
           </Grid>
         ),

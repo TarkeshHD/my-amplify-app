@@ -57,7 +57,6 @@ const Page = () => {
 
   const handleEventSelect = (event) => {
     addToHistory();
-    console.log(event);
     navigate(`/session-details/${event?.id}`);
   };
   return (
