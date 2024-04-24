@@ -10,7 +10,14 @@
   },
   "theme": {
     "palette": {
-      "primary": "#45a8bc",
+      "primary": {
+        "lightest": "#a1c9d1",
+        "light": "#5fb3c4",
+        "main": "#45a8bc",
+        "dark": "#2e7c86",
+        "darkest": "#1a5459",
+        "contrastText": "#FFFFFF"
+      },
       "secondary": "#93fjbc",
       "main": "#6366F1",
       "dark": "#4338CA"

@@ -3,7 +3,7 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { FormProvider, RHFRadioGroup } from '../hook-form';
 
-const QuestionCard = ({
+const QuestionActionCard = ({
   question,
   options = [],
   showValues = false,
@@ -14,6 +14,8 @@ const QuestionCard = ({
   timeRequired = 0,
   descriptionSuccess = '',
   timeTaken = 0,
+  weightage = 1,
+  type,
 }) => {
   const defaultValues = {
     choice: showValues ? answeredValue : correctValue,
@@ -56,21 +58,22 @@ const QuestionCard = ({
     <Paper variant="outlined">
       <Paper sx={{ backgroundColor: 'lightgray', padding: 2, display: 'flex', justifyContent: 'space-between' }}>
         <Typography>{question}</Typography>
-        <span>
+        <Box>
           {timeRequired > 0 && (
             <>
-              <Typography color={''} variant="body2">
-                Time Required: {timeRequired} seconds
-              </Typography>
               {timeTaken > 0 && (
                 <Typography variant="body2">
                   Time Taken:
                   <span style={{ color: timeTaken > timeRequired ? 'red' : 'green' }}> {timeTaken} seconds</span>
                 </Typography>
               )}
+              <Typography color={''} variant="body2">
+                Time Required: {timeRequired} seconds
+              </Typography>
             </>
           )}
-        </span>
+          {!answeredValue && <Typography variant="body2">Points : {weightage}</Typography>}
+        </Box>
       </Paper>
       <Box sx={{ padding: 2 }}>
         <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
@@ -87,13 +90,36 @@ const QuestionCard = ({
         <Box>
           {correctValue === answeredValue ? (
             <Alert severity="success">
-              <span style={{ fontWeight: 'bold' }}> Right Answer </span>, Correct option is{' '}
-              <span style={{ fontWeight: 'bold' }}>{correctValueToDisplay}</span>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                <span>
+                  {type === 'question' ? (
+                    <>
+                      <span style={{ fontWeight: 'bold' }}> Right Answer: </span>
+                      <span style={{ fontWeight: 'bold' }}>{correctValueToDisplay}</span>
+                    </>
+                  ) : (
+                    <span style={{ fontWeight: 'bold' }}> Right Action Performed </span>
+                  )}
+                </span>
+
+                <span style={{ fontWeight: 'bold' }}> + {weightage} points </span>
+              </Box>
             </Alert>
           ) : (
             <Alert severity="error">
-              <span style={{ fontWeight: 'bold' }}> Wrong Answer </span>, Correct option is{' '}
-              <span style={{ fontWeight: 'bold' }}>{correctValueToDisplay}</span>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                <span>
+                  {type === 'question' ? (
+                    <span>
+                      <span style={{ fontWeight: 'bold' }}> Wrong Answer </span>, Correct option is{' '}
+                      <span style={{ fontWeight: 'bold' }}>{correctValueToDisplay}</span>
+                    </span>
+                  ) : (
+                    <span style={{ fontWeight: 'bold' }}> Wrong Action Performed </span>
+                  )}
+                </span>
+                <span style={{ fontWeight: 'bold' }}> + 0 points </span>
+              </Box>
             </Alert>
           )}
         </Box>
@@ -102,4 +128,4 @@ const QuestionCard = ({
   );
 };
 
-export default QuestionCard;
+export default QuestionActionCard;

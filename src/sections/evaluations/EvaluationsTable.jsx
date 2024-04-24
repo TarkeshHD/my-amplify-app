@@ -228,7 +228,6 @@ export const EvaluationsTable = ({ count = 0, items = FAKE_DATA, fetchingData, e
       const doc = row?.original;
       const response = await axios.get(`/evaluation/${doc.id}`);
       const responseObj = response?.data?.details;
-      console.log('this one', responseObj);
 
       const tz = moment.tz.guess();
       const startTime = moment.unix(row?.original?.startTime).tz(tz).format('DD/MM/YYYY HH:mm');
@@ -264,7 +263,7 @@ export const EvaluationsTable = ({ count = 0, items = FAKE_DATA, fetchingData, e
         responseObj.scores = row?.original?.scores;
       }
 
-      setOpenEvalutationData(responseObj);
+      setOpenEvalutationData({ ...responseObj, evaluationType: responseObj?.moduleId?.evaluationType });
     } catch (error) {
       console.log(error);
       toast.error(error.message || 'Failed to fetch eval-data');

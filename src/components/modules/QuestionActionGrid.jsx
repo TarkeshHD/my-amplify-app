@@ -1,7 +1,7 @@
 import { Grid, Typography } from '@mui/material';
 import React from 'react';
 import { SeverityPill } from '../SeverityPill';
-import QuestionCard from './QuestionCard';
+import QuestionActionCard from './QuestionActionCard';
 
 const statusMap = {
   Pending: 'warning',
@@ -45,7 +45,7 @@ const QuestionsActionGrid = ({ showValues = false, evalData, evaluation = EVAL_S
       {evaluation.map((v, i) => (
         <Grid key={i} item xs={6}>
           {v?.type === 'question' ? (
-            <QuestionCard
+            <QuestionActionCard
               notEditable={true}
               question={v.title || 'कौन सी क्रेन सुरक्षित है ? ट्रेडिशनल हायड्रा या फराना नई जनरेशन क्रेन ?'}
               options={[
@@ -59,9 +59,11 @@ const QuestionsActionGrid = ({ showValues = false, evalData, evaluation = EVAL_S
               showValues={showValues}
               timeRequired={v.timeRequired || 0}
               timeTaken={v.timeTaken || 0}
+              weightage={v.weightage || 1}
+              type={'question'}
             />
           ) : (
-            <QuestionCard
+            <QuestionActionCard
               notEditable={true}
               question={v.title || 'कौन सी क्रेन सुरक्षित है ? ट्रेडिशनल हायड्रा या फराना नई जनरेशन क्रेन ?'}
               options={[
@@ -73,8 +75,10 @@ const QuestionsActionGrid = ({ showValues = false, evalData, evaluation = EVAL_S
               showValues={showValues}
               action={true}
               descriptionSuccess={v.descriptionSuccess}
-              timeRequired={20}
-              timeTaken={10}
+              timeRequired={v.timeRequired || 0}
+              timeTaken={v.timeTaken || 0}
+              weightage={v.weightage || 1}
+              type="action"
             />
           )}
         </Grid>

@@ -1,7 +1,7 @@
 import { Grid, Typography } from '@mui/material';
 import React from 'react';
 import { SeverityPill } from '../SeverityPill';
-import QuestionCard from './QuestionCard';
+import QuestionActionCard from './QuestionActionCard';
 
 const statusMap = {
   Pending: 'warning',
@@ -21,6 +21,7 @@ const EVAL_SAMPLE = [
 ];
 
 const QuestionsGrid = ({ showValues = false, evalData, evaluation = EVAL_SAMPLE }) => {
+  console.log('Evaluation', evaluation);
   return (
     <Grid container spacing={2}>
       {showValues && (
@@ -44,7 +45,7 @@ const QuestionsGrid = ({ showValues = false, evalData, evaluation = EVAL_SAMPLE 
       )}
       {evaluation.map((v, i) => (
         <Grid key={i} item xs={6}>
-          <QuestionCard
+          <QuestionActionCard
             notEditable={true}
             question={v.title || 'कौन सी क्रेन सुरक्षित है ? ट्रेडिशनल हायड्रा या फराना नई जनरेशन क्रेन ?'}
             options={[
@@ -56,6 +57,7 @@ const QuestionsGrid = ({ showValues = false, evalData, evaluation = EVAL_SAMPLE 
             correctValue={v.answer}
             answeredValue={v.answeredValue}
             showValues={showValues}
+            type={v.evaluationType}
           />
         </Grid>
       ))}
