@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
 import axios from '../utils/axios';
 
 const initialState = {
-  data: null,
+  data: BaseConfig,
   isConfigfileFetched: false,
 };
 
@@ -35,6 +35,8 @@ function ConfigProvider({ children }) {
       // Use some method of authorization to fetch this configuration ??
 
       const response = await axios.get('/config');
+
+      console.log('Response', response?.data?.details);
 
       // If the response doesn't have the required fields, use the default config file
 
