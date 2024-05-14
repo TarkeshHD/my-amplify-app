@@ -21,7 +21,6 @@ const EVAL_SAMPLE = [
 ];
 
 const QuestionsGrid = ({ showValues = false, evalData, evaluation = EVAL_SAMPLE }) => {
-  console.log('Evaluation', evaluation);
   return (
     <Grid container spacing={2}>
       {showValues && (

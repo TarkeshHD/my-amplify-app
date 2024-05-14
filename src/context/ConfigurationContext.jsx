@@ -33,13 +33,9 @@ function ConfigProvider({ children }) {
     let responses = BaseConfig;
     try {
       // Use some method of authorization to fetch this configuration ??
-
       const response = await axios.get('/config');
 
-      console.log('Response', response?.data?.details);
-
       // If the response doesn't have the required fields, use the default config file
-
       responses = response?.data?.details || BaseConfig;
     } catch (error) {
       responses = BaseConfig;
