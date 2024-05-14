@@ -18,16 +18,16 @@ const Page = () => {
   const auth = useAuth();
   const [inviteToken, setInviteToken] = useState('');
 
-  const [method, setMethod] = useState('');
+  const [method, setMethod] = useState([]);
+  const [viewMethod, setViewMethod] = useState('BasicAuth');
   const handleMethodChange = useCallback((event, value) => {
-    setMethod(value);
+    setViewMethod(value);
   }, []);
 
-  const TEST_CONFIG = ['BasicAuth'];
-
   useEffect(() => {
-    if (config?.isConfigfileFetched) {
-      setMethod(config?.data?.features?.auth?.types?.[0]);
+    if (config?.isConfigfileFetched && config?.data?.features?.auth?.types.length > 0) {
+      setMethod(config?.data?.features?.auth?.types);
+      setViewMethod(config?.data?.features?.auth?.types[0]);
     }
   }, [config.isConfigfileFetched]);
 
@@ -117,11 +117,12 @@ const Page = () => {
                 </Stack>
                 {config?.isConfigfileFetched && method !== '' ? (
                   <>
-                    <Tabs onChange={handleMethodChange} sx={{ mb: 2 }} value={method}>
+                    <Tabs onChange={handleMethodChange} sx={{ mb: 2 }} value={viewMethod}>
                       {config?.data?.features?.auth?.state === 'on' &&
-                        TEST_CONFIG.map((v, i) => <Tab key={0} label={method} value={v} />)}
+                        method.map((v, i) => <Tab key={i} label={v} value={v} />)}
                     </Tabs>
-                    {method && getLoginComponents(method, inviteToken)}
+
+                    {viewMethod.length !== 0 && getLoginComponents(viewMethod, inviteToken)}
                   </>
                 ) : (
                   <Typography variant="body2"> Wait till we get your login type... </Typography>
