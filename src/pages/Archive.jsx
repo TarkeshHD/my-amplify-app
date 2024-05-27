@@ -16,31 +16,43 @@ const Page = () => {
   const config = useConfig();
   const { data: configData } = config;
   const { user } = useAuth();
+  const [totalItems, setTotalItems] = useState(0);
 
-  const getData = async () => {
+  const filterValues = (response) => {
+    const keysWithoutId = [];
+    const keysWithId = [];
+    const responseData = response?.data?.details;
+    setTotalItems(responseData?.totalItems || 0);
+
+    Object.keys(responseData?.items[0]).forEach((key) => {
+      if (key.toLowerCase().includes('id')) {
+        keysWithId.push(key);
+      } else {
+        keysWithoutId.push(key);
+      }
+    });
+
+    // Concatenate arrays with desired order
+    const sortedKeys = [...keysWithoutId, ...keysWithId];
+
+    // Arrange data based on sorted keys
+    const filteredData = responseData?.items?.map((obj) =>
+      Object.fromEntries(sortedKeys.map((key) => [key, obj[key]])),
+    );
+
+    // Extract headers from the first object in the filtered array
+    const headerVal = Object.keys(filteredData[0]);
+
+    return [filteredData, headerVal];
+  };
+
+  const getData = async (pageIndex) => {
     try {
       setFetchingData(true);
-      const response = await axios.get('/archive');
-      const keysWithoutId = [];
-      const keysWithId = [];
-      const responseData = response?.data?.details;
+      const response = await axios.get(`/archive?page=${pageIndex}`);
 
-      Object.keys(responseData[0]).forEach((key) => {
-        if (key.toLowerCase().includes('id')) {
-          keysWithId.push(key);
-        } else {
-          keysWithoutId.push(key);
-        }
-      });
+      const [filteredData, headerVal] = filterValues(response);
 
-      // Concatenate arrays with desired order
-      const sortedKeys = [...keysWithoutId, ...keysWithId];
-
-      // Arrange data based on sorted keys
-      const filteredData = responseData.map((obj) => Object.fromEntries(sortedKeys.map((key) => [key, obj[key]])));
-
-      // Extract headers from the first object in the filtered array
-      const headerVal = Object.keys(filteredData[0]);
       setData(filteredData);
       setHeaders(headerVal);
     } catch (error) {
@@ -56,8 +68,12 @@ const Page = () => {
   };
 
   useEffect(() => {
-    getData();
+    getData(0);
   }, []);
+
+  const handlePaginationChange = async (pagination) => {
+    await getData(pagination.pageIndex);
+  };
 
   return (
     <>
@@ -96,6 +112,8 @@ const Page = () => {
             exportBtnClicked={exportBtnClicked}
             exportBtnFalse={exportBtnFalse}
             headers={headers}
+            totalItems={totalItems}
+            queryPageChange={handlePaginationChange}
           />
         </Stack>
       </Container>

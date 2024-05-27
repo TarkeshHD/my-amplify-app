@@ -14,33 +14,17 @@ import CustomDialog from '../../components/CustomDialog';
 import ArchiveGrid from '../../components/archive/ArchiveGrid';
 import ExportOptions from '../../components/export/ExportOptions';
 import { useConfig } from '../../hooks/useConfig';
-
-const FAKE_DATA = [
-  {
-    id: '000102',
-    module: 'Automotive Training',
-    username: 'CW_01',
-    session: '29-Jul-2023  -  31-Jul-2023',
-    score: '7',
-    status: 'Pass',
-  },
-  {
-    id: '000102',
-    module: 'Domain Training',
-    username: 'CW_02',
-    session: '29-Jul-2023  -  31-Jul-2023',
-    score: '4',
-    status: 'Fail',
-  },
-];
+import { set } from 'lodash';
 
 export const ArchiveTable = ({
   count = 0,
-  items = [...FAKE_DATA],
+  items,
   fetchingData,
   exportBtnClicked,
   exportBtnFalse,
   headers,
+  totalItems,
+  queryPageChange,
 }) => {
   const exportBtnRef = useRef(null);
   const [exportRow, setExportRow] = useState([]);
@@ -49,6 +33,15 @@ export const ArchiveTable = ({
   const { data } = config;
 
   const [openArchiveGrid, setOpenArchiveGrid] = useState(false);
+
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 25,
+  });
+
+  useEffect(() => {
+    queryPageChange(pagination);
+  }, [pagination.pageIndex]);
 
   useEffect(() => {
     if (exportBtnClicked) {
@@ -68,7 +61,7 @@ export const ArchiveTable = ({
           return row?.[accessorKey] || 'NA';
         },
         header: `${headerLabel}`,
-        filterVariant: 'multiSelect',
+
         size: 100,
         Cell: ({ cell, column, row }) => {
           const value = header.split('.').reduce((obj, key) => obj?.[key], row?.original);
@@ -131,13 +124,13 @@ export const ArchiveTable = ({
           positionActionsColumn="last"
           columns={columns}
           data={items} // enable some features
-          enableColumnOrdering
           state={{
             isLoading: fetchingData,
+            pagination,
           }}
-          initialState={{ pagination: { pageSize: 5 }, showGlobalFilter: true, showColumnFilters: true }}
+          initialState={{ pagination: { pageSize: 25 }, showGlobalFilter: true }}
           muiTablePaginationProps={{
-            rowsPerPageOptions: [5, 10, 15, 20, 25],
+            rowsPerPageOptions: [25],
           }}
           enableGlobalFilterModes
           positionGlobalFilter="left"
@@ -147,6 +140,9 @@ export const ArchiveTable = ({
             variant: 'outlined',
           }}
           enableFacetedValues
+          manualPagination
+          rowCount={totalItems}
+          onPaginationChange={setPagination}
         />
       </Card>
 

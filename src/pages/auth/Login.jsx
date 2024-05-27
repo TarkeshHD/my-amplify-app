@@ -26,7 +26,7 @@ const Page = () => {
 
   useEffect(() => {
     if (config?.isConfigfileFetched && config?.data?.features?.auth?.types.length > 0) {
-      setMethod(config?.data?.features?.auth?.types);
+      setMethod([config?.data?.features?.auth?.types[0]]);
       setViewMethod(config?.data?.features?.auth?.types[0]);
     }
   }, [config.isConfigfileFetched]);

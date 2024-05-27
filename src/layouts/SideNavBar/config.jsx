@@ -12,6 +12,7 @@ import {
   SettingsRounded,
   Shop2Rounded,
 } from '@mui/icons-material';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import ArchiveIcon from '@mui/icons-material/Archive';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import EmojiObjectsIcon from '@mui/icons-material/EmojiObjects';
@@ -56,6 +57,15 @@ export function getItems(labels) {
       icon: (
         <SvgIcon fontSize="small">
           <Poll />
+        </SvgIcon>
+      ),
+    },
+    {
+      title: labels?.training?.plural || 'Trainings',
+      path: '/trainings',
+      icon: (
+        <SvgIcon fontSize="small">
+          <FitnessCenterIcon />
         </SvgIcon>
       ),
     },

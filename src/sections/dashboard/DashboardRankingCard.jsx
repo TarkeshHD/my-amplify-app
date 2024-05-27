@@ -5,7 +5,11 @@ import { Stack } from '@mui/system';
 
 export const DashboardRankingCard = ({ title, items, Icon, iconColor }) => {
   return (
-    <Card>
+    <Card
+      sx={{
+        height: '80%',
+      }}
+    >
       <CardContent>
         <Typography color="text.secondary" variant="overline">
           {title}
