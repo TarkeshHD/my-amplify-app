@@ -300,7 +300,7 @@ export default function ModuleQuestionActionForm({ isEdit, currentModule }) {
   return (
     <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
       {expanded && (
-        <Grid spacing={3} container sx={{ mb: 2 }}>
+        <Grid spacing={3} container sx={{ mb: 5 }}>
           <Grid item xs={6}>
             <Typography variant="subtitle2" color={'text.secondary'} mb={1}>
               Display Name
@@ -345,7 +345,12 @@ export default function ModuleQuestionActionForm({ isEdit, currentModule }) {
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                       >
-                        <Accordion key={field.id} expanded={expanded} onChange={handleAccordionClick}>
+                        <Accordion
+                          key={field.id}
+                          expanded={expanded}
+                          onChange={handleAccordionClick}
+                          sx={{ padding: '0px 0px 0px 16px', boxShadow: 'none !important' }}
+                        >
                           <AccordionSummary aria-controls={`panel${index}d-content`} id={`panel${index}d-header`}>
                             <Grid display="flex" item xs={12} alignItems="center" justifyContent={'space-between'}>
                               <div
@@ -374,7 +379,7 @@ export default function ModuleQuestionActionForm({ isEdit, currentModule }) {
                                 )}
 
                                 <Typography variant="subtitle1" color={'text'}>
-                                  Question - {index + 1}{' '}
+                                  Question - {expanded ? `${index + 1} ` : `${field.title}`}{' '}
                                 </Typography>
                               </div>
 
@@ -400,7 +405,7 @@ export default function ModuleQuestionActionForm({ isEdit, currentModule }) {
                           </AccordionSummary>
 
                           <AccordionDetails>
-                            <Grid container mb={2} spacing={3}>
+                            <Grid container mb={0} spacing={3}>
                               <Grid item xs={12}>
                                 <RHFTextField
                                   multiline
@@ -426,7 +431,7 @@ export default function ModuleQuestionActionForm({ isEdit, currentModule }) {
                               <Grid item xs={6}>
                                 <RHFTextField name={`evaluation[${index}].options.d`} label={`d`} />
                               </Grid>
-                              <Grid item xs={6}>
+                              <Grid item xs={12}>
                                 <Typography variant="subtitle2" color={'text.disabled'}>
                                   Select correct option for the question
                                 </Typography>
@@ -487,13 +492,18 @@ export default function ModuleQuestionActionForm({ isEdit, currentModule }) {
                     {(provided, snapshot) => (
                       <Grid
                         container
-                        mb={2}
+                        mb={0}
                         spacing={3}
                         key={field.id}
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                       >
-                        <Accordion key={field.id} expanded={expanded} onChange={handleAccordionClick}>
+                        <Accordion
+                          key={field.id}
+                          expanded={expanded}
+                          onChange={handleAccordionClick}
+                          sx={{ padding: '0px 0px 0px 16px', boxShadow: 'none !important' }}
+                        >
                           <AccordionSummary aria-controls={`panel${index}d-content`} id={`panel${index}d-header`}>
                             <Grid display="flex" item xs={12} alignItems="center" justifyContent={'space-between'}>
                               <div
@@ -521,7 +531,7 @@ export default function ModuleQuestionActionForm({ isEdit, currentModule }) {
                                   </Tooltip>
                                 )}
                                 <Typography variant="subtitle1" color={'text'}>
-                                  Action - {index + 1}{' '}
+                                  Action - {expanded ? `${index + 1} ` : `${field.title}`}{' '}
                                 </Typography>
                               </div>
 
@@ -591,38 +601,44 @@ export default function ModuleQuestionActionForm({ isEdit, currentModule }) {
       </DragDropContext>
 
       {expanded && (
-        <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-          <Stack direction="row" spacing={2} justifyContent="center">
-            <LoadingButton
-              variant="outlined"
-              loading={isSubmitting}
-              startIcon={<Add />}
-              onClick={addQuestion} // Use the addQuestion function when the button is clicked
-            >
-              Add Question
-            </LoadingButton>
-            <LoadingButton
-              variant="outlined"
-              loading={isSubmitting}
-              startIcon={<Add />}
-              onClick={addAction} // Use the addAction function when this button is clicked
-            >
-              Add Action
-            </LoadingButton>
-          </Stack>
+        <Grid sx={{ display: 'flex', justifyContent: 'space-between' }}>
+          <Grid item xs={12} sx={{ display: 'flex' }}>
+            <Stack direction="row" spacing={1} justifyContent="center" sx={{ mb: 3 }}>
+              <LoadingButton
+                variant="text"
+                loading={isSubmitting}
+                startIcon={<Add />}
+                onClick={addQuestion} // Use the addQuestion function when the button is clicked
+              >
+                Add Question
+              </LoadingButton>
+              <LoadingButton
+                variant="text"
+                loading={isSubmitting}
+                startIcon={<Add />}
+                onClick={addAction} // Use the addAction function when this button is clicked
+              >
+                Add Action
+              </LoadingButton>
+            </Stack>
+          </Grid>
+          <Grid sx={{ display: 'flex', mr: 2, mt: 1 }}>
+            <Typography variant="h6" color={'text.disabled'}>
+              Total Points:{' '}
+              {values?.evaluation?.reduce((acc, curr) => {
+                const currentWeightage = parseInt(curr.weightage);
+                return acc + (isNaN(currentWeightage) ? 0 : currentWeightage);
+              }, 0)}
+            </Typography>
+          </Grid>
         </Grid>
       )}
 
-      <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-        <Stack direction="row" spacing={2} justifyContent="center">
-          <LoadingButton variant="outlined" sx={{ mb: 2 }} onClick={handleToggle}>
+      <Grid item xs={12}>
+        <Stack sx={{ mt: 2 }} display={'flex'} justifyContent={'flex-end'} flexDirection={'row'}>
+          <LoadingButton variant="outlined" sx={{ mr: 2 }} onClick={handleToggle}>
             {expanded ? 'Reorder Questions And Actions' : 'Back To Edit Mode'}
           </LoadingButton>
-        </Stack>
-      </Grid>
-
-      <Grid item xs={12}>
-        <Stack alignItems="flex-end" sx={{ mt: 2 }} display={'flex'} justifyContent={'space-between'}>
           <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
             {!isEdit ? `Create ${data?.labels?.module?.singular || 'Module'}` : 'Save Changes'}
           </LoadingButton>

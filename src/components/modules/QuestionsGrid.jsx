@@ -57,6 +57,7 @@ const QuestionsGrid = ({ showValues = false, evalData, evaluation = EVAL_SAMPLE 
             answeredValue={v.answeredValue}
             showValues={showValues}
             type={v.evaluationType}
+            weightage={v.weightage || 1}
           />
         </Grid>
       ))}
