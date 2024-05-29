@@ -205,7 +205,7 @@ const Analytics = () => {
           />
         </Grid>
 
-        <Grid item xs={12} sm={6} lg={3}>
+        <Grid item xs={12} sm={6} lg={3} mt={7}>
           <DashboardRankingCard
             title="Top 3 Users (Attempted modules)"
             items={top3Users.map((item) => {
@@ -213,6 +213,7 @@ const Analytics = () => {
             })}
             Icon={<StarBorder />}
             iconColor="secondary.main"
+            height="100px"
           />
         </Grid>
         <Grid item xs={12} sm={6} lg={3}>
@@ -253,7 +254,7 @@ const Analytics = () => {
             />
           </Box>
         </Grid>
-        <Grid item xs={12} sm={6} lg={3}>
+        <Grid item xs={12} sm={6} lg={3} mt={7}>
           <DashboardRankingCard
             title="Top 3 Modules (Users Attempted)"
             items={top3Modules.map((item) => {

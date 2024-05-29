@@ -44,6 +44,7 @@ const Router = () => {
         <Route path="departments" element={<Departments />} />
         <Route path="modules" element={<Modules />} />
         <Route path="evaluations" element={<Evaluations />} />
+        <Route path="trainings" element={<Training />} />
         <Route path="evaluations/:userIdParam" element={<UserEvaluation />} />
         <Route path="past-session" element={<PastSession />} />
         <Route path="create-session" element={<CreateSession />} />
@@ -81,5 +82,6 @@ const PastSession = Loadable(lazy(() => import('../pages/PastSession')));
 const CreateSession = Loadable(lazy(() => import('../pages/CreateSession')));
 const SessionDetails = Loadable(lazy(() => import('../pages/SessionDetails')));
 const SsoRedirect = Loadable(lazy(() => import('../pages/auth/SsoRedirect')));
+const Training = Loadable(lazy(() => import('../pages/Trainings')));
 
 export default Router;
