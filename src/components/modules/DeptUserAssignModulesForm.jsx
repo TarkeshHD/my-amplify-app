@@ -59,6 +59,7 @@ const DeptUserAssignModulesForm = ({
         id: user?._id?.toString(),
         domainId: user?.domainId?._id,
         domainName: user?.domainId?.name,
+        username: user?.username,
       });
     });
 

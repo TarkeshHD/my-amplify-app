@@ -24,7 +24,7 @@ export function RHFUploadSingleFile({ name, ...other }) {
 
         return (
           <UploadSingleFile
-            accept={{ 'image/*': [] }}
+            accept={{ 'image/*,application/json ': [] }} // can be json file also
             file={field.value}
             error={checkError}
             helperText={

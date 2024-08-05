@@ -101,9 +101,11 @@ export default function ModuleQuestionForm({ isEdit, currentModule }) {
               c: v?.options?.c || 'sample 3',
               d: v?.options?.d || 'sample 5',
             },
+            weightage: v?.weightage || 1,
           })),
       noOfQuestion: isEdit ? currentModule?.noOfQuestion : 10,
       passPercentage: isEdit ? currentModule?.passPercentage : 50,
+      description: isEdit ? currentModule?.description : '',
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [currentModule],
@@ -162,6 +164,7 @@ export default function ModuleQuestionForm({ isEdit, currentModule }) {
         evaluation,
         passPercentage: values.passPercentage,
         noOfQuestion: values.noOfQuestion,
+        description: values.description,
       };
 
       if (evaluation.length < values.noOfQuestion) {

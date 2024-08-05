@@ -28,6 +28,11 @@ const Page = () => {
     if (config?.isConfigfileFetched && config?.data?.features?.auth?.types.length > 0) {
       setMethod([config?.data?.features?.auth?.types[0]]);
       setViewMethod(config?.data?.features?.auth?.types[0]);
+      // Check if in url ? productAdmin=true is there, if its there make it basicLogin
+      if (window.location.search.includes('productAdmin=true')) {
+        setMethod(['BasicAuth']);
+        setViewMethod('BasicAuth');
+      }
     }
   }, [config.isConfigfileFetched]);
 

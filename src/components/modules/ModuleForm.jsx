@@ -32,6 +32,8 @@ export default function ModuleForm({ isEdit, currentModule }) {
     description: Yup.string().required('Description is required'),
     index: Yup.string().required('Index is required').trim(),
     thumbnail: Yup.mixed(),
+    evaluationJson: Yup.mixed(),
+    trainingJson: Yup.mixed(),
     SOP: Yup.mixed(),
   });
 
@@ -43,6 +45,8 @@ export default function ModuleForm({ isEdit, currentModule }) {
       evaluationType: 'question',
       thumbnail: currentModule?.thumbnail, // Need to figure out prefilling when doing Edit Part
       SOP: currentModule?.SOP, // Need to figure out prefilling when doing Edit Part
+      evaluationJson: currentModule?.evaluationJson, // Need to figure out prefilling when doing Edit Part
+      trainingJson: currentModule?.trainingJson, // Need to figure out prefilling when doing Edit Part
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [currentModule],
@@ -117,6 +121,10 @@ export default function ModuleForm({ isEdit, currentModule }) {
     ...(data?.features?.questionActionEvaluation?.state === 'on'
       ? [{ label: 'Question And Action', value: 'questionAction' }]
       : []), // QuestionAction added using feature flag from backend
+    ...(data?.features?.jsonLifecycleEvaluation?.state === 'on'
+      ? [{ label: 'JSON Lifecycle', value: 'jsonLifeCycle' }]
+      : []),
+    ,
   ];
 
   return (
@@ -173,6 +181,42 @@ export default function ModuleForm({ isEdit, currentModule }) {
               }}
               onRemove={() => {
                 handleRemove('SOP');
+              }}
+            />
+          </Box>
+        </Grid>
+
+        <Grid item xs={12} lg={6}>
+          <Box>
+            <Typography variant="subtitle2" color={'text.secondary'} mb={1}>
+              Evaluation JSON
+            </Typography>
+            <RHFUploadSingleFile
+              name="evaluationJson"
+              label="Evaluation Json"
+              onDrop={(v) => {
+                handleDrop(v, 'evaluationJson');
+              }}
+              onRemove={() => {
+                handleRemove('evaluationJson');
+              }}
+            />
+          </Box>
+        </Grid>
+
+        <Grid item xs={12} lg={6}>
+          <Box>
+            <Typography variant="subtitle2" color={'text.secondary'} mb={1}>
+              Training JSON
+            </Typography>
+            <RHFUploadSingleFile
+              name="trainingJson"
+              label="Training JSON"
+              onDrop={(v) => {
+                handleDrop(v, 'trainingJson');
+              }}
+              onRemove={() => {
+                handleRemove('trainingJson');
               }}
             />
           </Box>

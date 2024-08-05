@@ -13,6 +13,8 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { useForm } from 'react-hook-form';
 import { FormProvider } from '../hook-form';
 import RHFAutocomplete from '../hook-form/RHFAutocomplete';
+import axios from '../../utils/axios';
+import { toast } from 'react-toastify';
 
 const TraineeFormSso = ({ domains, departments }) => {
   const [inviteLink, setInviteLink] = useState('');
@@ -40,19 +42,21 @@ const TraineeFormSso = ({ domains, departments }) => {
   };
 
   const fetchInviteLinkFromBackend = async (domainId, departmentId) => {
+    setIsLoading(true);
     // Replace with actual API call
-    // For the purpose of this example, it's a simulated promise
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ data: { inviteLink: 'https://yourbackend.com/invite?token=example123' } });
-      }, 2000);
-    });
+    const response = await axios.post('/auth/create-invite-link', { role: 'user', domainId: domainId, departmentId });
+
+    // Simulating a fetch call with a timeout
+    setTimeout(() => {
+      setInviteLink(response.data?.details?.inviteLink);
+      setIsLoading(false);
+    }, 2000);
   };
 
   const handleCopyToClipboard = () => {
     if (inviteLink) {
       navigator.clipboard.writeText(inviteLink);
-      // Optionally, show a notification that the link was copied
+      toast.success('Copied to clipboard');
     }
   };
 

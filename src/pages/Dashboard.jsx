@@ -6,12 +6,20 @@ import Analytics from '../components/analytics/Analytics';
 import UpcomingSession from '../components/session/UpcomingSession';
 import { useEffect } from 'react';
 import { displayPendingToast } from '../utils/utils';
+import Evaluations from '../pages/Evaluations';
 
 const Page = () => {
   const config = useConfig();
   const { data } = config;
 
   const auth = useAuth();
+
+  const { user } = useAuth();
+
+  if (user?.role === 'user') {
+    // redirect to evaluation page
+    return <Evaluations />;
+  }
 
   useEffect(() => {
     displayPendingToast();

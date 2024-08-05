@@ -19,7 +19,7 @@ export const getFile = (path) => {
   if (!path) {
     return;
   }
-  return `${import.meta.env.VITE_BASE_URL}file/${path}`;
+  return `${path}`;
 };
 
 export const capitalizeFirstLetter = (word) => {
@@ -64,9 +64,10 @@ export const fetchScoresAndStatuses = async (item, config) => {
   let score = '-';
   let status = 'Pending';
 
-  if (item?.endTime) {
+  if (item?.endTime || item?.mode === 'jsonLifeCycle') {
     status = await getStatus(item, config);
     score = status === 'Fail' && item?.mode === 'time' ? '-' : getScore(item); // If the status is fail and the mode is time, then the score should be "-"
+    score = item?.mode === 'jsonLifeCycleBased' ? getScore(item) : score;
   }
 
   return { ...item, score, status };
@@ -85,13 +86,15 @@ export const getStatus = async (item, config) => {
     });
     const passMark = fullScore * (item.passingCriteria.passPercentage / 100);
     return item?.answers?.questionActionBased?.score >= passMark ? 'Pass' : 'Fail';
+  } else if (item?.mode === 'time') {
+    // If time taken is less than eval dump bronze time and if mistakes are less than passing criteria mistakes allowed; then pass
+    return item.answers?.timeBased.timeTaken < item?.evaluationDump.timeBased.bronzeTimeLimit &&
+      item.answers?.timeBased?.mistakes?.length <= item.passingCriteria.mistakesAllowed
+      ? 'Pass'
+      : 'Fail';
+  } else if (item?.mode === 'jsonLifeCycle') {
+    return item?.evaluationDump?.jsonLifeCycleBased?.status;
   }
-
-  // If time taken is less than eval dump bronze time and if mistakes are less than passing criteria mistakes allowed; then pass
-  return item.answers?.timeBased.timeTaken < item?.evaluationDump.timeBased.bronzeTimeLimit &&
-    item.answers?.timeBased?.mistakes?.length <= item.passingCriteria.mistakesAllowed
-    ? 'Pass'
-    : 'Fail';
 };
 
 export const getScore = (item) => {
@@ -104,8 +107,13 @@ export const getScore = (item) => {
       fullScore += question.weightage;
     });
     return item?.answers?.questionActionBased?.score + '/' + fullScore;
+  } else if (item?.mode === 'time') {
+    return capitalizeFirstLetter(item?.answers?.timeBased?.score);
+  } else if (item?.mode === 'jsonLifeCycle') {
+    return `${item?.evaluationDump?.jsonLifeCycleBased?.totalScored || 0} / ${
+      item?.evaluationDump?.jsonLifeCycleBased?.totalMark || 0
+    }`;
   }
-  return capitalizeFirstLetter(item?.answers?.timeBased?.score);
 };
 
 export const addToHistory = () => {

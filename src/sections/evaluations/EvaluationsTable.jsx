@@ -25,6 +25,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import { fetchScoresAndStatuses } from '../../utils/utils';
 import QuestionsActionGrid from '../../components/modules/QuestionActionGrid';
+import JsonLifeCycleEvaluationGrid from '../../components/modules/JsonLifeCycleEvaluationGrid';
 
 const statusMap = {
   Pending: 'warning',
@@ -258,7 +259,26 @@ export const EvaluationsTable = ({ count = 0, items = FAKE_DATA, fetchingData, e
             answeredValue: answers.questionActionBased.answerKey[index],
           };
         });
-      } else {
+      }
+      if (responseObj.mode === 'jsonLifeCycle') {
+        responseObj.evaluationDump = {
+          ...responseObj.evaluationDump.jsonLifeCycleBased,
+          chapters: responseObj.evaluationDump.jsonLifeCycleBased.chapters.map((chapter) => {
+            return {
+              ...chapter,
+              moments: chapter.moments.map((moment) => {
+                const momentAnswer = responseObj.answers.jsonLifeCycleBased.find(
+                  (answer) => answer.chapterIndex === chapter.chapterIndex && answer.momentIndex === moment.momentIndex,
+                );
+                return {
+                  ...moment,
+                  answers: momentAnswer ? momentAnswer.events : [],
+                };
+              }),
+            };
+          }),
+        };
+      } else if (responseObj.mode === 'time') {
         responseObj.mistakes = responseObj?.answers?.timeBased?.mistakes;
         responseObj.scores = row?.original?.scores;
       }
@@ -273,7 +293,8 @@ export const EvaluationsTable = ({ count = 0, items = FAKE_DATA, fetchingData, e
 
   const onDeleteRow = async (row) => {
     try {
-      await axios.post(`/evaluation/archive/${row.id}`);
+      const id = row.id || row._id;
+      await axios.post(`/evaluation/archive/${id}`);
       toast.success('Evaluation deleted successfully');
       setTimeout(() => {
         navigate(0);
@@ -407,12 +428,16 @@ export const EvaluationsTable = ({ count = 0, items = FAKE_DATA, fetchingData, e
           <QuestionsGrid showValues evalData={openEvaluationData} evaluation={openEvaluationData?.evaluationDump} />
         ) : openEvaluationData?.mode === 'time' ? (
           <TimeGrid showValues evalData={openEvaluationData} evaluation={openEvaluationData?.answers} />
-        ) : (
+        ) : openEvaluationData?.mode === 'questionAction' ? (
           <QuestionsActionGrid
             showValues
             evalData={openEvaluationData}
             evaluation={openEvaluationData?.evaluationDump}
           />
+        ) : openEvaluationData?.mode === 'jsonLifeCycle' ? (
+          <JsonLifeCycleEvaluationGrid evalData={openEvaluationData} />
+        ) : (
+          <></>
         )}
       </CustomDialog>
     </>
