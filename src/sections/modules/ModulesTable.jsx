@@ -17,6 +17,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from '../../utils/axios';
 import ModuleQuestionActionForm from '../../components/modules/ModuleQuestionActionForm';
 import QuestionsActionGrid from '../../components/modules/QuestionActionGrid';
+import { useAuth } from '../../hooks/useAuth';
 
 export const ModulesTable = ({
   count = 0,
@@ -29,6 +30,8 @@ export const ModulesTable = ({
 }) => {
   const tableRef = useRef(null);
 
+  const currentUser = useAuth();
+
   const columns = useMemo(
     () => [
       {
@@ -40,7 +43,7 @@ export const ModulesTable = ({
         header: 'Thumbnail',
         Cell: ({ cell, column }) => (
           <Box sx={{}}>
-            <img style={{ maxWidth: 80 }} alt="celll" src={getFile(cell?.getValue()?.path)} />
+            <img style={{ maxWidth: 80 }} alt="celll" src={getFile(cell?.getValue())} />
           </Box>
         ),
       },
@@ -70,8 +73,9 @@ export const ModulesTable = ({
   const navigate = useNavigate();
 
   const onDeleteRow = async (row) => {
+    const id = row.id || row._id;
     try {
-      await axios.post(`/module/archive/${row.id}`);
+      await axios.post(`/module/archive/${id}`);
       toast.success('Module deleted successfully');
       setTimeout(() => {
         navigate(0);
@@ -106,48 +110,54 @@ export const ModulesTable = ({
                 <Typography>Delete</Typography>
               </Stack>
             </MenuItem>,
-            row.original.evaluationType === 'question' ? (
-              <MenuItem
-                key={1}
-                onClick={() => {
-                  // onEditRow();
-                  setOpenQuestionsForm(row.original);
-                  closeMenu();
-                }}
-              >
-                <Stack spacing={2} direction={'row'}>
-                  <Quiz />
-                  <Typography>Add/Edit Questions </Typography>
-                </Stack>
-              </MenuItem>
-            ) : row.original.evaluationType === 'time' ? (
-              <MenuItem
-                key={4}
-                onClick={() => {
-                  // onEditRow();
-                  setOpenTimeForm(row.original);
-                  closeMenu();
-                }}
-              >
-                <Stack spacing={2} direction={'row'}>
-                  <TimerIcon />
-                  <Typography>Add/Edit Time Evaluation</Typography>
-                </Stack>
-              </MenuItem>
-            ) : (
-              <MenuItem
-                key={2}
-                onClick={() => {
-                  // onEditRow();
-                  setOpenQuestionActionForm(row.original);
-                  closeMenu();
-                }}
-              >
-                <Stack spacing={2} direction={'row'}>
-                  <EditNote />
-                  <Typography>Add/Edit Question Action Evaluation</Typography>
-                </Stack>
-              </MenuItem>
+            currentUser?.user?.role === 'productAdmin' && (
+              <>
+                {row.original.evaluationType === 'question' ? (
+                  <MenuItem
+                    key={1}
+                    onClick={() => {
+                      // onEditRow();
+                      setOpenQuestionsForm(row.original);
+                      closeMenu();
+                    }}
+                  >
+                    <Stack spacing={2} direction={'row'}>
+                      <Quiz />
+                      <Typography>Add/Edit Questions </Typography>
+                    </Stack>
+                  </MenuItem>
+                ) : row.original.evaluationType === 'time' ? (
+                  <MenuItem
+                    key={4}
+                    onClick={() => {
+                      // onEditRow();
+                      setOpenTimeForm(row.original);
+                      closeMenu();
+                    }}
+                  >
+                    <Stack spacing={2} direction={'row'}>
+                      <TimerIcon />
+                      <Typography>Add/Edit Time Evaluation</Typography>
+                    </Stack>
+                  </MenuItem>
+                ) : row?.original?.evaluationType === 'questionAction' ? (
+                  <MenuItem
+                    key={2}
+                    onClick={() => {
+                      // onEditRow();
+                      setOpenQuestionActionForm(row.original);
+                      closeMenu();
+                    }}
+                  >
+                    <Stack spacing={2} direction={'row'}>
+                      <EditNote />
+                      <Typography>Add/Edit Question Action Evaluation</Typography>
+                    </Stack>
+                  </MenuItem>
+                ) : (
+                  <></>
+                )}
+              </>
             ),
             <MenuItem
               key={3}
@@ -223,7 +233,7 @@ export const ModulesTable = ({
         <AssignModulesForm
           domains={domains}
           departments={departments}
-          selectedModules={[openAssignModules?.id]}
+          selectedModules={[openAssignModules?._id]}
           isEdit
           moduleAccess={openAssignModules?.moduleAccessId}
           users={users}

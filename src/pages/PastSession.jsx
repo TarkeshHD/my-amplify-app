@@ -10,6 +10,7 @@ import { EvaluationsTable } from '../sections/evaluations/EvaluationsTable';
 import { SessionTable } from '../sections/sessions/SessionTable';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { useAuth } from '../hooks/useAuth';
 const Page = () => {
   const [fetchingData, setFetchingData] = useState(false);
   const [data, setData] = useState([]);
@@ -46,6 +47,16 @@ const Page = () => {
   }, []);
 
   // const { user } = useAuth();
+  const { user } = useAuth();
+
+  if (user?.role === 'user') {
+    // page not found
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Typography variant="h3">Page Not found</Typography>
+      </Box>
+    );
+  }
 
   return (
     <>

@@ -16,13 +16,41 @@ import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import ArchiveIcon from '@mui/icons-material/Archive';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import EmojiObjectsIcon from '@mui/icons-material/EmojiObjects';
-
+import HomeMaxIcon from '@mui/icons-material/HomeMax';
 import { SvgIcon } from '@mui/material';
 import { useConfig } from '../../hooks/useConfig';
+import { useAuth } from '../../hooks/useAuth';
 
 export function getItems(labels) {
   const config = useConfig();
   const { data } = config;
+
+  const auth = useAuth();
+  const { user } = auth;
+
+  if (user?.role === 'user') {
+    return [
+      {
+        title: labels?.evaluation?.plural || 'Evaluations',
+        path: '/evaluations',
+        icon: (
+          <SvgIcon fontSize="small">
+            <Poll />
+          </SvgIcon>
+        ),
+      },
+      {
+        title: labels?.training?.plural || 'Trainings',
+        path: '/trainings',
+        icon: (
+          <SvgIcon fontSize="small">
+            <FitnessCenterIcon />
+          </SvgIcon>
+        ),
+      },
+    ];
+  }
+
   const items = [
     {
       title: 'Sessions and Analytics',
@@ -103,6 +131,19 @@ export function getItems(labels) {
       icon: (
         <SvgIcon fontSize="small">
           <EmojiObjectsIcon />
+        </SvgIcon>
+      ),
+    });
+  }
+
+  // Enable Device Tab if Device Login is enabled
+  if (data?.features?.deviceLogin?.state === 'on') {
+    items.splice(5, 0, {
+      title: 'Devices',
+      path: '/devices',
+      icon: (
+        <SvgIcon fontSize="small">
+          <HomeMaxIcon />
         </SvgIcon>
       ),
     });

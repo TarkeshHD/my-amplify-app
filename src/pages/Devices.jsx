@@ -12,10 +12,11 @@ import TraineeForm from '../components/users/TraineeForm';
 import { useAuth } from '../hooks/useAuth';
 import { useConfig } from '../hooks/useConfig';
 import { useSelection } from '../hooks/useSelection';
+import { EvaluationsTable } from '../sections/evaluations/EvaluationsTable';
 import { ModulesTable } from '../sections/modules/ModulesTable';
 import { UsersTable } from '../sections/users/UsersTable';
 import axios from '../utils/axios';
-import { TrainingsTable } from '../sections/trainings/TrainingsTable';
+import { DevicesTable } from '../sections/devices/DevicesTable';
 
 const Page = () => {
   const [fetchingData, setFetchingData] = useState(false);
@@ -25,10 +26,10 @@ const Page = () => {
   const config = useConfig();
   const { data: configData } = config;
 
-  const getEvaluations = async () => {
+  const getDevices = async () => {
     try {
       setFetchingData(true);
-      const response = await axios.get('/training/');
+      const response = await axios.get('/device/all');
       // Sort the array in descending order by the "createdAt" property
       const sortedData = [...(response.data?.details ?? [])].sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
@@ -36,7 +37,7 @@ const Page = () => {
 
       setData(sortedData);
     } catch (error) {
-      toast.error(error.message || `Failed to fetch ${data?.labels?.user?.plural?.toLowerCase() || 'users'}`);
+      toast.error(error.message || `Failed to fetch devices'}`);
       console.log(error);
     } finally {
       setFetchingData(false);
@@ -48,22 +49,31 @@ const Page = () => {
   };
 
   useEffect(() => {
-    getEvaluations();
+    getDevices();
   }, []);
 
   const { user } = useAuth();
 
+  if (user?.role === 'user') {
+    // page not found
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Typography variant="h3">Page Not found</Typography>
+      </Box>
+    );
+  }
+
   return (
     <>
       <Helmet>
-        <title>{configData?.labels?.training?.singular || 'Training'} | VRse Builder</title>
+        <title>{'Device'} | VRse Builder</title>
       </Helmet>
 
       <Container maxWidth="xl">
         <Stack spacing={3}>
           <Stack direction="row" justifyContent="space-between" spacing={4}>
             <Stack spacing={1}>
-              <Typography variant="h4">{configData?.labels?.training?.singular || 'Training'}</Typography>
+              <Typography variant="h4">{'Device'}</Typography>
             </Stack>
             <Stack alignItems="center" direction="row" spacing={1}>
               <Button
@@ -82,7 +92,7 @@ const Page = () => {
             </Stack>
           </Stack>
 
-          <TrainingsTable
+          <DevicesTable
             fetchingData={fetchingData}
             items={data}
             count={data.length}

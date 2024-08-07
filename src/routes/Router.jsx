@@ -7,6 +7,7 @@ import DashboardLayout from '../layouts/DashboardLayout';
 
 // Shields
 import AuthShield from '../shield/AuthShield';
+import { useAuth } from '../hooks/useAuth';
 
 // ----------------------------------------------------------------------
 
@@ -44,6 +45,7 @@ const Router = () => {
         <Route path="departments" element={<Departments />} />
         <Route path="modules" element={<Modules />} />
         <Route path="evaluations" element={<Evaluations />} />
+        <Route path="devices" element={<Devices />} />
         <Route path="trainings" element={<Training />} />
         <Route path="evaluations/:userIdParam" element={<UserEvaluation />} />
         <Route path="past-session" element={<PastSession />} />
@@ -68,6 +70,7 @@ const Router = () => {
 
 const Modules = Loadable(lazy(() => import('../pages/Modules')));
 const Evaluations = Loadable(lazy(() => import('../pages/Evaluations')));
+const Devices = Loadable(lazy(() => import('../pages/Devices')));
 const UserEvaluation = Loadable(lazy(() => import('../pages/UserEvaluation')));
 const Departments = Loadable(lazy(() => import('../pages/Departments')));
 const Domains = Loadable(lazy(() => import('../pages/Domains')));

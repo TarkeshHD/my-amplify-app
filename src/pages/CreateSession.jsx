@@ -6,6 +6,7 @@ import { Button, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import AddSessionForm from '../components/schedule/AddSession';
+import { useAuth } from '../hooks/useAuth';
 
 export const convertResponseToSessionList = (response) => {
   return response.map((session) => {
@@ -59,7 +60,16 @@ const Page = () => {
   useEffect(() => {
     getAllSession();
   }, []);
-
+  const auth = useAuth();
+  const { user } = auth;
+  if (user?.role === 'user') {
+    // page not found
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Typography variant="h3">Page Not found</Typography>
+      </Box>
+    );
+  }
   return (
     <>
       <Helmet>

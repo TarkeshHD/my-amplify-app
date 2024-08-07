@@ -70,8 +70,8 @@ const DomainAssignModulesForm = ({ isEdit = false, moduleAccess, domains = [], s
         domainsAccess,
       };
       if (isEdit) {
+        const selectedModule = reqObj.modules[0];
         delete reqObj.modules;
-        console.log(reqObj);
         const response = await axios.post(`/module/assign/update/domain/${selectedModules[0]}`, reqObj);
       } else {
         delete reqObj.isSpecialAccess && delete reqObj.isDomainAccess;

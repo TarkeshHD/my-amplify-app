@@ -117,7 +117,6 @@ export default function ModuleTimeForm({ isEdit, currentModule, fieldDisabled = 
             label={fieldDisabled ? 'No notes added' : 'Any Note (OPTIONAL)'}
           />
         </Grid>
-
         {!fieldDisabled && ( // Render the button only if fieldDisabled is false
           <Grid item xs={12}>
             <Stack alignItems="flex-end" sx={{ mt: 3 }}>

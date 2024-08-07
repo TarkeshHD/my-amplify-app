@@ -85,6 +85,7 @@ const Page = () => {
   }, []);
 
   const { user } = useAuth();
+
   const config = useConfig();
   const { data: configData } = config;
   const [exportBtnClicked, setExportBtnClicked] = useState(false);
@@ -92,6 +93,15 @@ const Page = () => {
   const exportBtnFalse = () => {
     setExportBtnClicked(false);
   };
+
+  if (user?.role === 'user') {
+    // page not found
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Typography variant="h3">Page Not found</Typography>
+      </Box>
+    );
+  }
 
   return (
     <>

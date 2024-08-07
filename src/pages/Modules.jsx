@@ -58,6 +58,7 @@ const Page = () => {
       const sortedData = [...(response.data?.details ?? [])].sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
       );
+
       setData(sortedData);
     } catch (error) {
       toast.error(error.message || `Failed to fetch ${data?.labels?.user?.plural?.toLowerCase() || 'users'}`);
@@ -124,6 +125,15 @@ const Page = () => {
   const { user } = useAuth();
   const config = useConfig();
   const { data: configData } = config;
+
+  if (user?.role === 'user') {
+    // page not found
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Typography variant="h3">Page Not found</Typography>
+      </Box>
+    );
+  }
 
   return (
     <>

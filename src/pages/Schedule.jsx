@@ -25,6 +25,7 @@ import { toast } from 'react-toastify';
 import axios from '../utils/axios';
 import { addToHistory } from '../utils/utils';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 const Page = () => {
   const [openEventUpdate, setOpenEventUpdate] = useState(false);
@@ -59,6 +60,16 @@ const Page = () => {
     addToHistory();
     navigate(`/session-details/${event?.id}`);
   };
+  const { user } = useAuth();
+
+  if (user?.role === 'user') {
+    // page not found
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Typography variant="h3">Page Not found</Typography>
+      </Box>
+    );
+  }
   return (
     <>
       <Helmet>

@@ -108,6 +108,15 @@ const Page = () => {
     </React.Fragment>
   ));
   const { user } = useAuth();
+
+  if (user?.role === 'user') {
+    // page not found
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Typography variant="h3">Page Not found</Typography>
+      </Box>
+    );
+  }
   return (
     <>
       <Helmet>
