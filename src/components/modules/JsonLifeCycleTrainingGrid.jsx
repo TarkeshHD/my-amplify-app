@@ -60,7 +60,7 @@ const AccordionDetails = styled(MuiAccordionDetails)(({ theme }) => ({
   padding: theme.spacing(2),
   borderTop: '1px solid rgba(0, 0, 0, .125)',
 }));
-const JsonLifeCycleEvaluationGrid = ({ evalData }) => {
+const JsonLifeCycleTrainingGrid = ({ trainingData }) => {
   const tz = moment.tz.guess();
 
   const [expanded, setExpanded] = React.useState('panel1');
@@ -75,9 +75,11 @@ const JsonLifeCycleEvaluationGrid = ({ evalData }) => {
     return moment.unix(unixTime).tz(tz).format('DD/MM/YYYY, HH:mm:ss');
   };
 
-  const renderAnswers = (answers) => {
-    if (!answers || answers.length === 0) return <Typography variant="body2">No answers provided</Typography>;
+  if (trainingData?.trainingType !== 'jsonLifeCycle') return null;
 
+  const renderAnswers = (answers) => {
+    if (!answers || answers.length === 0)
+      return <Typography variant="body2">No reached at this moment yet.</Typography>;
     const onRightAnswers = answers.filter((ans) => ans.eventType === 'onRight');
     const onWrongAnswers = answers.filter((ans) => ans.eventType === 'onWrong');
 
@@ -128,27 +130,18 @@ const JsonLifeCycleEvaluationGrid = ({ evalData }) => {
           <CardContent>
             <Grid container spacing={2}>
               <Grid item xs={8}>
-                <Typography variant="subtitle1">{evalData.evaluationDump.moduleName}</Typography>
+                <Typography variant="subtitle1">{trainingData.trainingDumpJson?.moduleName}</Typography>
               </Grid>
 
               <Grid textAlign={'right'} item xs={4}>
                 <Typography variant="subtitle1">
-                  <SeverityPill>{evalData.status}</SeverityPill>
+                  <SeverityPill>{trainingData.status}</SeverityPill>
                 </Typography>
               </Grid>
 
-              <Grid item xs={3}>
-                <Typography variant="body2">
-                  Current Score: {evalData.evaluationDump.totalScored} / {evalData.evaluationDump.totalMark}
-                </Typography>
-              </Grid>
-              <Grid item xs={3}>
-                <Typography variant="body2">Passing Mark: {evalData.evaluationDump.passMark}</Typography>
-              </Grid>
-
-              <Grid item textAlign={'right'} xs={6}>
+              <Grid item xs={12}>
                 <Typography color="gray" variant="caption">
-                  {formatTime(evalData.startTime)} - {evalData.endTime ? formatTime(evalData.endTime) : 'Pending'}
+                  {trainingData?.session}
                 </Typography>
               </Grid>
             </Grid>
@@ -159,7 +152,7 @@ const JsonLifeCycleEvaluationGrid = ({ evalData }) => {
         <Divider />
       </Grid>
 
-      {evalData.evaluationDump.chapters.map((chapter) => (
+      {trainingData?.trainingDumpJson?.chapters?.map((chapter) => (
         <Grid item xs={12} key={chapter.chapterIndex}>
           <Accordion
             variant="outlined"
@@ -169,9 +162,9 @@ const JsonLifeCycleEvaluationGrid = ({ evalData }) => {
             <AccordionSummary aria-controls="panel1d-content" id="panel1d-header">
               <Stack>
                 <Typography variant="h6">{chapter.chapterName}</Typography>
-                <Typography variant="body2">
+                {/* <Typography variant="body2">
                   Total Score: {chapter.totalScored} / {chapter.totalMark}
-                </Typography>
+                </Typography> */}
                 <Typography variant="body2">
                   Total Time Taken:{' '}
                   {chapter.totalTimeTaken ? `${secondsDurationToReadableFormat(chapter.totalTimeTaken)} ` : '-'}
@@ -212,9 +205,6 @@ const JsonLifeCycleEvaluationGrid = ({ evalData }) => {
                           </Stack>
                           <Box my={2}>
                             <Typography variant="body2">Start Time: {formatTime(moment.startTime)}</Typography>
-                            <Typography variant="body2">
-                              Score: {moment.totalScored} / {moment.weightage}
-                            </Typography>
 
                             {/* <Typography variant="body2">End Time: {formatTime(moment.endTime)}</Typography> */}
 
@@ -234,4 +224,4 @@ const JsonLifeCycleEvaluationGrid = ({ evalData }) => {
   );
 };
 
-export default JsonLifeCycleEvaluationGrid;
+export default JsonLifeCycleTrainingGrid;

@@ -12,14 +12,16 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 
 import { Delete, Edit, FileDownload } from '@mui/icons-material';
+import { useParams } from 'react-router-dom';
 import CustomDialog from '../../components/CustomDialog';
+import axios from '../../utils/axios';
 import CustomDateRangePicker from '../../components/DatePicker/CustomDateRangePicker';
 import { SeverityPill } from '../../components/SeverityPill';
 import ExportOptions from '../../components/export/ExportOptions';
 
 import { useConfig } from '../../hooks/useConfig';
-
-import { useParams } from 'react-router-dom';
+import JsonLifeCycleEvaluationGrid from '../../components/modules/JsonLifeCycleEvaluationGrid';
+import JsonLifeCycleTrainingGrid from '../../components/modules/JsonLifeCycleTrainingGrid';
 
 const statusMap = {
   ongoing: 'warning',
@@ -47,6 +49,7 @@ const FAKE_DATA = [
 export const TrainingsTable = ({ count = 0, items = FAKE_DATA, fetchingData, exportBtnClicked, exportBtnFalse }) => {
   const exportBtnRef = useRef(null);
   const [exportRow, setExportRow] = useState([]);
+  const [openTrainingData, setOpenTrainingData] = useState(null);
   const [openExportOptions, setOpenExportOptions] = useState(false);
 
   const { userIdParam } = useParams();
@@ -74,27 +77,21 @@ export const TrainingsTable = ({ count = 0, items = FAKE_DATA, fetchingData, exp
         header: `${data?.labels?.module?.singular || 'Module'}`,
         filterVariant: 'multi-select',
         size: 100,
-        Cell: ({ cell, column, row }) => {
-          return <Typography>{row?.original?.moduleId?.name || '-'}</Typography>;
-        },
+        Cell: ({ cell, column, row }) => <Typography>{row?.original?.moduleId?.name || '-'}</Typography>,
       },
       {
         accessorKey: 'userId.domainId.name', // simple recommended way to define a column
         header: `${data?.labels?.domain?.singular || 'Domain'}`,
         filterVariant: 'multi-select',
         size: 100,
-        Cell: ({ cell, column, row }) => {
-          return <Typography>{row?.original?.userId?.domainId?.name || '-'}</Typography>;
-        },
+        Cell: ({ cell, column, row }) => <Typography>{row?.original?.userId?.domainId?.name || '-'}</Typography>,
       },
       {
         accessorKey: 'userId.departmentId.name', // simple recommended way to define a column
         header: `${data?.labels?.department?.singular || 'Department'}`,
         filterVariant: 'multi-select',
         size: 100,
-        Cell: ({ cell, column, row }) => {
-          return <Typography>{row?.original?.userId?.departmentId?.name || '-'}</Typography>;
-        },
+        Cell: ({ cell, column, row }) => <Typography>{row?.original?.userId?.departmentId?.name || '-'}</Typography>,
       },
 
       {
@@ -166,18 +163,14 @@ export const TrainingsTable = ({ count = 0, items = FAKE_DATA, fetchingData, exp
           header: `Name`,
           filterVariant: 'multi-select',
           size: 100,
-          Cell: ({ cell, column, row }) => {
-            return <Typography>{row?.original?.userId?.name || '-'}</Typography>;
-          },
+          Cell: ({ cell, column, row }) => <Typography>{row?.original?.userId?.name || '-'}</Typography>,
         },
         {
           accessorKey: 'userId.username',
           header: `${data?.labels?.user?.singular || 'User'}`,
           filterVariant: 'multi-select',
           size: 100,
-          Cell: ({ cell, column, row }) => {
-            return <Typography>{row?.original?.userId?.username || '-'}</Typography>;
-          },
+          Cell: ({ cell, column, row }) => <Typography>{row?.original?.userId?.username || '-'}</Typography>,
         },
       );
     }
@@ -187,8 +180,8 @@ export const TrainingsTable = ({ count = 0, items = FAKE_DATA, fetchingData, exp
 
   // Set below flag as well as use it as 'Row' Object to be passed inside forms
 
-  const convertRowDatas = (rows) => {
-    return rows.map((row) => {
+  const convertRowDatas = (rows) =>
+    rows.map((row) => {
       const tz = moment.tz.guess();
       const startTime = moment.unix(row?.original?.startTime).tz(tz).format('DD/MM/YYYY HH:mm');
       const endTime = row?.original?.endTime
@@ -196,70 +189,75 @@ export const TrainingsTable = ({ count = 0, items = FAKE_DATA, fetchingData, exp
         : 'Pending';
       const values = row.original;
       return [
-        values?.suerId?.name || '-',
+        values?.userId?.name || '-',
         values?.userId?.username || '-',
         values?.moduleId?.name || '-',
         values?.userId?.domainId?.name || '-',
-        values?.departmentId?.name || '-',
+        values?.userId?.departmentId?.name || '-',
         `${startTime} - ${endTime}`,
         values?.status || '-',
       ];
     });
-  };
 
   const handleExportRows = (rows, type) => {
     setOpenExportOptions(true);
     setExportRow(convertRowDatas(rows));
   };
 
-  //   const handleRowClick = async (row) => {
-  //     try {
-  //       setOpenEvalutationData({ loading: true });
-  //       const doc = row?.original;
-  //       const response = await axios.get(`/evaluation/${doc.id}`);
-  //       const responseObj = response?.data?.details;
+  const handleRowClick = async (row) => {
+    try {
+      setOpenTrainingData({ loading: true });
 
-  //       const tz = moment.tz.guess();
-  //       const startTime = moment.unix(row?.original?.startTime).tz(tz).format('DD/MM/YYYY HH:mm');
-  //       const endTime = row?.original?.endTime
-  //         ? moment.unix(row?.original?.endTime).tz(tz).format('DD/MM/YYYY HH:mm')
-  //         : 'Pending';
-  //       const session = `${startTime} - ${endTime}`;
+      const doc = row?.original;
 
-  //       console.log('Status', row?.original?.status);
-  //       let status = row?.original?.status;
+      // We are skipping below stage why?, Making API call for the dump makes much more sense.
+      // const response = await axios.get(`/training/${doc._id}`); // doc._id ? It should have been doc.id
+      // const responseObj = response?.data?.details;
 
-  //       responseObj.status = status;
-  //       responseObj.session = session;
-  //       responseObj.username = row?.original?.userId?.name;
+      const responseObj = {
+        trainingDumpJson: doc?.trainingDumpJson,
+      };
+      const tz = moment.tz.guess();
+      const startTime = moment.unix(row?.original?.startTime).tz(tz).format('DD/MM/YYYY HH:mm');
+      const endTime = row?.original?.endTime
+        ? moment.unix(row?.original?.endTime).tz(tz).format('DD/MM/YYYY HH:mm')
+        : 'Pending';
+      const session = `${startTime} - ${endTime}`;
 
-  //       const { answers } = responseObj;
-  //       if (responseObj.mode === 'mcq') {
-  //         responseObj.evaluationDump = responseObj.evaluationDump.mcqBased.map((v, index) => {
-  //           return {
-  //             ...v,
-  //             answeredValue: answers.mcqBased.answerKey[index],
-  //           };
-  //         });
-  //       } else if (responseObj.mode === 'questionAction') {
-  //         responseObj.evaluationDump = responseObj.evaluationDump.questionActionBased.map((v, index) => {
-  //           return {
-  //             ...v,
-  //             answeredValue: answers.questionActionBased.answerKey[index],
-  //           };
-  //         });
-  //       } else {
-  //         responseObj.mistakes = responseObj?.answers?.timeBased?.mistakes;
-  //         responseObj.scores = row?.original?.scores;
-  //       }
+      const status = row?.original?.status;
 
-  //       setOpenEvalutationData({ ...responseObj, evaluationType: responseObj?.moduleId?.evaluationType });
-  //     } catch (error) {
-  //       console.log(error);
-  //       toast.error(error.message || 'Failed to fetch eval-data');
-  //       setOpenEvalutationData(false);
-  //     }
-  //   };
+      responseObj.status = status;
+      responseObj.session = session;
+      responseObj.username = row?.original?.userId?.name;
+
+      responseObj.trainingType = row?.original?.trainingType;
+
+      const { answers } = responseObj;
+      if (row?.original?.trainingType === 'jsonLifeCycle') {
+        responseObj.trainingDumpJson = {
+          ...responseObj.trainingDumpJson,
+          chapters: responseObj.trainingDumpJson.chapters?.map((chapter) => ({
+            ...chapter,
+            moments: chapter.moments.map((moment) =>
+              // CHECK Answers is not an array in this but in evaluation JSON Lifcycle case we are doing something else!??
+
+              ({
+                ...moment,
+                totalTimeTaken: moment?.endTime ? moment.endTime - moment.startTime : undefined,
+                answers: moment?.answers?.events || [],
+              }),
+            ),
+          })),
+        };
+      }
+
+      setOpenTrainingData({ ...responseObj });
+    } catch (error) {
+      console.log(error);
+      toast.error(error.message || 'Failed to fetch eval-data');
+      setOpenTrainingData(false);
+    }
+  };
 
   return (
     <>
@@ -287,6 +285,9 @@ export const TrainingsTable = ({ count = 0, items = FAKE_DATA, fetchingData, exp
             </Box>
           )}
           muiTableBodyRowProps={({ row }) => ({
+            onClick: () => {
+              handleRowClick(row);
+            },
             sx: { cursor: 'pointer' },
           })}
           enableRowActions
@@ -332,6 +333,19 @@ export const TrainingsTable = ({ count = 0, items = FAKE_DATA, fetchingData, exp
           exportRow={exportRow}
           closeExportOptions={() => setOpenExportOptions(false)}
         />
+      </CustomDialog>
+
+      {/* View Training Data */}
+
+      <CustomDialog
+        onClose={() => {
+          setOpenTrainingData(false);
+        }}
+        sx={{ minWidth: '60vw' }}
+        open={Boolean(openTrainingData && openTrainingData?.trainingType === 'jsonLifeCycle')}
+        title={<Typography variant="h5">{data?.labels?.training?.singular || 'Training'}</Typography>}
+      >
+        <JsonLifeCycleTrainingGrid trainingData={openTrainingData} />
       </CustomDialog>
     </>
   );

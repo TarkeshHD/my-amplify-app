@@ -28,33 +28,11 @@ export function getItems(labels) {
   const auth = useAuth();
   const { user } = auth;
 
-  if (user?.role === 'user') {
-    return [
-      {
-        title: labels?.evaluation?.plural || 'Evaluations',
-        path: '/evaluations',
-        icon: (
-          <SvgIcon fontSize="small">
-            <Poll />
-          </SvgIcon>
-        ),
-      },
-      {
-        title: labels?.training?.plural || 'Trainings',
-        path: '/trainings',
-        icon: (
-          <SvgIcon fontSize="small">
-            <FitnessCenterIcon />
-          </SvgIcon>
-        ),
-      },
-    ];
-  }
-
   const items = [
     {
       title: 'Sessions and Analytics',
       path: '/',
+      doNotRenderForUser: [],
       icon: (
         <SvgIcon fontSize="small">
           <BarChartRounded />
@@ -64,6 +42,7 @@ export function getItems(labels) {
     {
       title: labels?.user?.plural || 'Users',
       path: '/users',
+      doNotRenderForUser: ['user'],
       icon: (
         <SvgIcon fontSize="small">
           <GroupRounded />
@@ -73,6 +52,7 @@ export function getItems(labels) {
     {
       title: labels?.module?.plural || 'Modules',
       path: '/modules',
+      doNotRenderForUser: ['user'],
       icon: (
         <SvgIcon fontSize="small">
           <ModelTraining />
@@ -82,6 +62,7 @@ export function getItems(labels) {
     {
       title: labels?.evaluation?.plural || 'Evaluations',
       path: '/evaluations',
+      doNotRenderForUser: [],
       icon: (
         <SvgIcon fontSize="small">
           <Poll />
@@ -91,6 +72,7 @@ export function getItems(labels) {
     {
       title: labels?.training?.plural || 'Trainings',
       path: '/trainings',
+      doNotRenderForUser: [],
       icon: (
         <SvgIcon fontSize="small">
           <FitnessCenterIcon />
@@ -99,6 +81,7 @@ export function getItems(labels) {
     },
     {
       title: 'Organization',
+      doNotRenderForUser: ['user'],
       children: [
         {
           title: labels?.domain?.plural || 'Domains',
@@ -128,6 +111,7 @@ export function getItems(labels) {
     items.splice(3, 0, {
       title: 'Knowledge Repository',
       path: '/knowledge',
+      doNotRenderForUser: ['user'],
       icon: (
         <SvgIcon fontSize="small">
           <EmojiObjectsIcon />
@@ -141,6 +125,7 @@ export function getItems(labels) {
     items.splice(5, 0, {
       title: 'Devices',
       path: '/devices',
+      doNotRenderForUser: [],
       icon: (
         <SvgIcon fontSize="small">
           <HomeMaxIcon />
@@ -155,6 +140,7 @@ export function getItems(labels) {
     items.splice(4, 0, {
       title: 'Schedule',
       path: '/schedule',
+      doNotRenderForUser: ['user'],
       icon: (
         <SvgIcon fontSize="small">
           <CalendarMonthIcon />
@@ -169,6 +155,7 @@ export function getItems(labels) {
     items.splice(4, 0, {
       title: 'Archive',
       path: '/archive',
+      doNotRenderForUser: ['user'],
       icon: (
         <SvgIcon fontSize="small">
           <ArchiveIcon />

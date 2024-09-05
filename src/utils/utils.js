@@ -242,3 +242,18 @@ export const displayPendingToast = () => {
     localStorage.removeItem(defaultKey);
   }
 };
+
+export const secondsDurationToReadableFormat = (seconds) => {
+  if (!seconds) return '-';
+  // Create a duration object from seconds
+  const duration = moment.duration(seconds, 'seconds');
+
+  // Extract days, hours, and minutes from the duration
+  const days = Math.floor(duration.asDays());
+  const hours = duration.hours();
+  const minutes = duration.minutes();
+
+  // Format the result as a string
+  const formattedDuration = `${days}d ${hours}h ${minutes.toString().padStart(2, '0')}m`;
+  return formattedDuration;
+};

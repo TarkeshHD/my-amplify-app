@@ -25,6 +25,7 @@ import { useConfig } from '../../hooks/useConfig';
 import { SideNavItem } from './SideNavItem';
 import { SideNavNestedItems } from './SideNavNestedItems';
 import { getItems } from './config';
+import { useAuth } from '../../hooks/useAuth';
 
 export const SideNav = (props) => {
   const { open, onClose } = props;
@@ -35,6 +36,8 @@ export const SideNav = (props) => {
 
   const config = useConfig();
   const { data } = config;
+
+  const { user } = useAuth();
 
   const items = getItems(data?.labels);
 
@@ -115,6 +118,7 @@ export const SideNav = (props) => {
             }}
           >
             {items.map((item) => {
+              if (item?.doNotRenderForUser?.includes(user.role)) return false;
               const active = item.path ? pathname === item.path : false;
               const hasChildren = item.children;
 

@@ -28,14 +28,21 @@ const Page = () => {
     try {
       setFetchingData(true);
       const response = await axios.get(`/evaluation/user/${userIdParam}`);
+      const trainingResponse = await axios.get(`/training/user/${userIdParam}`);
       // Sort the array in descending order by the "createdAt" property
       const sortedData = [...(response.data?.details ?? [])].sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
       );
 
+      console.log('trainingResponse', trainingResponse);
+      const sortedTrainingData = [...(trainingResponse.data?.trainings ?? [])].sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+      );
+
+      console.log('sortedTrainingData', sortedTrainingData);
       setEvaluationTime(convertTimeToDescription(response?.data?.totalVrSessionTime));
       setUserName(response?.data?.user?.username);
-      setData(sortedData);
+      setData([...sortedData, ...sortedTrainingData]);
     } catch (error) {
       toast.error(error.message || `Failed to fetch ${data?.labels?.user?.plural?.toLowerCase() || 'users'}`);
       console.log(error);
@@ -69,12 +76,10 @@ const Page = () => {
         <Stack spacing={3}>
           <Stack direction="row" justifyContent="space-between" spacing={4}>
             <Stack spacing={1}>
-              <Typography variant="h5">
-                {userName} {configData?.labels?.evaluation?.singular || 'Evaluation'}
-              </Typography>
+              <Typography variant="h5">{userName} VR History</Typography>
               {evaluationTime && (
                 <Typography variant="body1" color="textSecondary">
-                  Total VR Evaluation Time: {evaluationTime}
+                  Total VR Time: {evaluationTime}
                 </Typography>
               )}
             </Stack>

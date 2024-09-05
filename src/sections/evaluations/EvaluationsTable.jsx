@@ -26,6 +26,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { fetchScoresAndStatuses } from '../../utils/utils';
 import QuestionsActionGrid from '../../components/modules/QuestionActionGrid';
 import JsonLifeCycleEvaluationGrid from '../../components/modules/JsonLifeCycleEvaluationGrid';
+import JsonLifeCycleTrainingGrid from '../../components/modules/JsonLifeCycleTrainingGrid';
 
 const statusMap = {
   Pending: 'warning',
@@ -55,7 +56,8 @@ const FAKE_DATA = [
 export const EvaluationsTable = ({ count = 0, items = FAKE_DATA, fetchingData, exportBtnClicked, exportBtnFalse }) => {
   const exportBtnRef = useRef(null);
   const [exportRow, setExportRow] = useState([]);
-  const [openEvaluationData, setOpenEvalutationData] = useState(null);
+  const [openEvaluationData, setOpenEvaluationData] = useState(null);
+  const [openTrainingData, setOpenTrainingData] = useState(null);
   const [openExportOptions, setOpenExportOptions] = useState(false);
 
   const navigate = useNavigate();
@@ -170,10 +172,10 @@ export const EvaluationsTable = ({ count = 0, items = FAKE_DATA, fetchingData, e
         filterVariant: 'multi-select',
       },
       {
-        accessorKey: 'status', // simple recommended way to define a column
+        accessorFn: (row) => capitalizeFirstLetter(row.status), // simple recommended way to define a column
         header: 'status',
         Cell: ({ cell, column, row }) => {
-          const status = row?.original?.status;
+          const status = capitalizeFirstLetter(row?.original?.status);
           return <SeverityPill color={statusMap[status]}>{status}</SeverityPill>;
         },
         filterVariant: 'multi-select',
@@ -213,7 +215,7 @@ export const EvaluationsTable = ({ count = 0, items = FAKE_DATA, fetchingData, e
         values?.departmentId?.name || '-',
         `${startTime} - ${endTime}`,
         values?.score || '-',
-        values?.status || '-',
+        capitalizeFirstLetter(values?.status) || '-',
       ];
     });
   };
@@ -225,9 +227,16 @@ export const EvaluationsTable = ({ count = 0, items = FAKE_DATA, fetchingData, e
 
   const handleRowClick = async (row) => {
     try {
-      setOpenEvalutationData({ loading: true });
+      // Delegagate these to seperate function according to the conditions. !important
       const doc = row?.original;
-      const response = await axios.get(`/evaluation/${doc.id}`);
+      let response;
+      if (doc?.trainingType === 'jsonLifeCycle') {
+        response = await axios.get(`/training/${doc._id}`);
+      } else if (!doc?.trainingType) {
+        response = await axios.get(`/evaluation/${doc.id}`);
+      } else {
+        return;
+      }
       const responseObj = response?.data?.details;
 
       const tz = moment.tz.guess();
@@ -237,7 +246,7 @@ export const EvaluationsTable = ({ count = 0, items = FAKE_DATA, fetchingData, e
         : 'Pending';
       const session = `${startTime} - ${endTime}`;
 
-      let status = row?.original?.status;
+      const status = capitalizeFirstLetter(row?.original?.status);
 
       responseObj.status = status;
       responseObj.session = session;
@@ -283,11 +292,31 @@ export const EvaluationsTable = ({ count = 0, items = FAKE_DATA, fetchingData, e
         responseObj.scores = row?.original?.scores;
       }
 
-      setOpenEvalutationData({ ...responseObj, evaluationType: responseObj?.moduleId?.evaluationType });
+      if (doc?.trainingType === 'jsonLifeCycle') {
+        responseObj.trainingDumpJson = {
+          ...responseObj.trainingDumpJson,
+          chapters: responseObj.trainingDumpJson.chapters?.map((chapter) => ({
+            ...chapter,
+            moments: chapter.moments.map((moment) =>
+              // CHECK Answers is not an array in this but in evaluation JSON Lifcycle case we are doing something else!??
+
+              ({
+                ...moment,
+                totalTimeTaken: moment?.endTime ? moment.endTime - moment.startTime : undefined,
+                answers: moment?.answers?.events || [],
+              }),
+            ),
+          })),
+        };
+
+        setOpenTrainingData({ ...responseObj, trainingType: doc?.trainingType });
+      } else if (!doc?.trainingType) {
+        setOpenEvaluationData({ ...responseObj, evaluationType: responseObj?.moduleId?.evaluationType });
+      }
     } catch (error) {
       console.log(error);
       toast.error(error.message || 'Failed to fetch eval-data');
-      setOpenEvalutationData(false);
+      setOpenEvaluationData(false);
     }
   };
 
@@ -412,7 +441,7 @@ export const EvaluationsTable = ({ count = 0, items = FAKE_DATA, fetchingData, e
       {/* View Evaluation Data */}
       <CustomDialog
         onClose={() => {
-          setOpenEvalutationData(false);
+          setOpenEvaluationData(false);
         }}
         sx={{ minWidth: '60vw' }}
         open={Boolean(openEvaluationData)}
@@ -436,6 +465,28 @@ export const EvaluationsTable = ({ count = 0, items = FAKE_DATA, fetchingData, e
           />
         ) : openEvaluationData?.mode === 'jsonLifeCycle' ? (
           <JsonLifeCycleEvaluationGrid evalData={openEvaluationData} />
+        ) : (
+          <></>
+        )}
+      </CustomDialog>
+
+      {/* View Training Data */}
+      <CustomDialog
+        onClose={() => {
+          setOpenTrainingData(false);
+        }}
+        sx={{ minWidth: '60vw' }}
+        open={Boolean(openTrainingData)}
+        title={<Typography variant="h5">{data?.labels?.training?.singular || 'Training'} </Typography>}
+      >
+        {openTrainingData?.loading ? (
+          <Box>
+            <Skeleton variant="text" sx={{ fontSize: '1rem' }} />
+            <Skeleton variant="rectangular" width={210} height={60} />
+            <Skeleton variant="rounded" width={210} height={60} />
+          </Box>
+        ) : openTrainingData?.trainingType === 'jsonLifeCycle' ? (
+          <JsonLifeCycleTrainingGrid trainingData={openTrainingData} />
         ) : (
           <></>
         )}
