@@ -21,6 +21,8 @@ const EVAL_SAMPLE = [
   { answer: 'a', answeredValue: 'b' },
 ];
 
+// Why is this not in utils?
+
 export const secondsToHHMMSS = (seconds) => {
   const duration = moment.duration(seconds, 'seconds');
   return moment.utc(duration.asMilliseconds()).format('HH:mm:ss');

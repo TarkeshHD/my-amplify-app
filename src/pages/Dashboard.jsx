@@ -7,6 +7,8 @@ import UpcomingSession from '../components/session/UpcomingSession';
 import { useEffect } from 'react';
 import { displayPendingToast } from '../utils/utils';
 import Evaluations from '../pages/Evaluations';
+import AdminDashboard from '../sections/dashboard/AdminDashboard';
+import TraineeDashboard from '../sections/dashboard/TraineeDashboard';
 
 const Page = () => {
   const config = useConfig();
@@ -15,11 +17,6 @@ const Page = () => {
   const auth = useAuth();
 
   const { user } = useAuth();
-
-  if (user?.role === 'user') {
-    // redirect to evaluation page
-    return <Evaluations />;
-  }
 
   useEffect(() => {
     displayPendingToast();
@@ -30,11 +27,19 @@ const Page = () => {
       <Helmet>
         <title>Sessions and Analytics | VRse Builder</title>
       </Helmet>
-
-      <UpcomingSession />
-      <Analytics />
+      <RoleBasedDashboard user={user?.role} />
     </>
   );
+};
+
+const RoleBasedDashboard = ({ user }) => {
+  switch (user) {
+    case 'user':
+      return <TraineeDashboard />;
+
+    default:
+      return <AdminDashboard />;
+  }
 };
 
 export default Page;

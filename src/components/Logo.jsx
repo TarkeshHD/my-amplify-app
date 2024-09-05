@@ -6,6 +6,7 @@ import { useConfig } from '../hooks/useConfig';
 const Logo = () => {
   const config = useConfig();
   const { data } = config;
+  const height = data?.clientLogoHeight || 100;
   let logo = '';
   if (data && data?.clientName !== 'FrontEndFallbackConfig') {
     logo = import.meta.env.VITE_BASE_URL + data.clientLogo;
@@ -13,7 +14,7 @@ const Logo = () => {
     logo = defaultLogo;
   }
 
-  return <img alt="avLogo" src={logo} />;
+  return <img alt="avLogo" src={logo} height={height} />;
 };
 
 export default Logo;

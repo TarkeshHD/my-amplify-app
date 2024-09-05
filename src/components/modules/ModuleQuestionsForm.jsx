@@ -105,7 +105,7 @@ export default function ModuleQuestionForm({ isEdit, currentModule }) {
           })),
       noOfQuestion: isEdit ? currentModule?.noOfQuestion : 10,
       passPercentage: isEdit ? currentModule?.passPercentage : 50,
-      description: isEdit ? currentModule?.description : '',
+      description: currentModule?.description || '',
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [currentModule],
@@ -214,9 +214,9 @@ export default function ModuleQuestionForm({ isEdit, currentModule }) {
     name: 'evaluation',
   });
 
-  const addQuestion = (values) => {
+  const addQuestion = () => {
     // Specify the last index
-    const indexToInsert = values.evaluation.length;
+    const indexToInsert = values?.evaluation?.length;
 
     // Insert a new item at the specified index
     insert(indexToInsert, {
@@ -229,6 +229,7 @@ export default function ModuleQuestionForm({ isEdit, currentModule }) {
         c: 'sample 3',
         d: 'sample 5',
       },
+      weightage: 1,
     });
   };
 
@@ -351,7 +352,7 @@ export default function ModuleQuestionForm({ isEdit, currentModule }) {
                                 <IconButton>
                                   <DeleteIcon
                                     sx={{ fontSize: '24px' }}
-                                    onClick={() => removeQuestionAction(index)}
+                                    onClick={() => removeQuestion(index)}
                                     color="error"
                                   />
                                 </IconButton>
