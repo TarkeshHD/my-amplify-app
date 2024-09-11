@@ -218,7 +218,7 @@ export const UsersTable = ({
           state={{
             isLoading: fetchingData,
           }}
-          initialState={{ pagination: { pageSize: 5 }, showGlobalFilter: true, showColumnFilters: true }}
+          initialState={{ pagination: { pageSize: 10 }, showGlobalFilter: true, showColumnFilters: true }}
           muiTablePaginationProps={{
             rowsPerPageOptions: [5, 10, 15, 20, 25],
           }}

@@ -20,7 +20,7 @@ import QuestionsGrid from '../../components/modules/QuestionsGrid';
 import TimeGrid from '../../components/modules/TimeGrid';
 import { useConfig } from '../../hooks/useConfig';
 import axios from '../../utils/axios';
-import { capitalizeFirstLetter, getInitials } from '../../utils/utils';
+import { capitalizeFirstLetter, convertTimeToDescription, getInitials } from '../../utils/utils';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { fetchScoresAndStatuses } from '../../utils/utils';
@@ -165,6 +165,18 @@ export const EvaluationsTable = ({ count = 0, items = FAKE_DATA, fetchingData, e
         },
         Filter: ({ column }) => <CustomDateRangePicker column={column} />,
       },
+      {
+        accessorKey: 'duration', // simple recommended way to define a column
+        header: 'Duration',
+        filterVariant: 'multi-select',
+        Cell: ({ cell, column, row }) => {
+          const endTime = row?.original?.endTime ? row?.original?.endTime : undefined;
+          const startTime = row?.original?.startTime;
+          const duration = endTime ? endTime - startTime : undefined;
+          console.log('duration', duration);
+          return <Typography>{duration > 0 ? convertTimeToDescription(duration) : '-'}</Typography>;
+        },
+      },
 
       {
         accessorKey: 'score', // simple recommended way to define a column
@@ -207,6 +219,7 @@ export const EvaluationsTable = ({ count = 0, items = FAKE_DATA, fetchingData, e
       const endTime = row?.original?.endTime
         ? moment.unix(row?.original?.endTime).tz(tz).format('DD/MM/YYYY HH:mm')
         : 'Pending';
+      const duration = row?.original?.endTime ? row?.original?.endTime - row?.original?.startTime : undefined;
       const values = row.original;
       return [
         values?.userId?.username || '-',
@@ -214,6 +227,7 @@ export const EvaluationsTable = ({ count = 0, items = FAKE_DATA, fetchingData, e
         values?.userId?.domainId?.name || '-',
         values?.departmentId?.name || '-',
         `${startTime} - ${endTime}`,
+        duration > 0 ? convertTimeToDescription(duration) : '-',
         values?.score || '-',
         capitalizeFirstLetter(values?.status) || '-',
       ];
@@ -407,7 +421,7 @@ export const EvaluationsTable = ({ count = 0, items = FAKE_DATA, fetchingData, e
           state={{
             isLoading: fetchingData,
           }}
-          initialState={{ pagination: { pageSize: 5 }, showGlobalFilter: true, showColumnFilters: true }}
+          initialState={{ pagination: { pageSize: 10 }, showGlobalFilter: true, showColumnFilters: true }}
           muiTablePaginationProps={{
             rowsPerPageOptions: [5, 10, 15, 20, 25],
           }}

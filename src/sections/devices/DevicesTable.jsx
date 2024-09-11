@@ -270,7 +270,7 @@ export const DevicesTable = ({ count = 0, items = FAKE_DATA, fetchingData, expor
           state={{
             isLoading: fetchingData,
           }}
-          initialState={{ pagination: { pageSize: 5 }, showGlobalFilter: true, showColumnFilters: true }}
+          initialState={{ pagination: { pageSize: 10 }, showGlobalFilter: true, showColumnFilters: true }}
           muiTablePaginationProps={{
             rowsPerPageOptions: [5, 10, 15, 20, 25],
           }}

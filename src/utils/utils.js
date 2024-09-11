@@ -1,11 +1,10 @@
 import moment from 'moment-timezone';
-import axios from './axios';
 import { read, utils } from 'xlsx';
 import { toast } from 'react-toastify';
+import axios from './axios';
 
-export const applyPagination = (documents, page, rowsPerPage) => {
-  return documents.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
-};
+export const applyPagination = (documents, page, rowsPerPage) =>
+  documents.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
 export const getInitials = (name = '') =>
   name
@@ -36,10 +35,9 @@ export const calculatePercentageChange = (oldValue, newValue) => {
     // Handle the case where oldValue is zero to avoid division by zero
     if (newValue === 0) {
       return 0;
-    } else {
-      // If old value is zero and new value is non-zero, consider it as an infinite increase
-      return 100;
     }
+    // If old value is zero and new value is non-zero, consider it as an infinite increase
+    return 100;
   }
 
   const change = newValue - oldValue;
@@ -50,14 +48,15 @@ export const calculatePercentageChange = (oldValue, newValue) => {
 // Format bytes to kb, mb or gb
 export const formatBytes = (bytes) => {
   if (bytes < 1024) {
-    return bytes + ' B';
-  } else if (bytes < 1048576) {
-    return (bytes / 1024).toFixed(0) + ' KB';
-  } else if (bytes < 1073741824) {
-    return (bytes / 1048576).toFixed(0) + ' MB';
-  } else {
-    return (bytes / 1073741824).toFixed(0) + ' GB';
+    return `${bytes} B`;
   }
+  if (bytes < 1048576) {
+    return `${(bytes / 1024).toFixed(0)} KB`;
+  }
+  if (bytes < 1073741824) {
+    return `${(bytes / 1048576).toFixed(0)} MB`;
+  }
+  return `${(bytes / 1073741824).toFixed(0)} GB`;
 };
 
 export const fetchScoresAndStatuses = async (item, config) => {
@@ -79,37 +78,44 @@ export const getStatus = async (item, config) => {
     // Get the percentage and find the pass mark
     const passMark = item?.evaluationDump.mcqBased.length * (item.passingCriteria.passPercentage / 100);
     return item?.answers?.mcqBased?.score >= passMark ? 'Pass' : 'Fail';
-  } else if (item?.mode === 'questionAction') {
+  }
+  if (item?.mode === 'questionAction') {
     let fullScore = 0;
     item?.evaluationDump.questionActionBased.forEach((question) => {
       fullScore += question.weightage;
     });
     const passMark = fullScore * (item.passingCriteria.passPercentage / 100);
     return item?.answers?.questionActionBased?.score >= passMark ? 'Pass' : 'Fail';
-  } else if (item?.mode === 'time') {
+  }
+  if (item?.mode === 'time') {
     // If time taken is less than eval dump bronze time and if mistakes are less than passing criteria mistakes allowed; then pass
     return item.answers?.timeBased.timeTaken < item?.evaluationDump.timeBased.bronzeTimeLimit &&
       item.answers?.timeBased?.mistakes?.length <= item.passingCriteria.mistakesAllowed
       ? 'Pass'
       : 'Fail';
-  } else if (item?.mode === 'jsonLifeCycle') {
+  }
+  if (item?.mode === 'jsonLifeCycle') {
+    console.log('item?.evaluationDump?.jsonLifeCycleBased?.status', item?.evaluationDump?.jsonLifeCycleBased?.status);
     return item?.evaluationDump?.jsonLifeCycleBased?.status;
   }
 };
 
 export const getScore = (item) => {
   if (item?.mode === 'mcq') {
-    return item?.answers?.mcqBased?.score + ' / ' + item?.answers?.mcqBased?.answerKey.length;
-  } else if (item?.mode === 'questionAction') {
+    return `${item?.answers?.mcqBased?.score} / ${item?.answers?.mcqBased?.answerKey.length}`;
+  }
+  if (item?.mode === 'questionAction') {
     // Loop through thee evaluation dump and calculate the weightage to get full score
     let fullScore = 0;
     item?.evaluationDump.questionActionBased.forEach((question) => {
       fullScore += question.weightage;
     });
-    return item?.answers?.questionActionBased?.score + '/' + fullScore;
-  } else if (item?.mode === 'time') {
+    return `${item?.answers?.questionActionBased?.score}/${fullScore}`;
+  }
+  if (item?.mode === 'time') {
     return capitalizeFirstLetter(item?.answers?.timeBased?.score);
-  } else if (item?.mode === 'jsonLifeCycle') {
+  }
+  if (item?.mode === 'jsonLifeCycle') {
     return `${item?.evaluationDump?.jsonLifeCycleBased?.totalScored || 0} / ${
       item?.evaluationDump?.jsonLifeCycleBased?.totalMark || 0
     }`;
@@ -177,8 +183,8 @@ export const convertTimeToDescription = (time, minify = false) => {
   return formattedDuration;
 };
 
-export const readExcelFile = (file) => {
-  return new Promise((resolve, reject) => {
+export const readExcelFile = (file) =>
+  new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const data = new Uint8Array(e.target.result);
@@ -188,7 +194,6 @@ export const readExcelFile = (file) => {
     reader.onerror = (error) => reject(error);
     reader.readAsArrayBuffer(file);
   });
-};
 
 export const getItemWithExpiration = (key) => {
   const itemStr = localStorage.getItem(key);
@@ -211,7 +216,7 @@ export const setItemWithExpiration = (key, value, timeout) => {
   // `item` is an object which contains the original value
   // plus the expiration time
   const item = {
-    value: value,
+    value,
     expiry: now + timeout,
   };
 
@@ -241,19 +246,4 @@ export const displayPendingToast = () => {
     // Remove the toast message from localStorage after displaying it
     localStorage.removeItem(defaultKey);
   }
-};
-
-export const secondsDurationToReadableFormat = (seconds) => {
-  if (!seconds) return '-';
-  // Create a duration object from seconds
-  const duration = moment.duration(seconds, 'seconds');
-
-  // Extract days, hours, and minutes from the duration
-  const days = Math.floor(duration.asDays());
-  const hours = duration.hours();
-  const minutes = duration.minutes();
-
-  // Format the result as a string
-  const formattedDuration = `${days}d ${hours}h ${minutes.toString().padStart(2, '0')}m`;
-  return formattedDuration;
 };

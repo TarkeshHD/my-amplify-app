@@ -35,12 +35,17 @@ const Page = () => {
       );
 
       console.log('trainingResponse', trainingResponse);
+      console.log('sortedData', sortedData);
       const sortedTrainingData = [...(trainingResponse.data?.trainings ?? [])].sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
       );
 
-      console.log('sortedTrainingData', sortedTrainingData);
-      setEvaluationTime(convertTimeToDescription(response?.data?.totalVrSessionTime));
+      console.log('sortedTrainingData', response?.data?.totalVrSessionTime);
+      setEvaluationTime(
+        response?.data?.totalVrSessionTime > 0
+          ? convertTimeToDescription(response?.data?.totalVrSessionTime)
+          : '0 Seconds',
+      );
       setUserName(response?.data?.user?.username);
       setData([...sortedData, ...sortedTrainingData]);
     } catch (error) {
