@@ -22,6 +22,7 @@ import ExportOptions from '../../components/export/ExportOptions';
 import { useConfig } from '../../hooks/useConfig';
 import JsonLifeCycleEvaluationGrid from '../../components/modules/JsonLifeCycleEvaluationGrid';
 import JsonLifeCycleTrainingGrid from '../../components/modules/JsonLifeCycleTrainingGrid';
+import { convertTimeToDescription } from '../../utils/utils';
 
 const statusMap = {
   ongoing: 'warning',
@@ -145,6 +146,18 @@ export const TrainingsTable = ({ count = 0, items = FAKE_DATA, fetchingData, exp
         Filter: ({ column }) => <CustomDateRangePicker column={column} />,
       },
       {
+        accessorKey: 'duration', // simple recommended way to define a column
+        header: 'Duration',
+        filterVariant: 'multi-select',
+        Cell: ({ cell, column, row }) => {
+          const endTime = row?.original?.endTime ? row?.original?.endTime : undefined;
+          const startTime = row?.original?.startTime;
+          const duration = endTime ? endTime - startTime : undefined;
+          console.log('duration', duration);
+          return <Typography>{duration > 0 ? convertTimeToDescription(duration) : '-'}</Typography>;
+        },
+      },
+      {
         accessorKey: 'status', // simple recommended way to define a column
         header: 'status',
         Cell: ({ cell, column, row }) => {
@@ -187,6 +200,7 @@ export const TrainingsTable = ({ count = 0, items = FAKE_DATA, fetchingData, exp
       const endTime = row?.original?.endTime
         ? moment.unix(row?.original?.endTime).tz(tz).format('DD/MM/YYYY HH:mm')
         : 'Pending';
+      const duration = row?.original?.endTime ? row?.original?.endTime - row?.original?.startTime : undefined;
       const values = row.original;
       return [
         values?.userId?.name || '-',
@@ -195,6 +209,7 @@ export const TrainingsTable = ({ count = 0, items = FAKE_DATA, fetchingData, exp
         values?.userId?.domainId?.name || '-',
         values?.userId?.departmentId?.name || '-',
         `${startTime} - ${endTime}`,
+        duration > 0 ? convertTimeToDescription(duration) : '-',
         values?.status || '-',
       ];
     });

@@ -95,7 +95,7 @@ export const DepartmentsTable = ({ count = 0, items = [], fetchingData, domains 
           state={{
             isLoading: fetchingData,
           }}
-          initialState={{ pagination: { pageSize: 5 }, showGlobalFilter: true }}
+          initialState={{ pagination: { pageSize: 10 }, showGlobalFilter: true }}
           muiTablePaginationProps={{
             rowsPerPageOptions: [5, 10, 15, 20, 25],
           }}

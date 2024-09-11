@@ -31,7 +31,7 @@ import {
 import { ArrowForwardIos, CancelRounded, CheckCircleRounded } from '@mui/icons-material';
 
 import { SeverityPill } from '../SeverityPill';
-import { secondsDurationToReadableFormat } from '../../utils/utils';
+import { convertTimeToDescription } from '../../utils/utils';
 
 const Accordion = styled((props) => <MuiAccordion disableGutters elevation={0} square {...props} />)(({ theme }) => ({
   border: `1px solid ${theme.palette.divider}`,
@@ -174,7 +174,7 @@ const JsonLifeCycleEvaluationGrid = ({ evalData }) => {
                 </Typography>
                 <Typography variant="body2">
                   Total Time Taken:{' '}
-                  {chapter.totalTimeTaken ? `${secondsDurationToReadableFormat(chapter.totalTimeTaken)} ` : '-'}
+                  {chapter.totalTimeTaken ? `${convertTimeToDescription(chapter.totalTimeTaken)} ` : '-'}
                 </Typography>
               </Stack>
             </AccordionSummary>
@@ -205,9 +205,7 @@ const JsonLifeCycleEvaluationGrid = ({ evalData }) => {
                             <Typography variant="subtitle1">{moment.momentName}</Typography>
                             <Typography variant="body2">
                               Time Taken:{' '}
-                              {moment.totalTimeTaken
-                                ? `${secondsDurationToReadableFormat(moment.totalTimeTaken)} `
-                                : '-'}
+                              {moment.totalTimeTaken ? `${convertTimeToDescription(moment.totalTimeTaken)} ` : '-'}
                             </Typography>
                           </Stack>
                           <Box my={2}>
