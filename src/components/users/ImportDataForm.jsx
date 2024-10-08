@@ -1,24 +1,26 @@
-import { Alert, Box, Grid, Stack, Typography } from '@mui/material';
+import { Alert, Box, CircularProgress, Grid, Stack, Typography } from '@mui/material';
 import React, { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { read, utils } from 'xlsx';
-import { FormProvider } from '../hook-form';
-import { RHFUploadSingleFile } from '../hook-form/RHFUpload';
 
 import { LoadingButton } from '@mui/lab';
 
 import ExcelJS from 'exceljs';
 import { useNavigate } from 'react-router-dom';
+import { RHFUploadSingleFile } from '../hook-form/RHFUpload';
+import { FormProvider } from '../hook-form';
 import { useConfig } from '../../hooks/useConfig';
 import axios from '../../utils/axios';
 import { readExcelFile } from '../../utils/utils';
+import { set } from 'lodash';
 
 const expectedValues = ['Name', 'Employee Code', 'Domain', 'Department'];
 
 const ImportDataForm = ({ setOpenImportDataForm }) => {
   const navigate = useNavigate();
   const [sendFiles, setSendFiles] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   const methods = useForm({});
   const {
     watch,
@@ -36,7 +38,7 @@ const ImportDataForm = ({ setOpenImportDataForm }) => {
   }
 
   const validateHeaders = (workbook, sheet, lastCell) => {
-    const headersRange = 'A1:' + lastCell;
+    const headersRange = `A1:${lastCell}`;
     const headers = utils.sheet_to_json(sheet, {
       range: headersRange,
       header: 1,
@@ -80,7 +82,7 @@ const ImportDataForm = ({ setOpenImportDataForm }) => {
           return;
         }
 
-        const dataRows = utils.sheet_to_json(sheet, { range: 'A1:' + lastCell });
+        const dataRows = utils.sheet_to_json(sheet, { range: `A1:${lastCell}` });
         if (!validateDataRows(dataRows)) {
           toast.error('Please upload a valid Excel format. Values are missing');
           return;
@@ -132,8 +134,11 @@ const ImportDataForm = ({ setOpenImportDataForm }) => {
   );
 
   const onSubmit = async () => {
+    setIsLoading(true);
     if (sendFiles.length < 1) {
       toast.error('Please upload a valid .xlsx format (Values are missing)');
+      setIsLoading(false);
+      console.log('isLoading', isLoading);
       return;
     }
 
@@ -141,10 +146,11 @@ const ImportDataForm = ({ setOpenImportDataForm }) => {
       // Send data to the backend
       await axios.post('user/bulk', { userData: sendFiles });
       toast.success('Successfully bulk imported users');
-
+      setIsLoading(false);
       setOpenImportDataForm(false);
       navigate(0);
     } catch (error) {
+      setIsLoading(false);
       toast.error(`${error?.message || 'Server error'} `);
     }
 
@@ -194,7 +200,13 @@ const ImportDataForm = ({ setOpenImportDataForm }) => {
         </Grid>
         <Grid item xs={12}>
           <Stack alignItems="flex-end" sx={{ mt: 1 }}>
-            <LoadingButton type="submit" variant="contained" loading={false}>
+            <LoadingButton
+              loadingPosition="center" // Can be 'start', 'end', or 'center'
+              loadingIndicator={<CircularProgress color="inherit" size={16} />}
+              type="submit"
+              variant="contained"
+              loading={isLoading}
+            >
               Upload File
             </LoadingButton>
           </Stack>

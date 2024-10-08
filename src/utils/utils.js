@@ -63,7 +63,7 @@ export const fetchScoresAndStatuses = async (item, config) => {
   let score = '-';
   let status = 'Pending';
 
-  if (item?.endTime || item?.mode === 'jsonLifeCycle') {
+  if (item?.endTime) {
     status = await getStatus(item, config);
     score = status === 'Fail' && item?.mode === 'time' ? '-' : getScore(item); // If the status is fail and the mode is time, then the score should be "-"
     score = item?.mode === 'jsonLifeCycleBased' ? getScore(item) : score;
@@ -95,7 +95,9 @@ export const getStatus = async (item, config) => {
       : 'Fail';
   }
   if (item?.mode === 'jsonLifeCycle') {
-    console.log('item?.evaluationDump?.jsonLifeCycleBased?.status', item?.evaluationDump?.jsonLifeCycleBased?.status);
+    if (!item?.evaluationDump?.jsonLifeCycleBased?.endTime) {
+      return 'Pending';
+    }
     return item?.evaluationDump?.jsonLifeCycleBased?.status;
   }
 };
@@ -246,4 +248,77 @@ export const displayPendingToast = () => {
     // Remove the toast message from localStorage after displaying it
     localStorage.removeItem(defaultKey);
   }
+};
+
+export const secondsToHHMMSS = (seconds) => {
+  const duration = moment.duration(seconds, 'seconds');
+  return moment.utc(duration.asMilliseconds()).format('HH:mm:ss');
+};
+
+export const convertUnixToLocalTime = (unixTime) => {
+  const tz = moment.tz.guess(); // This needs to be in constant or something no?
+  return moment.unix(unixTime).tz(tz).format('DD/MM/YYYY HH:mm');
+};
+
+export const getCommonAnalytics = (values) => {
+  // Total evaluation count
+  const totalEvaluations = values.length;
+  // Filter to find pending evaluations
+  const pendingEvaluations = values.filter(
+    (item) =>
+      item?.original?.status?.toLowerCase() === 'pending' || item?.original?.status?.toLowerCase() === 'ongoing',
+  );
+
+  // Safely calculate incompletion rate
+  const incompletionRate =
+    totalEvaluations > 0 ? parseFloat(((pendingEvaluations.length || 0) / totalEvaluations) * 100).toFixed(2) : '0'; // Set to '0' if totalEvaluations is 0
+
+  // Create a Set of unique userIds for total user attempts
+  const uniqueUsers = new Set(values.map((item) => item?.original?.userId?._id));
+  const totalUserAttempts = uniqueUsers.size;
+
+  return {
+    totalEvaluations,
+    incompletionRate,
+    totalUserAttempts,
+    pendingEvaluations,
+  };
+};
+
+export const getEvaluationAnalytics = (values) => {
+  console.log('values', values);
+
+  // Get common analytics
+  const { totalEvaluations, incompletionRate, totalUserAttempts, pendingEvaluations } = getCommonAnalytics(values);
+
+  // Filter to find passed evaluations (status is either 'Pass' or 'Passed')
+  const passedEvaluations = values.filter(
+    (item) => item?.original?.status?.toLowerCase() === 'pass' || item?.original?.status?.toLowerCase() === 'passed',
+  );
+
+  // Safely calculate pass percentage
+  const passPercentage =
+    totalEvaluations - pendingEvaluations.length > 0
+      ? parseFloat(((passedEvaluations.length || 0) / (totalEvaluations - pendingEvaluations.length)) * 100).toFixed(2)
+      : '0'; // Set to '0' if no passed or pending evaluations
+
+  // Log or return the calculated values
+  const analytics = {
+    totalEvaluations,
+    passPercentage,
+    totalUserAttempts,
+    incompletionRate,
+  };
+
+  return analytics;
+};
+
+export const getTrainingAnalytics = (values) => {
+  const { totalEvaluations, incompletionRate, totalUserAttempts } = getCommonAnalytics(values);
+
+  return {
+    totalEvaluations,
+    totalUserAttempts,
+    incompletionRate,
+  };
 };

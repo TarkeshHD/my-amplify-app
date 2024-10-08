@@ -12,7 +12,6 @@ import TraineeForm from '../components/users/TraineeForm';
 import { useAuth } from '../hooks/useAuth';
 import { useConfig } from '../hooks/useConfig';
 import { useSelection } from '../hooks/useSelection';
-import { EvaluationsTable } from '../sections/evaluations/EvaluationsTable';
 import { ModulesTable } from '../sections/modules/ModulesTable';
 import { UsersTable } from '../sections/users/UsersTable';
 import axios from '../utils/axios';

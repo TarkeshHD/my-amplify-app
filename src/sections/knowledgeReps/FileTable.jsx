@@ -9,7 +9,7 @@ import { useMemo } from 'react';
 import CustomDialog from '../../components/CustomDialog';
 import { Scrollbar } from '../../components/Scrollbar';
 import SearchNotFound from '../../components/SearchNotFound';
-import { getInitials } from '../../utils/utils';
+import { convertUnixToLocalTime, getInitials } from '../../utils/utils';
 
 export const FileTable = ({ items = [], fetchingData, addWorkingDirectory }) => {
   const handleDownload = () => {
@@ -53,8 +53,7 @@ export const FileTable = ({ items = [], fetchingData, addWorkingDirectory }) => 
         accessorKey: 'modified', // simple recommended way to define a column
         header: `Last Modified`,
         Cell: ({ cell, column, row }) => {
-          const tz = moment.tz.guess();
-          const startTime = moment.unix(row?.original?.modified).tz(tz).format('DD/MM/YYYY');
+          const startTime = convertUnixToLocalTime(row?.original?.modified);
 
           return <Typography>{startTime}</Typography>;
         },

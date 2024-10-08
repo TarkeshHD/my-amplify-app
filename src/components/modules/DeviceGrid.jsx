@@ -10,22 +10,6 @@ const statusMap = {
   Fail: 'error',
 };
 
-const EVAL_SAMPLE = [
-  { answer: 'a', answeredValue: 'b' },
-  { answer: 'a', answeredValue: 'c' },
-  { answer: 'd', answeredValue: 'd' },
-  { answer: 'd', answeredValue: 'b' },
-  { answer: 'b', answeredValue: 'b' },
-  { answer: 'c', answeredValue: 'b' },
-  { answer: 'c', answeredValue: 'c' },
-  { answer: 'a', answeredValue: 'b' },
-];
-
-export const secondsToHHMMSS = (seconds) => {
-  const duration = moment.duration(seconds, 'seconds');
-  return moment.utc(duration.asMilliseconds()).format('HH:mm:ss');
-};
-
 const DeviceGrid = ({ evalData: devData }) => {
   const ipAddr = devData?.ipAddress?.length > 0 ? devData?.ipAddress[0]?.ip : 'N/A';
   const macAddr = devData?.macAddr || '';

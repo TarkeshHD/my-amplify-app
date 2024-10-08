@@ -8,7 +8,7 @@ import {
 } from 'material-react-table';
 import moment from 'moment-timezone';
 import PropTypes from 'prop-types';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 
 import { Delete, Edit, FileDownload } from '@mui/icons-material';
@@ -22,7 +22,8 @@ import ExportOptions from '../../components/export/ExportOptions';
 import { useConfig } from '../../hooks/useConfig';
 import JsonLifeCycleEvaluationGrid from '../../components/modules/JsonLifeCycleEvaluationGrid';
 import JsonLifeCycleTrainingGrid from '../../components/modules/JsonLifeCycleTrainingGrid';
-import { convertTimeToDescription } from '../../utils/utils';
+import { convertTimeToDescription, convertUnixToLocalTime, getTrainingAnalytics } from '../../utils/utils';
+import { debounce } from 'lodash';
 
 const statusMap = {
   ongoing: 'warning',
@@ -47,11 +48,19 @@ const FAKE_DATA = [
   },
 ];
 
-export const TrainingsTable = ({ count = 0, items = FAKE_DATA, fetchingData, exportBtnClicked, exportBtnFalse }) => {
+export const TrainingsTable = ({
+  count = 0,
+  items = FAKE_DATA,
+  fetchingData,
+  exportBtnClicked,
+  exportBtnFalse,
+  updateAnalytic,
+}) => {
   const exportBtnRef = useRef(null);
   const [exportRow, setExportRow] = useState([]);
   const [openTrainingData, setOpenTrainingData] = useState(null);
   const [openExportOptions, setOpenExportOptions] = useState(false);
+  const analyticsHiddenBtnRef = useRef(null);
 
   const { userIdParam } = useParams();
 
@@ -71,8 +80,26 @@ export const TrainingsTable = ({ count = 0, items = FAKE_DATA, fetchingData, exp
     setUpdatedItems(items);
   }, [items]);
 
+  // Create a debounced click function
+  const debouncedClickForAnalytics = useCallback(
+    debounce(() => {
+      console.log("I'm debounced");
+      if (analyticsHiddenBtnRef.current) {
+        analyticsHiddenBtnRef.current.click();
+      }
+    }, 500), // 500ms debounce
+    [],
+  );
+
   const columns = useMemo(() => {
     const baseColumns = [
+      {
+        accessorKey: 'userId.departmentId.name', // simple recommended way to define a column
+        header: `${data?.labels?.department?.singular || 'Department'}`,
+        filterVariant: 'multi-select',
+        size: 100,
+        Cell: ({ cell, column, row }) => <Typography>{row?.original?.userId?.departmentId?.name || '-'}</Typography>,
+      },
       {
         accessorKey: 'moduleId.name', // simple recommended way to define a column
         header: `${data?.labels?.module?.singular || 'Module'}`,
@@ -81,24 +108,10 @@ export const TrainingsTable = ({ count = 0, items = FAKE_DATA, fetchingData, exp
         Cell: ({ cell, column, row }) => <Typography>{row?.original?.moduleId?.name || '-'}</Typography>,
       },
       {
-        accessorKey: 'userId.domainId.name', // simple recommended way to define a column
-        header: `${data?.labels?.domain?.singular || 'Domain'}`,
-        filterVariant: 'multi-select',
-        size: 100,
-        Cell: ({ cell, column, row }) => <Typography>{row?.original?.userId?.domainId?.name || '-'}</Typography>,
-      },
-      {
-        accessorKey: 'userId.departmentId.name', // simple recommended way to define a column
-        header: `${data?.labels?.department?.singular || 'Department'}`,
-        filterVariant: 'multi-select',
-        size: 100,
-        Cell: ({ cell, column, row }) => <Typography>{row?.original?.userId?.departmentId?.name || '-'}</Typography>,
-      },
-
-      {
         size: 250,
         accessorFn: (row) => {
           const endTime = row?.endTime ? row?.endTime : undefined;
+
           return [row?.startTime, endTime];
         },
         header: 'Session Time',
@@ -132,11 +145,9 @@ export const TrainingsTable = ({ count = 0, items = FAKE_DATA, fetchingData, exp
         },
         sortingFn: 'datetime',
         Cell: ({ cell, column, row }) => {
-          const tz = moment.tz.guess();
-          const startTime = moment.unix(row?.original?.startTime).tz(tz).format('DD/MM/YYYY HH:mm');
-          const endTime = row?.original?.endTime
-            ? moment.unix(row?.original?.endTime).tz(tz).format('DD/MM/YYYY HH:mm')
-            : 'Pending';
+          debouncedClickForAnalytics();
+          const startTime = convertUnixToLocalTime(row?.original?.startTime);
+          const endTime = row?.original?.endTime ? convertUnixToLocalTime(row?.original?.endTime) : 'Pending';
           return (
             <Typography>
               {startTime} - {endTime}
@@ -166,6 +177,13 @@ export const TrainingsTable = ({ count = 0, items = FAKE_DATA, fetchingData, exp
         },
         filterVariant: 'multi-select',
       },
+      // {
+      //   accessorKey: 'userId.domainId.name', // simple recommended way to define a column
+      //   header: `${data?.labels?.domain?.singular || 'Domain'}`,
+      //   filterVariant: 'multi-select',
+      //   size: 100,
+      //   Cell: ({ cell, column, row }) => <Typography>{row?.original?.userId?.domainId?.name || '-'}</Typography>,
+      // },
     ];
 
     // Conditionally add the userId.username column if userId is present
@@ -178,13 +196,13 @@ export const TrainingsTable = ({ count = 0, items = FAKE_DATA, fetchingData, exp
           size: 100,
           Cell: ({ cell, column, row }) => <Typography>{row?.original?.userId?.name || '-'}</Typography>,
         },
-        {
-          accessorKey: 'userId.username',
-          header: `${data?.labels?.user?.singular || 'User'}`,
-          filterVariant: 'multi-select',
-          size: 100,
-          Cell: ({ cell, column, row }) => <Typography>{row?.original?.userId?.username || '-'}</Typography>,
-        },
+        //     {
+        //       accessorKey: 'userId.username',
+        //       header: `${data?.labels?.user?.singular || 'User'}`,
+        //       filterVariant: 'multi-select',
+        //       size: 100,
+        //       Cell: ({ cell, column, row }) => <Typography>{row?.original?.userId?.username || '-'}</Typography>,
+        //     },
       );
     }
 
@@ -195,11 +213,8 @@ export const TrainingsTable = ({ count = 0, items = FAKE_DATA, fetchingData, exp
 
   const convertRowDatas = (rows) =>
     rows.map((row) => {
-      const tz = moment.tz.guess();
-      const startTime = moment.unix(row?.original?.startTime).tz(tz).format('DD/MM/YYYY HH:mm');
-      const endTime = row?.original?.endTime
-        ? moment.unix(row?.original?.endTime).tz(tz).format('DD/MM/YYYY HH:mm')
-        : 'Pending';
+      const startTime = convertUnixToLocalTime(row?.original?.startTime);
+      const endTime = row?.original?.endTime ? convertUnixToLocalTime(row?.original?.endTime) : 'Pending';
       const duration = row?.original?.endTime ? row?.original?.endTime - row?.original?.startTime : undefined;
       const values = row.original;
       return [
@@ -232,11 +247,8 @@ export const TrainingsTable = ({ count = 0, items = FAKE_DATA, fetchingData, exp
       const responseObj = {
         trainingDumpJson: doc?.trainingDumpJson,
       };
-      const tz = moment.tz.guess();
-      const startTime = moment.unix(row?.original?.startTime).tz(tz).format('DD/MM/YYYY HH:mm');
-      const endTime = row?.original?.endTime
-        ? moment.unix(row?.original?.endTime).tz(tz).format('DD/MM/YYYY HH:mm')
-        : 'Pending';
+      const startTime = convertUnixToLocalTime(row?.original?.startTime);
+      const endTime = row?.original?.endTime ? convertUnixToLocalTime(row?.original?.endTime) : 'Pending';
       const session = `${startTime} - ${endTime}`;
 
       const status = row?.original?.status;
@@ -274,6 +286,13 @@ export const TrainingsTable = ({ count = 0, items = FAKE_DATA, fetchingData, exp
     }
   };
 
+  const updateAnalytics = (tableValues) => {
+    const trainingAnalytic = getTrainingAnalytics(tableValues);
+    console.log('rendering child');
+    console.log('training analytics', trainingAnalytic);
+    updateAnalytic(trainingAnalytic);
+  };
+
   return (
     <>
       <Card>
@@ -296,6 +315,18 @@ export const TrainingsTable = ({ count = 0, items = FAKE_DATA, fetchingData, exp
                 variant="contained"
               >
                 Export Data
+              </Button>
+              {/* Process Button - Hidden */}
+              <Button
+                ref={analyticsHiddenBtnRef}
+                sx={{ display: 'none' }}
+                disabled={table.getPrePaginationRowModel().rows.length === 0}
+                onClick={() => {
+                  updateAnalytics(table.getPrePaginationRowModel().rows); // Sending table data to an outside function
+                }}
+                variant="contained"
+              >
+                Analytics Hidden Button
               </Button>
             </Box>
           )}
@@ -331,6 +362,9 @@ export const TrainingsTable = ({ count = 0, items = FAKE_DATA, fetchingData, exp
             variant: 'outlined',
           }}
           enableFacetedValues
+          renderEmptyRowsFallback={() => {
+            updateAnalytics([]);
+          }}
         />
       </Card>
 

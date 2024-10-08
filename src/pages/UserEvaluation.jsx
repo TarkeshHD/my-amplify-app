@@ -1,20 +1,28 @@
-import { Download } from '@mui/icons-material';
-import { Box, Button, Container, DialogActions, IconButton, Stack, SvgIcon, Tooltip, Typography } from '@mui/material';
-import { useEffect, useMemo, useState } from 'react';
+import { Download, EventAvailable, PendingActions, People, TrendingUp } from '@mui/icons-material';
+import { Box, Button, Container, Stack, SvgIcon, Typography } from '@mui/material';
+import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'react-toastify';
-import { useAuth } from '../hooks/useAuth';
-import { useConfig } from '../hooks/useConfig';
-import { EvaluationsTable } from '../sections/evaluations/EvaluationsTable';
-import axios from '../utils/axios';
 import { useNavigate, useParams } from 'react-router-dom';
+import { isEqual } from 'lodash';
+import { useConfig } from '../hooks/useConfig';
+import EvaluationsTable from '../sections/evaluations/EvaluationsTable';
+import axios from '../utils/axios';
 import { convertTimeToDescription, removeFromHistory } from '../utils/utils';
+import { DashboardTasksProgress } from '../sections/dashboard/DashboardTasksProgress';
+import { DashboardDiffCard } from '../sections/dashboard/DashboardDiffCard';
 
 const Page = () => {
   const [fetchingData, setFetchingData] = useState(false);
   const [data, setData] = useState([]);
   const [exportBtnClicked, setExportBtnClicked] = useState(false);
   const navigate = useNavigate();
+  const [evalautionAnalytics, setEvaluationAnalytics] = useState({
+    totalEvaluations: 0,
+    passPercentage: 0,
+    totalUserAttempts: 0,
+    incompletionRate: 0,
+  });
 
   const { userIdParam } = useParams();
 
@@ -69,7 +77,16 @@ const Page = () => {
     navigate(prevPage);
   };
 
-  const { user } = useAuth();
+  const updateAnalytic = (analytics) => {
+    setEvaluationAnalytics((prevState) => {
+      if (!isEqual(analytics, prevState)) {
+        // Update the state if they are different
+        return { ...analytics };
+      }
+      // Return the previous state if nothing has changed
+      return prevState;
+    });
+  };
 
   return (
     <>
@@ -107,6 +124,54 @@ const Page = () => {
               </Button>
             </Stack>
           </Stack>
+          <Box
+            sx={{
+              width: '100%',
+              overflowX: { xs: 'auto', md: 'visible' },
+              '&::-webkit-scrollbar': { display: 'none' },
+              scrollbarWidth: 'none',
+            }}
+          >
+            <Stack
+              direction="row"
+              spacing={4}
+              sx={{
+                pb: { xs: 2, md: 0 },
+                width: { xs: 'max-content', md: '100%' },
+              }}
+            >
+              <DashboardDiffCard
+                title={`Total Evaluations Done`}
+                icon={<EventAvailable />}
+                positive={evalautionAnalytics?.totalEvaluations > 0}
+                sx={{ height: '100%', width: 350 }}
+                value={evalautionAnalytics?.totalEvaluations || 0}
+                info={`Total number of evaluations done.`}
+              />
+              <DashboardTasksProgress
+                title="Pass Percentage"
+                icon={<TrendingUp />}
+                iconColor={'success.main'}
+                sx={{ height: '100%', width: 350 }}
+                value={evalautionAnalytics?.passPercentage || 0}
+              />
+              <DashboardDiffCard
+                title={`Total User Attempts`}
+                icon={<People />}
+                iconColor={'primary.main'}
+                positive={evalautionAnalytics?.totalUserAttempts > 0}
+                sx={{ height: '100%', width: 350 }}
+                value={evalautionAnalytics?.totalUserAttempts || 0}
+                info={`Total number of users who tried evaluations.`}
+              />
+              <DashboardTasksProgress
+                title="Incomplete Evaluations"
+                icon={<PendingActions />}
+                sx={{ height: '100%', width: 350 }}
+                value={evalautionAnalytics?.incompletionRate || 0}
+              />
+            </Stack>
+          </Box>
 
           <EvaluationsTable
             fetchingData={fetchingData}
@@ -114,6 +179,7 @@ const Page = () => {
             count={data.length}
             exportBtnClicked={exportBtnClicked}
             exportBtnFalse={exportBtnFalse}
+            updateAnalytic={updateAnalytic}
           />
         </Stack>
       </Container>

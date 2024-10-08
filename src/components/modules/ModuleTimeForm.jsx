@@ -34,7 +34,7 @@ export default function ModuleTimeForm({ isEdit, currentModule, fieldDisabled = 
     note: Yup.string(),
   });
 
-  let evaluationValues = undefined;
+  let evaluationValues;
   if (currentModule?.evaluation) {
     evaluationValues = currentModule?.evaluation[0];
   }

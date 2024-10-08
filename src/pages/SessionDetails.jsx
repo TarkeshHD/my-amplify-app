@@ -9,7 +9,7 @@ import {
   SvgIcon,
   Button,
 } from '@mui/material';
-import { addToHistory, fetchScoresAndStatuses, removeFromHistory } from '../utils/utils';
+import { addToHistory, convertUnixToLocalTime, fetchScoresAndStatuses, removeFromHistory } from '../utils/utils';
 import DefaultImage from '../assets/No_Image_Available.jpg';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from '../utils/axios';
@@ -74,9 +74,8 @@ const ModuleGrid = ({ modules }) => {
 
 const SessionInfoGrid = ({ sessions }) => {
   // Convert unix time stamp to proper date using moment
-  const tz = moment.tz.guess();
-  const startTime = moment.unix(sessions.startDate).tz(tz).format('DD/MM/YYYY HH:mm');
-  const endTime = moment.unix(sessions.endDate).tz(tz).format('DD/MM/YYYY HH:mm');
+  const startTime = convertUnixToLocalTime(sessions.startDate);
+  const endTime = convertUnixToLocalTime(sessions.endDate);
   return (
     <div
       style={{

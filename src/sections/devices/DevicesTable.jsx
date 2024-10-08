@@ -20,7 +20,7 @@ import QuestionsGrid from '../../components/modules/QuestionsGrid';
 import TimeGrid from '../../components/modules/TimeGrid';
 import { useConfig } from '../../hooks/useConfig';
 import axios from '../../utils/axios';
-import { capitalizeFirstLetter, getInitials } from '../../utils/utils';
+import { capitalizeFirstLetter, convertUnixToLocalTime, getInitials } from '../../utils/utils';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { fetchScoresAndStatuses } from '../../utils/utils';
@@ -53,7 +53,6 @@ const FAKE_DATA = [
 ];
 
 export const DevicesTable = ({ count = 0, items = FAKE_DATA, fetchingData, exportBtnClicked, exportBtnFalse }) => {
-  const tz = moment.tz.guess();
   const exportBtnRef = useRef(null);
   const [exportRow, setExportRow] = useState([]);
   const [openDeviceData, setOpenDeviceData] = useState(null);
@@ -127,7 +126,7 @@ export const DevicesTable = ({ count = 0, items = FAKE_DATA, fetchingData, expor
         filterVariant: 'multi-select',
         size: 100,
         Cell: ({ cell, column, row }) => {
-          const time = moment.unix(row?.original?.domainsHistory[0]?.time).tz(tz).format('DD/MM/YYYY HH:mm');
+          const time = convertUnixToLocalTime(row?.original?.domainsHistory[0]?.time);
           return (
             <Typography>
               {row?.original?.domainsHistory?.length !== 0
@@ -143,7 +142,7 @@ export const DevicesTable = ({ count = 0, items = FAKE_DATA, fetchingData, expor
         filterVariant: 'multi-select',
         size: 100,
         Cell: ({ cell, column, row }) => {
-          const time = moment.unix(row?.original?.usersHistory[0]?.time).tz(tz).format('DD/MM/YYYY HH:mm');
+          const time = convertUnixToLocalTime(row?.original?.usersHistory[0]?.time);
           return (
             <Typography>
               {row?.original?.usersHistory?.length !== 0 ? `${row?.original?.usersHistory[0]?.name}  - ${time}` : '-'}
@@ -157,7 +156,7 @@ export const DevicesTable = ({ count = 0, items = FAKE_DATA, fetchingData, expor
         filterVariant: 'multi-select',
         size: 100,
         Cell: ({ cell, column, row }) => {
-          const time = moment.unix(row?.original?.ipAddress[0]?.time).tz(tz).format('DD/MM/YYYY HH:mm');
+          const time = convertUnixToLocalTime(row?.original?.ipAddress[0]?.time);
           return (
             <Typography>
               {row?.original?.ipAddress?.length !== 0 ? `${row?.original?.ipAddress[0]?.ip}  - ${time}` : '-'}
@@ -174,11 +173,8 @@ export const DevicesTable = ({ count = 0, items = FAKE_DATA, fetchingData, expor
 
   const convertRowDatas = (rows) => {
     return rows.map((row) => {
-      const tz = moment.tz.guess();
-      const startTime = moment.unix(row?.original?.startTime).tz(tz).format('DD/MM/YYYY HH:mm');
-      const endTime = row?.original?.endTime
-        ? moment.unix(row?.original?.endTime).tz(tz).format('DD/MM/YYYY HH:mm')
-        : 'Pending';
+      const startTime = convertUnixToLocalTime(row?.original?.startTime);
+      const endTime = row?.original?.endTime ? convertUnixToLocalTime(row?.original?.endTime) : 'Pending';
       const values = row.original;
       return [
         values?.deviceId || '-',

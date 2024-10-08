@@ -1,6 +1,6 @@
 import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
 import React from 'react';
-import { secondsToHHMMSS } from './TimeGrid';
+import { secondsToHHMMSS } from '../../utils/utils';
 // import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography } from '@material-ui/core';
 
 const tableData = [

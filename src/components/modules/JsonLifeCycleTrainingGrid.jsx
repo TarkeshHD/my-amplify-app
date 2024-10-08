@@ -31,7 +31,7 @@ import {
 import { ArrowForwardIos, CancelRounded, CheckCircleRounded } from '@mui/icons-material';
 
 import { SeverityPill } from '../SeverityPill';
-import { convertTimeToDescription } from '../../utils/utils';
+import { convertTimeToDescription, convertUnixToLocalTime } from '../../utils/utils';
 
 const Accordion = styled((props) => <MuiAccordion disableGutters elevation={0} square {...props} />)(({ theme }) => ({
   border: `1px solid ${theme.palette.divider}`,
@@ -61,8 +61,6 @@ const AccordionDetails = styled(MuiAccordionDetails)(({ theme }) => ({
   borderTop: '1px solid rgba(0, 0, 0, .125)',
 }));
 const JsonLifeCycleTrainingGrid = ({ trainingData }) => {
-  const tz = moment.tz.guess();
-
   const [expanded, setExpanded] = React.useState('panel1');
 
   const handleChange = (panel) => (event, newExpanded) => {
@@ -72,7 +70,7 @@ const JsonLifeCycleTrainingGrid = ({ trainingData }) => {
   // Why this is not in Utils?
   const formatTime = (unixTime) => {
     if (!unixTime) return '-';
-    return moment.unix(unixTime).tz(tz).format('DD/MM/YYYY, HH:mm:ss');
+    return convertUnixToLocalTime(unixTime);
   };
 
   if (trainingData?.trainingType !== 'jsonLifeCycle') return null;
