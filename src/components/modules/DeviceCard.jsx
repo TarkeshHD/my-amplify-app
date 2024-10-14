@@ -1,6 +1,7 @@
 import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
 import React from 'react';
-import { secondsToHHMMSS } from './TimeGrid';
+import moment from 'moment-timezone';
+import { convertUnixToLocalTime } from '../../utils/utils';
 
 const styles = {
   container: {
@@ -60,7 +61,7 @@ const DeviceCard = ({ tableData, content }) => {
       }}
     >
       <TableCell style={{ ...styles.descriptionCell, ...styles.dataCell }}>{row?.name || row?.ip}</TableCell>
-      <TableCell style={{ ...styles.timeCell, ...styles.dataCell }}>{secondsToHHMMSS(row.time)}</TableCell>
+      <TableCell style={{ ...styles.timeCell, ...styles.dataCell }}>{convertUnixToLocalTime(row.time)}</TableCell>
     </TableRow>
   ));
 

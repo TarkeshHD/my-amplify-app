@@ -19,6 +19,7 @@ import {
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
 import axios from '../../utils/axios';
+import { convertUnixToLocalTime } from '../../utils/utils';
 
 export default function VRLoginOTP() {
   const [fetchingData, setFetchingData] = useState(false);
@@ -31,8 +32,8 @@ export default function VRLoginOTP() {
       const response = await axios.get('/user/generate-otp/web');
 
       setOtp(response.data.details.otp);
-      const tz = moment.tz.guess(); // This needs to be in constant or something no?
-      setExpiry(moment.unix(response.data.details.expiryTime).tz(tz).format('DD/MM/YYYY, HH:mm:ss'));
+
+      setExpiry(convertUnixToLocalTime(response.data.details.expiryTime));
     } catch (error) {
       toast.error(error.message || `Failed to fetch login OTP`);
       console.log(error);

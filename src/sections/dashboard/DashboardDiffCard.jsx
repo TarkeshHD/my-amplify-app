@@ -5,7 +5,7 @@ import { Avatar, Card, CardContent, Stack, SvgIcon, Typography } from '@mui/mate
 import React from 'react';
 
 export const DashboardDiffCard = (props) => {
-  const { difference = null, positive, sx, value, title, icon, iconColor } = props;
+  const { difference = null, positive, sx, value, title, icon, iconColor, info } = props;
 
   let subtextTitle = 'h4';
   if (!icon) {
@@ -50,6 +50,11 @@ export const DashboardDiffCard = (props) => {
               Since last month
             </Typography>
           </Stack>
+        )}
+        {info && (
+          <Typography color="text.secondary" variant="caption">
+            {info}
+          </Typography>
         )}
       </CardContent>
     </Card>

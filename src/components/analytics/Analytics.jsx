@@ -1,22 +1,34 @@
-import { EventAvailable, HourglassEmpty, StarBorder, TrendingUp, Extension } from '@mui/icons-material';
+import {
+  EventAvailable,
+  HourglassEmpty,
+  StarBorder,
+  TrendingUp,
+  Extension,
+  PendingActions,
+  People,
+  HowToReg,
+  DeviceHub,
+  Devices,
+} from '@mui/icons-material';
 import { Alert, Button, Container, Unstable_Grid2 as Grid } from '@mui/material';
 
+import { useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
+import { Box, height } from '@mui/system';
+import { set } from 'lodash';
 import { DashboardDiffCard } from '../../sections/dashboard/DashboardDiffCard';
 
 import { DashboardBarChart } from '../../sections/dashboard/DashboardBarChart';
 
 import { DashboardTasksProgress } from '../../sections/dashboard/DashboardTasksProgress';
 
-import { useEffect, useState } from 'react';
-import { toast } from 'react-toastify';
 import { useAuth } from '../../hooks/useAuth';
 import { useConfig } from '../../hooks/useConfig';
 import { DashboardPieChart } from '../../sections/dashboard/DashboardPieChart';
 import axios from '../../utils/axios';
 import { calculatePercentageChange, convertTimeToDescription } from '../../utils/utils';
 import { DashboardRankingCard } from '../../sections/dashboard/DashboardRankingCard';
-import { Box } from '@mui/system';
-import { set } from 'lodash';
+import { DashboardTable } from '../../sections/dashboard/DashboardTable';
 
 const now = new Date();
 
@@ -37,16 +49,17 @@ const Analytics = () => {
 
   const [usersEvaluated, setUsersEvaluated] = useState(0);
   const [lastMonthUsersEvaluated, setLastMonthUsersEvaluated] = useState(0);
-  const [timeSpentInModule, setTimeSpentInModule] = useState(0);
-  const [lastMonthTimeSpentInModule, setLastMonthTimeSpentInModule] = useState(0);
-  const [timeSpentInEvaluation, setTimeSpentInEvaluation] = useState(0);
+  const [evaluationCountValue, setEvaluationCount] = useState(0);
+  const [lastMonthEvaluationCount, setLastMonthEvaluationCount] = useState(0);
+  const [domainCount, setDomainCount] = useState(0);
   const [lastMonthTimeSpentInEvaluation, setLastMonthTimeSpentInEvaluation] = useState(0);
-  const [averageModulesPerUser, setAverageModulesPerUser] = useState(0);
-  const [lastMonthAverageModulesPerUser, setLastMonthAverageModulesPerUser] = useState(0);
-  const [averageEvaluationsPerUser, setAverageEvaluationsPerUser] = useState(0);
+  const [deviceCount, setDeviceCount] = useState(0);
+  const [lastMonthDeviceCount, setLastMonthDeviceCount] = useState(0);
+  const [incompletionPercentage, setIncompletionPercentage] = useState(0);
   const [lastMonthAverageEvaluationsPerUser, setLastMonthAverageEvaluationsPerUser] = useState(0);
   const [top3Modules, setTop3Modules] = useState([]);
   const [top3Users, setTop3Users] = useState([]);
+  const [top5FailureMoments, setTop5FailureMoments] = useState([]);
 
   const [domainName, setDomainName] = useState(false);
 
@@ -54,7 +67,7 @@ const Analytics = () => {
     try {
       const response = await axios.get('/analytic/all');
 
-      const data = response.data;
+      const { data } = response;
       // Total User Analytics
       const totalUsers = data?.details?.userCount?.total;
       const lastMonthUserPercentage = calculatePercentageChange(data?.details?.userCount?.tillLastMonth, totalUsers);
@@ -66,11 +79,11 @@ const Analytics = () => {
         data?.details?.timeSpentInVR?.tillLastMonth,
         data?.details.timeSpentInVR?.total,
       );
-      // Time Spent In Module
-      const timeSpentInModule = data?.details?.timeSpentInModules?.total;
-      const lastMonthTimeSpentInModule = calculatePercentageChange(
-        data?.details?.timeSpentInModules?.tillLastMonth,
-        timeSpentInModule,
+      // Evaluation Count
+      const evaluationCount = data?.details?.evaluationCount?.total;
+      const lastMonthEvaluationCount = calculatePercentageChange(
+        data?.details?.evaluationCount?.tillLastMonth,
+        evaluationCount,
       );
       // Time Spent In Evaluation
       const timeSpentInEvaluation = data?.details?.timeSpentInEvaluations?.total;
@@ -85,11 +98,8 @@ const Analytics = () => {
         usersEvaluated,
       );
       // Average Modules Per User
-      const averageModulesPerUser = data?.details?.avgAttemptedModules?.total;
-      const lastMonthAverageModulesPerUser = calculatePercentageChange(
-        data?.details?.avgAttemptedModules?.tillLastMonth,
-        averageModulesPerUser,
-      );
+      const deviceCount = data?.details?.deviceCount?.total;
+      const lastMonthDeviceCount = calculatePercentageChange(data?.details?.deviceCount?.tillLastMonth, deviceCount);
       // Average Evaluations Per User
       const averageEvaluationsPerUser = data?.details?.avgAttemptedEvaluations?.total;
       const lastMonthAverageEvaluationsPerUser = calculatePercentageChange(
@@ -102,6 +112,9 @@ const Analytics = () => {
       // Monthly Evaluation Analytics
       const monthlyTotalEval = data?.details?.monthlyEvals?.monthlyResults;
       const monthlyPassEval = data?.details?.monthlyEvals?.passUserResults;
+
+      // Failure moment list
+      const top5FailureMoments = data?.details?.momentFailureList?.value;
 
       let countArr = [];
       let nameArr = [];
@@ -120,20 +133,22 @@ const Analytics = () => {
         nameArr = data?.details?.domainCount?.map((item) => item.domainName);
       }
 
+      // Check if json is on then only ad dthis value
+
       setTotalUsers(totalUsers);
       setLastMonthUserPercentage(lastMonthUserPercentage);
       setTop3Modules(data?.details?.top3ModulesByAttendance);
       setTotalVRSession(totalVRSession);
       setLastMonthVRSessionPercentage(lastMonthVRSessionPercentage);
-      setTimeSpentInModule(timeSpentInModule);
-      setLastMonthTimeSpentInModule(lastMonthTimeSpentInModule);
-      setTimeSpentInEvaluation(timeSpentInEvaluation);
+      setEvaluationCount(evaluationCount);
+      setLastMonthEvaluationCount(lastMonthEvaluationCount);
+      setDomainCount(nameArr?.length);
       setLastMonthTimeSpentInEvaluation(lastMonthTimeSpentInEvaluation);
       setUsersEvaluated(usersEvaluated);
       setLastMonthUsersEvaluated(lastMonthUsersEvaluated);
-      setAverageModulesPerUser(averageModulesPerUser);
-      setLastMonthAverageModulesPerUser(lastMonthAverageModulesPerUser);
-      setAverageEvaluationsPerUser(averageEvaluationsPerUser);
+      setDeviceCount(deviceCount);
+      setLastMonthDeviceCount(lastMonthDeviceCount);
+      setIncompletionPercentage(data?.details?.incompletionPercentage?.value);
       setLastMonthAverageEvaluationsPerUser(lastMonthAverageEvaluationsPerUser);
 
       setPassPercentage(passPercentage);
@@ -141,7 +156,11 @@ const Analytics = () => {
       setMonthlyPassEval(monthlyPassEval);
       setDomainName(domainName);
       setDomainOrDeptVal([countArr, nameArr]);
+      setTop5FailureMoments(top5FailureMoments);
 
+      console.log('evalaurion count', evaluationCount);
+
+      console.log(data?.details?.momentFailureList?.value);
       setTop3Users(data?.details?.top3UsersByModules);
     } catch (error) {
       toast.error(`Fetch analytics! ${error.message}`);
@@ -156,7 +175,7 @@ const Analytics = () => {
   return (
     <Container maxWidth="xl">
       <h1>Analytics</h1>
-      <Grid container spacing={3}>
+      <Grid container spacing={2}>
         {domainName && (
           <Grid item lg={12} xs={12}>
             <Alert severity="info">
@@ -167,103 +186,98 @@ const Analytics = () => {
 
         <Grid xs={12} sm={6} lg={3}>
           <DashboardDiffCard
-            title={'Total ' + (data?.labels?.user?.plural || 'Users')}
-            icon={<EventAvailable />}
+            title={`Total ${data?.labels?.user?.plural || 'Users'}`}
+            icon={<People />}
             difference={lastMonthUserPercentage}
-            positive={lastMonthUserPercentage > 0 ? true : false}
+            positive={lastMonthUserPercentage > 0}
             sx={{ height: '100%' }}
             value={totalUsers}
+            iconColor="primary.main"
           />
         </Grid>
         <Grid xs={12} sm={6} lg={3}>
           <DashboardDiffCard
             title="Time Spent In VR"
             icon={<HourglassEmpty />}
-            iconColor="error.main"
+            iconColor="secondary.main"
             difference={lastMonthVRSessionPercentage}
-            positive={lastMonthVRSessionPercentage > 0 ? true : false}
+            positive={lastMonthVRSessionPercentage > 0}
             sx={{ height: '100%' }}
             value={totalVRSession}
           />
         </Grid>
         <Grid xs={12} sm={6} lg={3}>
           <DashboardDiffCard
-            title={(data?.labels?.user?.plural || 'Users') + ' Evaluated'}
+            title={`${data?.labels?.user?.plural || 'Users'} Evaluated`}
             icon={<EventAvailable />}
             difference={lastMonthUsersEvaluated}
-            positive={lastMonthUsersEvaluated > 0 ? true : false}
+            positive={lastMonthUsersEvaluated > 0}
             sx={{ height: '100%' }}
             value={usersEvaluated}
           />
         </Grid>
         <Grid xs={12} sm={6} lg={3}>
           <DashboardTasksProgress
-            title="Pass Percentage"
+            title="Passed Evaluations"
             icon={<TrendingUp />}
+            iconColor={'success.main'}
             sx={{ height: '100%' }}
             value={passPercentage}
           />
         </Grid>
 
-        <Grid item xs={12} sm={6} lg={3} mt={7}>
-          <DashboardRankingCard
-            title="Top 3 Users (Attempted modules)"
-            items={top3Users.map((item) => {
-              return { name: item.username, detail: `${item.sessionCount} modules` };
-            })}
-            Icon={<StarBorder />}
-            iconColor="secondary.main"
-            height="100px"
-          />
+        <Grid gridRow={'span 2'} xs={12} md={8} lg={9}>
+          <DashboardTable moments={top5FailureMoments} iconColor="primary.main" />
         </Grid>
+
         <Grid item xs={12} sm={6} lg={3}>
-          <Box
-            sx={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between', gap: 2 }}
-          >
-            <DashboardDiffCard
-              title="Time Spent In Module"
-              value={convertTimeToDescription(timeSpentInModule, true)}
-              difference={lastMonthTimeSpentInModule}
-              positive={lastMonthTimeSpentInModule > 0 ? true : false}
+          <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: '', gap: 2 }}>
+            <DashboardTasksProgress
+              title={`Incomplete Evaluations`}
+              value={incompletionPercentage}
+              icon={<PendingActions />}
             />
             <DashboardDiffCard
-              title="Time Spent In Evaluation"
-              value={convertTimeToDescription(timeSpentInEvaluation, true)}
-              difference={lastMonthTimeSpentInEvaluation}
-              positive={lastMonthTimeSpentInEvaluation > 0 ? true : false}
+              title="Total Evaluation"
+              value={evaluationCountValue}
+              difference={lastMonthEvaluationCount}
+              positive={lastMonthEvaluationCount > 0}
+              icon={<HowToReg />}
             />
           </Box>
         </Grid>
+
         <Grid item xs={12} sm={6} lg={3}>
           <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 2 }}>
-            <DashboardDiffCard
-              title={`Average ${data?.labels?.module?.plural ?? 'Modules'} per ${
-                data?.labels?.user?.singular ?? 'User'
-              }`}
-              value={averageModulesPerUser}
-              difference={lastMonthAverageModulesPerUser}
-              positive={lastMonthAverageModulesPerUser > 0 ? true : false}
+            <DashboardPieChart
+              title={`${
+                auth?.user?.role === 'admin'
+                  ? data?.labels?.department?.singular || 'Department'
+                  : data?.labels?.domain?.singular || 'Domain'
+              } ${data?.labels?.user?.plural || 'Users'}`}
+              chartSeries={domainOrDeptVal[0]}
+              labels={domainOrDeptVal[1]}
             />
             <DashboardDiffCard
-              title={`Average ${data?.labels?.evaluation?.singular ?? 'Evaluation'} per ${
-                data?.labels?.user?.singular ?? 'User'
-              }`}
-              value={averageEvaluationsPerUser}
-              difference={lastMonthAverageEvaluationsPerUser}
-              positive={lastMonthAverageEvaluationsPerUser > 0 ? true : false}
+              title={`Total Number Of Device`}
+              icon={<Devices />}
+              iconColor={'primary.main'}
+              value={deviceCount}
+              difference={lastMonthDeviceCount}
+              positive={lastMonthDeviceCount > 0}
+            />
+
+            <DashboardDiffCard
+              title={`Total Number Of ${auth?.user?.role === 'admin' ? 'Department' : 'Domain'}`}
+              value={domainCount}
+              icon={<DeviceHub />}
+              difference={0}
+              positive={lastMonthTimeSpentInEvaluation < 0}
             />
           </Box>
         </Grid>
-        <Grid item xs={12} sm={6} lg={3} mt={7}>
-          <DashboardRankingCard
-            title="Top 3 Modules (Users Attempted)"
-            items={top3Modules.map((item) => {
-              return { name: item.moduleName, detail: `${item.sessionCount} sessions` };
-            })}
-            Icon={<Extension />}
-          />
-        </Grid>
-        <Grid xs={12} lg={8}>
+
+        <Grid item xs={12} sm={9}>
           <DashboardBarChart
             title="Monthly Evaluation Sessions"
             chartSeries={[
@@ -277,17 +291,6 @@ const Analytics = () => {
               },
             ]}
             sx={{ height: '100%' }}
-          />
-        </Grid>
-        <Grid xs={12} md={6} lg={4}>
-          <DashboardPieChart
-            title={`${
-              auth?.user?.role === 'admin'
-                ? data?.labels?.department?.singular || 'Department'
-                : data?.labels?.domain?.singular || 'Domain'
-            } ${data?.labels?.user?.plural || 'Users'}`}
-            chartSeries={domainOrDeptVal[0]}
-            labels={domainOrDeptVal[1]}
           />
         </Grid>
       </Grid>

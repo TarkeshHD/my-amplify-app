@@ -16,7 +16,7 @@ import CustomDateRangePicker from '../../components/DatePicker/CustomDateRangePi
 
 import { useConfig } from '../../hooks/useConfig';
 import { useNavigate } from 'react-router-dom';
-import { addToHistory } from '../../utils/utils';
+import { addToHistory, convertUnixToLocalTime } from '../../utils/utils';
 
 export const SessionTable = ({
   count = 0,
@@ -105,11 +105,8 @@ export const SessionTable = ({
         size: 250,
         header: 'Session Time',
         Cell: ({ cell, column, row }) => {
-          const tz = moment.tz.guess();
-          const startTime = moment.unix(row?.original?.startDate).tz(tz).format('DD/MM/YYYY HH:mm');
-          const endTime = row?.original?.endDate
-            ? moment.unix(row?.original?.endDate).tz(tz).format('DD/MM/YYYY HH:mm')
-            : 'Pending';
+          const startTime = convertUnixToLocalTime(row?.original?.startDate);
+          const endTime = row?.original?.endDate ? convertUnixToLocalTime(row?.original?.endDate) : 'Pending';
           return (
             <Typography>
               {startTime} - {endTime}

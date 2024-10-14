@@ -3,6 +3,7 @@ import moment from 'moment-timezone';
 import React from 'react';
 import { SeverityPill } from '../SeverityPill';
 import TimeCard from './TimeCard';
+import { secondsToHHMMSS } from '../../utils/utils';
 
 const statusMap = {
   Pending: 'warning',
@@ -22,11 +23,6 @@ const EVAL_SAMPLE = [
 ];
 
 // Why is this not in utils?
-
-export const secondsToHHMMSS = (seconds) => {
-  const duration = moment.duration(seconds, 'seconds');
-  return moment.utc(duration.asMilliseconds()).format('HH:mm:ss');
-};
 
 const TimeGrid = ({ showValues = false, evalData, evaluation = EVAL_SAMPLE }) => {
   return (

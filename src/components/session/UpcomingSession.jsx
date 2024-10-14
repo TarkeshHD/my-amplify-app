@@ -6,7 +6,6 @@ import axios from '../../utils/axios';
 import { toast } from 'react-toastify';
 import { Container, Stack } from '@mui/system';
 import { Button, SvgIcon, Typography } from '@mui/material';
-import { EvaluationsTable } from '../../sections/evaluations/EvaluationsTable';
 import { SessionTable } from '../../sections/sessions/SessionTable';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';

@@ -3,7 +3,7 @@ import { Avatar, Box, Card, CardContent, LinearProgress, Stack, SvgIcon, Typogra
 import PropTypes from 'prop-types';
 
 export const DashboardTasksProgress = (props) => {
-  const { value, sx, title } = props;
+  const { value, sx, title, icon, iconColor = 'warning.main' } = props;
 
   return (
     <Card sx={sx}>
@@ -17,14 +17,12 @@ export const DashboardTasksProgress = (props) => {
           </Stack>
           <Avatar
             sx={{
-              backgroundColor: 'warning.main',
+              backgroundColor: iconColor,
               height: 56,
               width: 56,
             }}
           >
-            <SvgIcon>
-              <FormatListBulleted />
-            </SvgIcon>
+            <SvgIcon>{icon || <FormatListBulleted />}</SvgIcon>
           </Avatar>
         </Stack>
         <Box sx={{ mt: 3 }}>

@@ -30,7 +30,7 @@ export function getItems(labels) {
 
   const items = [
     {
-      title: 'Sessions and Analytics',
+      title: `${data?.features?.schedule?.state === 'on' ? 'Sessions and Analytics' : 'Analytics'}`,
       path: '/',
       doNotRenderForUser: [],
       icon: (
