@@ -16,6 +16,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { Box, height } from '@mui/system';
 import { set } from 'lodash';
+import { PDFDownloadLink } from '@react-pdf/renderer';
 import { DashboardDiffCard } from '../../sections/dashboard/DashboardDiffCard';
 
 import { DashboardBarChart } from '../../sections/dashboard/DashboardBarChart';
@@ -29,6 +30,7 @@ import axios from '../../utils/axios';
 import { calculatePercentageChange, convertTimeToDescription } from '../../utils/utils';
 import { DashboardRankingCard } from '../../sections/dashboard/DashboardRankingCard';
 import { DashboardTable } from '../../sections/dashboard/DashboardTable';
+import ReportPDF from './ReportPDF';
 
 const now = new Date();
 
@@ -60,6 +62,7 @@ const Analytics = () => {
   const [top3Modules, setTop3Modules] = useState([]);
   const [top3Users, setTop3Users] = useState([]);
   const [top5FailureMoments, setTop5FailureMoments] = useState([]);
+  const [totalVRSessionInMilliseconds, setTotalVRSessionInMilliseconds] = useState(0);
 
   const [domainName, setDomainName] = useState(false);
 
@@ -75,6 +78,7 @@ const Analytics = () => {
       const top3Users = data?.details?.top3UsersByModules;
       // Time Spent In VR
       const totalVRSession = convertTimeToDescription(data?.details?.timeSpentInVR?.total, true);
+      const totalVRSessionInMilliseconds = data?.details?.timeSpentInVR?.total;
       const lastMonthVRSessionPercentage = calculatePercentageChange(
         data?.details?.timeSpentInVR?.tillLastMonth,
         data?.details.timeSpentInVR?.total,
@@ -139,6 +143,7 @@ const Analytics = () => {
       setLastMonthUserPercentage(lastMonthUserPercentage);
       setTop3Modules(data?.details?.top3ModulesByAttendance);
       setTotalVRSession(totalVRSession);
+      setTotalVRSessionInMilliseconds(totalVRSessionInMilliseconds);
       setLastMonthVRSessionPercentage(lastMonthVRSessionPercentage);
       setEvaluationCount(evaluationCount);
       setLastMonthEvaluationCount(lastMonthEvaluationCount);
@@ -171,7 +176,24 @@ const Analytics = () => {
 
   return (
     <Container maxWidth="xl">
-      <h1>Analytics</h1>
+      <Box sx={{ justifyContent: 'space-between', display: 'flex', alignItems: 'center' }}>
+        <h1>Analytics</h1>
+        <PDFDownloadLink
+          document={
+            <ReportPDF
+              totalUsers={totalUsers}
+              totalVRSessionInMilliseconds={totalVRSessionInMilliseconds}
+              incompletionPercentage={incompletionPercentage}
+              passPercentage={passPercentage}
+              moments={top5FailureMoments.slice(0, 2)}
+              deviceCount={deviceCount}
+            />
+          }
+          fileName="autovrse_training_report.pdf"
+        >
+          {({ loading }) => (loading ? 'Loading document...' : <Button variant="contained">Generate report</Button>)}
+        </PDFDownloadLink>
+      </Box>
       <Grid container spacing={2}>
         {domainName && (
           <Grid item lg={12} xs={12}>

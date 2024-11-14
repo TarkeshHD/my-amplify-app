@@ -320,3 +320,25 @@ export const getTrainingAnalytics = (values) => {
     incompletionRate,
   };
 };
+
+/**
+ * Converts milliseconds to hours with 2 decimal places precision
+ *
+ * @param {number} ms - The number of milliseconds to convert
+ * @returns {string} The number of hours as a string with 2 decimal places
+ *
+ * @example
+ * // Returns "1.50"
+ * millisecondsToHours(5400000);
+ *
+ * @example
+ * // Returns "0.02"
+ * millisecondsToHours(60000);
+ *
+ * @description
+ * Uses moment.duration() to handle the conversion from milliseconds to hours.
+ * The result is formatted to 2 decimal places using toFixed(2).
+ * This is useful for converting VR session durations from milliseconds to a more readable hours format.
+ */
+
+export const millisecondsToHours = (ms) => moment.duration(ms).asHours().toFixed(2);

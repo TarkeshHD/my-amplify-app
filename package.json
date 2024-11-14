@@ -19,6 +19,7 @@
     "@mui/material": "^5.12.3",
     "@mui/system": "^5.12.3",
     "@mui/x-date-pickers": "^6.16.2",
+    "@react-pdf/renderer": "^4.0.0",
     "axios": "^1.4.0",
     "exceljs": "^4.4.0",
     "export-to-csv": "^0.2.1",
