@@ -14,9 +14,12 @@ import { useSelection } from '../hooks/useSelection';
 import { DomainsTable } from '../sections/domains/DomainsTable';
 import axios from '../utils/axios';
 import { applyPagination } from '../utils/utils';
+import ImportUserDataForm from '../components/users/ImportUserDataForm';
+import ImportDomainDataForm from '../components/domains/ImportDomainDataForm';
 
 const Page = () => {
   const [openDomainForm, setOpenDomainForm] = useState(false);
+  const [openImportDataForm, setOpenImportDataForm] = useState(false);
 
   const [fetchingData, setFetchingData] = useState(false);
   const [data, setData] = useState([]);
@@ -66,6 +69,10 @@ const Page = () => {
     );
   }
 
+  const handleRefresh = () => {
+    getDomainsTree();
+  };
+
   return (
     <>
       <Helmet>
@@ -78,27 +85,48 @@ const Page = () => {
             <Stack spacing={1}>
               <Typography variant="h4">{configData?.labels?.domain?.plural || 'Domains'}</Typography>
             </Stack>
-            {user?.role === 'superAdmin' ||
-              (user?.role === 'productAdmin' && (
-                <Stack alignItems="center" direction="row" spacing={1}>
-                  <Button
-                    startIcon={
-                      <SvgIcon fontSize="small">
-                        <Add />
-                      </SvgIcon>
-                    }
-                    variant="contained"
-                    onClick={() => {
-                      setOpenDomainForm(true);
-                    }}
-                  >
-                    Add {configData?.labels?.domain?.singular || 'Domain'}
-                  </Button>
-                </Stack>
-              ))}
+            <Stack alignItems="center" direction="row" spacing={1}>
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  setOpenImportDataForm(true);
+                }}
+                startIcon={
+                  <SvgIcon fontSize="small">
+                    <Upload />
+                  </SvgIcon>
+                }
+              >
+                Import
+              </Button>
+              {user?.role === 'superAdmin' ||
+                (user?.role === 'productAdmin' && (
+                  <Stack alignItems="center" direction="row" spacing={1}>
+                    <Button
+                      startIcon={
+                        <SvgIcon fontSize="small">
+                          <Add />
+                        </SvgIcon>
+                      }
+                      variant="contained"
+                      onClick={() => {
+                        setOpenDomainForm(true);
+                      }}
+                    >
+                      Add {configData?.labels?.domain?.singular || 'Domain'}
+                    </Button>
+                  </Stack>
+                ))}
+            </Stack>
           </Stack>
 
-          <DomainsTable count={data.length} items={data} fetchingData={fetchingData} domains={flatDomains} />
+          <DomainsTable
+            count={data.length}
+            items={data}
+            fetchingData={fetchingData}
+            domains={flatDomains}
+            handleRefresh={handleRefresh}
+          />
           {/* ADD DOMAIN */}
           <CustomDialog
             onClose={() => {
@@ -108,6 +136,18 @@ const Page = () => {
             title={<>Add {configData?.labels?.domain?.singular || 'Domain'}</>}
           >
             <DomainForm domains={flatDomains} />
+          </CustomDialog>
+
+          {/* Import Domain Data form */}
+          <CustomDialog
+            onClose={() => {
+              setOpenImportDataForm(false);
+            }}
+            minWidth="60vw"
+            open={openImportDataForm}
+            title={<Typography variant="h5">Import Domain Data</Typography>}
+          >
+            <ImportDomainDataForm setOpenImportDataForm={setOpenImportDataForm} />
           </CustomDialog>
         </Stack>
       </Container>

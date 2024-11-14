@@ -1,5 +1,6 @@
 import React, { Suspense, lazy } from 'react';
-import { Route, Routes, useLocation } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { useConfig } from '../hooks/useConfig';
 
 // Layout
@@ -7,21 +8,17 @@ import DashboardLayout from '../layouts/DashboardLayout';
 
 // Shields
 import AuthShield from '../shield/AuthShield';
-import { useAuth } from '../hooks/useAuth';
 
 // ----------------------------------------------------------------------
 
-const Loadable = (Component) => (props) => {
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const { pathname } = useLocation();
-  // Use loading screen instead of null;
-  return (
+const Loadable = (Component) => (props) =>
+  (
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    // Use loading screen instead of null;
     <Suspense fallback={null}>
       <Component {...props} />
     </Suspense>
   );
-};
-
 const Router = () => {
   const config = useConfig();
   const { data } = config;
@@ -29,40 +26,50 @@ const Router = () => {
   const isKnowledgeRepEnabled = data?.features?.knowledgeRep?.state === 'on';
   const isScheduleEnabled = data?.features?.schedule?.state === 'on';
   const isArchiveEnabled = data?.features?.archive?.state === 'on';
+  const backendUrl = import.meta.env.VITE_BASE_URL;
   return (
-    <Routes>
-      <Route
-        path="/"
-        element={
-          <AuthShield>
-            <DashboardLayout />
-          </AuthShield>
-        }
-      >
-        <Route index path="" element={<Dashboard />} />
-        <Route path="users" element={<Users />} />
-        <Route path="domains" element={<Domains />} />
-        <Route path="departments" element={<Departments />} />
-        <Route path="modules" element={<Modules />} />
-        <Route path="evaluations" element={<Evaluations />} />
-        <Route path="devices" element={<Devices />} />
-        <Route path="trainings" element={<Training />} />
-        <Route path="evaluations/:userIdParam" element={<UserEvaluation />} />
-        <Route path="past-session" element={<PastSession />} />
-        <Route path="create-session" element={<CreateSession />} />
-        <Route path="session-details/:sessionId" element={<SessionDetails />} />
+    <>
+      <Helmet>
+        <link rel="apple-touch-icon" sizes="180x180" href={`${backendUrl}images/apple-touch-icon.png`} />
+        <link rel="icon" type="image/png" sizes="32x32" href={`${backendUrl}images/favicon-32x32.png`} />
+        <link rel="icon" type="image/png" sizes="16x16" href={`${backendUrl}images/favicon-16x16.png`} />
+        <link rel="manifest" href={`${backendUrl}/site.webmanifest`} />
+      </Helmet>
 
-        {isKnowledgeRepEnabled && <Route path="knowledge" element={<KnowledgeRep />} />}
-        {isScheduleEnabled && <Route path="schedule" element={<Schedule />} />}
-        {isArchiveEnabled && <Route path="archive" element={<Archive />} />}
-      </Route>
-      <Route path="auth">
-        <Route path="sso-redirect" element={<SsoRedirect />} />
-        <Route path="login" element={<Login />} />
-        <Route path="register" element={<div>Register</div>} />
-      </Route>
-      <Route path="*" element={<ErrorPage />} />
-    </Routes>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <AuthShield>
+              <DashboardLayout />
+            </AuthShield>
+          }
+        >
+          <Route index path="" element={<Dashboard />} />
+          <Route path="users" element={<Users />} />
+          <Route path="domains" element={<Domains />} />
+          <Route path="departments" element={<Departments />} />
+          <Route path="modules" element={<Modules />} />
+          <Route path="evaluations" element={<Evaluations />} />
+          <Route path="devices" element={<Devices />} />
+          <Route path="trainings" element={<Training />} />
+          <Route path="evaluations/:userIdParam" element={<UserEvaluation />} />
+          <Route path="past-session" element={<PastSession />} />
+          <Route path="create-session" element={<CreateSession />} />
+          <Route path="session-details/:sessionId" element={<SessionDetails />} />
+
+          {isKnowledgeRepEnabled && <Route path="knowledge" element={<KnowledgeRep />} />}
+          {isScheduleEnabled && <Route path="schedule" element={<Schedule />} />}
+          {isArchiveEnabled && <Route path="archive" element={<Archive />} />}
+        </Route>
+        <Route path="auth">
+          <Route path="sso-redirect" element={<SsoRedirect />} />
+          <Route path="login" element={<Login />} />
+          <Route path="register" element={<div>Register</div>} />
+        </Route>
+        <Route path="*" element={<ErrorPage />} />
+      </Routes>
+    </>
   );
 };
 

@@ -1,4 +1,4 @@
-import { Box, Button, Card, Typography } from '@mui/material';
+import { Box, Button, Card, MenuItem, Typography, IconButton, Tooltip } from '@mui/material';
 import {
   MRT_FullScreenToggleButton as MRTFullScreenToggleButton,
   MRT_ShowHideColumnsButton as MRTShowHideColumnsButton,
@@ -10,9 +10,11 @@ import moment from 'moment-timezone';
 import PropTypes from 'prop-types';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
+import { debounce, isEmpty } from 'lodash';
+import { Delete, FileDownload, FilterAltOff } from '@mui/icons-material';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Stack } from '@mui/system';
 
-import { Delete, Edit, FileDownload } from '@mui/icons-material';
-import { useParams } from 'react-router-dom';
 import CustomDialog from '../../components/CustomDialog';
 import axios from '../../utils/axios';
 import CustomDateRangePicker from '../../components/DatePicker/CustomDateRangePicker';
@@ -23,7 +25,8 @@ import { useConfig } from '../../hooks/useConfig';
 import JsonLifeCycleEvaluationGrid from '../../components/modules/JsonLifeCycleEvaluationGrid';
 import JsonLifeCycleTrainingGrid from '../../components/modules/JsonLifeCycleTrainingGrid';
 import { convertTimeToDescription, convertUnixToLocalTime, getTrainingAnalytics } from '../../utils/utils';
-import { debounce } from 'lodash';
+import ConfirmationDialog from '../../components/ConfirmationDialog';
+import { useAuth } from '../../hooks/useAuth';
 
 const statusMap = {
   ongoing: 'warning',
@@ -55,14 +58,22 @@ export const TrainingsTable = ({
   exportBtnClicked,
   exportBtnFalse,
   updateAnalytic,
+  handleRefresh,
 }) => {
   const exportBtnRef = useRef(null);
   const [exportRow, setExportRow] = useState([]);
   const [openTrainingData, setOpenTrainingData] = useState(null);
   const [openExportOptions, setOpenExportOptions] = useState(false);
+  const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
+  const [rowSelection, setRowSelection] = useState({});
+
   const analyticsHiddenBtnRef = useRef(null);
 
+  const auth = useAuth();
+  const hasDeleteAccess = auth?.permissions?.includes('delete_training');
+
   const { userIdParam } = useParams();
+  const navigate = useNavigate();
 
   const config = useConfig();
   const { data } = config;
@@ -83,7 +94,6 @@ export const TrainingsTable = ({
   // Create a debounced click function
   const debouncedClickForAnalytics = useCallback(
     debounce(() => {
-      console.log("I'm debounced");
       if (analyticsHiddenBtnRef.current) {
         analyticsHiddenBtnRef.current.click();
       }
@@ -94,18 +104,52 @@ export const TrainingsTable = ({
   const columns = useMemo(() => {
     const baseColumns = [
       {
-        accessorKey: 'userId.departmentId.name', // simple recommended way to define a column
+        accessorFn: (row) => {
+          return `${row.userId?.departmentId?.name}${row.userId?.departmentId?.archived ? '-Deprecated' : ''}`;
+        },
+        filterFn: (row, _columnId, filterValue) => {
+          const departmentName = row.original?.userId?.departmentId?.name;
+          const archivedSuffix = row.original?.userId?.departmentId?.archived ? '-Deprecated' : '';
+          const fullDepartmentName = `${departmentName}${archivedSuffix}`;
+          if (!filterValue || filterValue.length === 0) return true;
+          return filterValue.includes(fullDepartmentName);
+        },
         header: `${data?.labels?.department?.singular || 'Department'}`,
         filterVariant: 'multi-select',
         size: 100,
-        Cell: ({ cell, column, row }) => <Typography>{row?.original?.userId?.departmentId?.name || '-'}</Typography>,
+        Cell: ({ cell, column, row }) =>
+          row.original?.userId?.departmentId?.archived ? (
+            <SeverityPill color={'error'} tooltipTitle={'Deprecated'}>
+              {' '}
+              <Delete sx={{ fontSize: 15, mr: 0.5 }} /> {row.original?.userId?.departmentId?.name}
+            </SeverityPill>
+          ) : (
+            <Typography>{row?.original?.userId?.departmentId?.name || '-'}</Typography>
+          ),
       },
       {
-        accessorKey: 'moduleId.name', // simple recommended way to define a column
+        accessorFn: (row) => {
+          return `${row.moduleId?.name}${row.moduleId?.archived ? '-Deprecated' : ''}`;
+        },
+        filterFn: (row, _columnId, filterValue) => {
+          const moduleName = row.original?.moduleId?.name;
+          const archivedSuffix = row.original?.moduleId?.archived ? '-Deprecated' : '';
+          const fullModuleName = `${moduleName}${archivedSuffix}`;
+          if (!filterValue || filterValue.length === 0) return true;
+          return filterValue.includes(fullModuleName);
+        },
         header: `${data?.labels?.module?.singular || 'Module'}`,
         filterVariant: 'multi-select',
         size: 100,
-        Cell: ({ cell, column, row }) => <Typography>{row?.original?.moduleId?.name || '-'}</Typography>,
+        Cell: ({ cell, column, row }) =>
+          row?.original?.moduleId?.archived ? (
+            <SeverityPill color={'error'} tooltipTitle={'Deprecated'}>
+              {' '}
+              <Delete sx={{ fontSize: 15 }} /> {row.original.moduleId.name}
+            </SeverityPill>
+          ) : (
+            <Typography>{row?.original?.moduleId?.name || '-'}</Typography>
+          ),
       },
       {
         size: 250,
@@ -164,7 +208,6 @@ export const TrainingsTable = ({
           const endTime = row?.original?.endTime ? row?.original?.endTime : undefined;
           const startTime = row?.original?.startTime;
           const duration = endTime ? endTime - startTime : undefined;
-          console.log('duration', duration);
           return <Typography>{duration > 0 ? convertTimeToDescription(duration) : '-'}</Typography>;
         },
       },
@@ -286,11 +329,41 @@ export const TrainingsTable = ({
     }
   };
 
+  const onConfirmBulkDelete = async () => {
+    try {
+      setShowConfirmationDialog(false);
+      await axios.post(`/archive/bulkArchive`, { type: 'training', data: Object.keys(rowSelection) });
+      toast.success('Trainings deleted successfully');
+      setRowSelection({});
+      handleRefresh();
+    } catch (error) {
+      console.log(error);
+      toast.error(error.message || 'Failed to delete trainings');
+    }
+  };
+  const onDeleteRow = async (row) => {
+    try {
+      const id = row.id || row._id;
+      await axios.post(`/training/archive/${id}`);
+      toast.success('Training deleted successfully');
+      setTimeout(() => {
+        navigate(0);
+      }, 700);
+    } catch (error) {
+      console.log(error);
+      toast.error(error.message || 'Failed to delete training');
+    }
+  };
+
   const updateAnalytics = (tableValues) => {
     const trainingAnalytic = getTrainingAnalytics(tableValues);
-    console.log('rendering child');
-    console.log('training analytics', trainingAnalytic);
     updateAnalytic(trainingAnalytic);
+  };
+
+  const isColumnFiltersEmpty = (table) => {
+    const columnFilters = table?.getState()?.columnFilters;
+    // TODO: Need to handle filter reset and checks only with  table?.getState()?.columnFilters;
+    return !columnFilters || columnFilters.every((filter) => filter.value.length === 0);
   };
 
   return (
@@ -299,6 +372,24 @@ export const TrainingsTable = ({
         <MaterialReactTable
           renderToolbarInternalActions={({ table }) => (
             <Box sx={{ display: 'flex', p: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <Tooltip title="Clear filter" arrow>
+                <IconButton
+                  sx={{ display: !isColumnFiltersEmpty(table) ? 'block' : 'none', mt: '6px' }}
+                  onClick={() => {
+                    table.resetColumnFilters();
+                  }}
+                >
+                  <FilterAltOff color="warning" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Bulk delete" arrow>
+                <IconButton
+                  onClick={() => setShowConfirmationDialog(true)}
+                  sx={{ display: hasDeleteAccess && !isEmpty(rowSelection) ? 'block' : 'none', mt: '6px' }}
+                >
+                  <Delete color={isEmpty(rowSelection) ? 'grey' : 'error'} />
+                </IconButton>
+              </Tooltip>
               <MRTToggleFiltersButton table={table} />
               <MRTShowHideColumnsButton table={table} />
               <MRTFullScreenToggleButton table={table} />
@@ -346,9 +437,12 @@ export const TrainingsTable = ({
           columns={columns}
           data={updatedItems}
           enableRowSelection // enable some features
+          onRowSelectionChange={setRowSelection}
+          getRowId={(row) => row._id}
           enableColumnOrdering
           state={{
             isLoading: fetchingData,
+            rowSelection,
           }}
           initialState={{ pagination: { pageSize: 5 }, showGlobalFilter: true, showColumnFilters: true }}
           muiTablePaginationProps={{
@@ -365,6 +459,22 @@ export const TrainingsTable = ({
           renderEmptyRowsFallback={() => {
             updateAnalytics([]);
           }}
+          renderRowActionMenuItems={({ row, closeMenu, table }) => [
+            <MenuItem
+              key={0}
+              onClick={() => {
+                onDeleteRow(row.original);
+                // onDeleteRow();
+                closeMenu();
+              }}
+              sx={{ color: 'error.main' }}
+            >
+              <Stack spacing={2} direction={'row'}>
+                <Delete />
+                <Typography>Delete</Typography>
+              </Stack>
+            </MenuItem>,
+          ]}
         />
       </Card>
 
@@ -396,6 +506,16 @@ export const TrainingsTable = ({
       >
         <JsonLifeCycleTrainingGrid trainingData={openTrainingData} />
       </CustomDialog>
+
+      <ConfirmationDialog
+        onClose={() => {
+          setShowConfirmationDialog(false);
+        }}
+        open={showConfirmationDialog}
+        title={'Delete'}
+        description={'Do you want to perform this bulk delete option?'}
+        onConfirm={onConfirmBulkDelete}
+      ></ConfirmationDialog>
     </>
   );
 };

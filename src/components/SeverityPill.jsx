@@ -1,3 +1,4 @@
+import { Tooltip } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import PropTypes from 'prop-types';
 
@@ -28,14 +29,16 @@ const SeverityPillRoot = styled('span')(({ theme, ownerState }) => {
 });
 
 export const SeverityPill = (props) => {
-  const { color = 'primary', children, ...other } = props;
+  const { color = 'primary', children, tooltipTitle, ...other } = props;
 
   const ownerState = { color };
 
   return (
-    <SeverityPillRoot ownerState={ownerState} {...other}>
-      {children}
-    </SeverityPillRoot>
+    <Tooltip title={tooltipTitle || ''} placement="top">
+      <SeverityPillRoot ownerState={ownerState} {...other}>
+        {children}
+      </SeverityPillRoot>
+    </Tooltip>
   );
 };
 

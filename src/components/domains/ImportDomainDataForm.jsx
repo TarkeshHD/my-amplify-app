@@ -8,16 +8,16 @@ import { LoadingButton } from '@mui/lab';
 
 import ExcelJS from 'exceljs';
 import { useNavigate } from 'react-router-dom';
+import { set } from 'lodash';
 import { RHFUploadSingleFile } from '../hook-form/RHFUpload';
 import { FormProvider } from '../hook-form';
 import { useConfig } from '../../hooks/useConfig';
 import axios from '../../utils/axios';
 import { readExcelFile } from '../../utils/utils';
-import { set } from 'lodash';
 
-const expectedValues = ['Name', 'Employee Code', 'Domain', 'Department'];
+const expectedValues = ['Name', 'Password'];
 
-const ImportDataForm = ({ setOpenImportDataForm }) => {
+const ImportDomainDataForm = ({ setOpenImportDataForm }) => {
   const navigate = useNavigate();
   const [sendFiles, setSendFiles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,9 +33,6 @@ const ImportDataForm = ({ setOpenImportDataForm }) => {
 
   const config = useConfig();
   const { data } = config;
-  if (data?.features?.traineeType?.state === 'on' && !expectedValues.includes('Trainee Type')) {
-    expectedValues.push('Trainee Type');
-  }
 
   const validateHeaders = (workbook, sheet, lastCell) => {
     const headersRange = `A1:${lastCell}`;
@@ -50,10 +47,7 @@ const ImportDataForm = ({ setOpenImportDataForm }) => {
 
   const validateDataRows = (sheetData) => {
     for (const row of sheetData) {
-      if (!row.Name || !row['Employee Code'] || !row.Domain || !row.Department) {
-        return false;
-      }
-      if (data?.features?.traineeType?.state === 'on' && !row['Trainee Type']) {
+      if (!row.Name || !row.Password) {
         return false;
       }
     }
@@ -138,14 +132,13 @@ const ImportDataForm = ({ setOpenImportDataForm }) => {
     if (sendFiles.length < 1) {
       toast.error('Please upload a valid .xlsx format (Values are missing)');
       setIsLoading(false);
-      console.log('isLoading', isLoading);
       return;
     }
 
     try {
       // Send data to the backend
-      await axios.post('user/bulk', { userData: sendFiles });
-      toast.success('Successfully bulk imported users');
+      await axios.post('domain/bulk', { domainData: sendFiles });
+      toast.success('Successfully bulk imported domains');
       setIsLoading(false);
       setOpenImportDataForm(false);
       navigate(0);
@@ -154,7 +147,7 @@ const ImportDataForm = ({ setOpenImportDataForm }) => {
       toast.error(`${error?.message || 'Server error'} `);
     }
 
-    // const response = await axios.post('user/bulk', { userData: sendFiles });
+    // const response = await axios.post('domain/bulk', { domainData: sendFiles });
   };
 
   return (
@@ -180,7 +173,7 @@ const ImportDataForm = ({ setOpenImportDataForm }) => {
         <Grid item xs={12}>
           <Box>
             <Typography variant="subtitle2" color={'text.secondary'} mb={1}>
-              Excel User Data
+              Excel Domain Data
             </Typography>
             <RHFUploadSingleFile
               name="excel"
@@ -216,4 +209,4 @@ const ImportDataForm = ({ setOpenImportDataForm }) => {
   );
 };
 
-export default ImportDataForm;
+export default ImportDomainDataForm;

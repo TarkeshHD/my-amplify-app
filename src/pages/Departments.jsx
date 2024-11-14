@@ -1,22 +1,20 @@
-import { Add, CloseRounded, Download, Upload } from '@mui/icons-material';
-import { Box, Button, Container, DialogActions, IconButton, Stack, SvgIcon, Tooltip, Typography } from '@mui/material';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
+import { Add, Upload } from '@mui/icons-material';
+import { Box, Button, Container, Stack, SvgIcon, Typography } from '@mui/material';
+import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'react-toastify';
 import CustomDialog from '../components/CustomDialog';
-import { SearchBar } from '../components/SearchBar';
 import DepartmentForm from '../components/departments/DepartmentForm';
-import AdminForm from '../components/users/AdminForm';
-import TraineeForm from '../components/users/TraineeForm';
 import { useAuth } from '../hooks/useAuth';
 import { useConfig } from '../hooks/useConfig';
-import { useSelection } from '../hooks/useSelection';
 import { DepartmentsTable } from '../sections/departments/DepartmentsTable';
 import axios from '../utils/axios';
-import { applyPagination } from '../utils/utils';
+import ImportDepartmentDataForm from '../components/departments/ImportDepartmentDataForm';
 
 const Page = () => {
   const [openDepartmentForm, setOpenDepartmentForm] = useState(false);
+  const [openImportDataForm, setOpenImportDataForm] = useState(false);
 
   const [fetchingData, setFetchingData] = useState(false);
   const [data, setData] = useState([]);
@@ -69,6 +67,15 @@ const Page = () => {
     );
   }
 
+  const handleRefresh = () => {
+    getDepartments();
+  };
+
+  const onCloseDepartmentForm = () => {
+    setOpenDepartmentForm(false);
+    handleRefresh();
+  };
+
   return (
     <>
       <Helmet>
@@ -82,6 +89,19 @@ const Page = () => {
               <Typography variant="h4">{configData?.labels?.department?.singular || 'Department'}</Typography>
             </Stack>
             <Stack alignItems="center" direction="row" spacing={1}>
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  setOpenImportDataForm(true);
+                }}
+                startIcon={
+                  <SvgIcon fontSize="small">
+                    <Upload />
+                  </SvgIcon>
+                }
+              >
+                Import
+              </Button>
               <Button
                 startIcon={
                   <SvgIcon fontSize="small">
@@ -98,7 +118,13 @@ const Page = () => {
             </Stack>
           </Stack>
 
-          <DepartmentsTable count={data.length} items={data} fetchingData={fetchingData} domains={domains} />
+          <DepartmentsTable
+            count={data.length}
+            items={data}
+            fetchingData={fetchingData}
+            domains={domains}
+            handleRefresh={handleRefresh}
+          />
 
           {/* ADD DOMAIN */}
           <CustomDialog
@@ -108,7 +134,18 @@ const Page = () => {
             open={openDepartmentForm}
             title={<>Add </>}
           >
-            <DepartmentForm domains={domains} />
+            <DepartmentForm domains={domains} handleClose={onCloseDepartmentForm} />
+          </CustomDialog>
+          {/* Import Department Data form */}
+          <CustomDialog
+            onClose={() => {
+              setOpenImportDataForm(false);
+            }}
+            minWidth="60vw"
+            open={openImportDataForm}
+            title={<Typography variant="h5">Import Department Data</Typography>}
+          >
+            <ImportDepartmentDataForm setOpenImportDataForm={setOpenImportDataForm} />
           </CustomDialog>
         </Stack>
       </Container>

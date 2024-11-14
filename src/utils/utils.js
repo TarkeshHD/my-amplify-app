@@ -286,8 +286,6 @@ export const getCommonAnalytics = (values) => {
 };
 
 export const getEvaluationAnalytics = (values) => {
-  console.log('values', values);
-
   // Get common analytics
   const { totalEvaluations, incompletionRate, totalUserAttempts, pendingEvaluations } = getCommonAnalytics(values);
 

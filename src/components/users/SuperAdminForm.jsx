@@ -21,7 +21,7 @@ SuperAdminForm.propTypes = {
   currentUser: PropTypes.object,
 };
 
-export default function SuperAdminForm({ isEdit, currentUser }) {
+export default function SuperAdminForm({ isEdit, currentUser, handleClose }) {
   const navigate = useNavigate();
   const config = useConfig();
   const { data } = config;
@@ -78,7 +78,7 @@ export default function SuperAdminForm({ isEdit, currentUser }) {
         await axios.post(`/user/update/${currentUser._id}`, values);
       }
       toast.success(!isEdit ? 'Create success!' : 'Update success!');
-      navigate(0);
+      handleClose();
     } catch (error) {
       console.error(error);
       toast.error(error.message || 'Something went wrong!');

@@ -1,38 +1,15 @@
-import { Add, CloseRounded, Download, PeopleAlt, Upload } from '@mui/icons-material';
-import {
-  Alert,
-  Box,
-  Button,
-  Container,
-  DialogActions,
-  IconButton,
-  Stack,
-  SvgIcon,
-  Tab,
-  Tabs,
-  Tooltip,
-  Typography,
-} from '@mui/material';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Add, Download, PeopleAlt, Upload } from '@mui/icons-material';
+import { Alert, Box, Button, Container, Stack, SvgIcon, Tooltip, Typography } from '@mui/material';
+import { useCallback, useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'react-toastify';
 import CustomDialog from '../components/CustomDialog';
-import { SearchBar } from '../components/SearchBar';
 import AssignModulesForm from '../components/modules/AssignModulesForm';
 import ModuleForm from '../components/modules/ModuleForm';
-import ModuleQuestionForm from '../components/modules/ModuleQuestionsForm';
-import ModuleTimeForm from '../components/modules/ModuleTimeForm';
-import QuestionsGrid from '../components/modules/QuestionsGrid';
-import AdminForm from '../components/users/AdminForm';
-import SuperAdminForm from '../components/users/SuperAdminForm';
-import TraineeForm from '../components/users/TraineeForm';
 import { useAuth } from '../hooks/useAuth';
 import { useConfig } from '../hooks/useConfig';
-import { useSelection } from '../hooks/useSelection';
 import { ModulesTable } from '../sections/modules/ModulesTable';
-import { UsersTable } from '../sections/users/UsersTable';
 import axios from '../utils/axios';
-import { applyPagination } from '../utils/utils';
 
 const Page = () => {
   const [openModuleForm, setOpenModuleForm] = useState(false);
@@ -122,6 +99,10 @@ const Page = () => {
     setSelectedRows(Object.keys(rows));
   }, []);
 
+  const handleRefresh = () => {
+    getModules();
+  };
+
   const { user } = useAuth();
   const config = useConfig();
   const { data: configData } = config;
@@ -149,7 +130,7 @@ const Page = () => {
             </Stack>
             <Stack alignItems="center" direction="row" spacing={1}>
               <Tooltip
-                title={'Select rows to assign ' + (configData?.labels?.module?.plural?.toLowerCase() || 'modules')}
+                title={`Select rows to assign ${configData?.labels?.module?.plural?.toLowerCase() || 'modules'}`}
               >
                 <span>
                   <Button
@@ -203,6 +184,7 @@ const Page = () => {
             domains={domains}
             departments={departments}
             users={users}
+            handleRefresh={handleRefresh}
           />
 
           {/* MODULE FORM */}
@@ -214,22 +196,6 @@ const Page = () => {
             open={openModuleForm}
             title={<Typography variant="h5">Add {configData?.labels?.module?.singular || 'Module'}</Typography>}
           >
-            {/* <Box sx={{ borderBottom: 2, borderColor: 'divider', mb: 2 }}>
-              <Tabs value={selectedTabModuleForm} onChange={handleTabChange} aria-label="tabs-modules">
-                <Tab value="one" label="Basic" />
-                <Tab value="two" label="Questions" />
-              </Tabs>
-            </Box>
-            {(() => {
-              switch (selectedTabModuleForm) {
-                case 'one':
-                  return <ModuleForm />;
-                case 'two':
-                  return <ModuleQuestionForm />;
-                default:
-                  return null;
-              }
-            })()} */}
             <ModuleForm />
           </CustomDialog>
 

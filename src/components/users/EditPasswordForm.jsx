@@ -20,7 +20,7 @@ EditPasswordForm.propTypes = {
   currentUser: PropTypes.object,
 };
 
-export default function EditPasswordForm({ user, ...props }) {
+export default function EditPasswordForm({ user, handleClose, ...props }) {
   const navigate = useNavigate();
 
   const EditUserSchema = Yup.object().shape({
@@ -55,7 +55,7 @@ export default function EditPasswordForm({ user, ...props }) {
     try {
       const response = await axios.post(`/user/update/${user._id}`, values);
       toast.success('Password updated successfully!');
-      navigate(0);
+      handleClose();
     } catch (error) {
       console.error(error);
       toast.error(error.message || 'Something went wrong!');

@@ -158,9 +158,6 @@ const Analytics = () => {
       setDomainOrDeptVal([countArr, nameArr]);
       setTop5FailureMoments(top5FailureMoments);
 
-      console.log('evalaurion count', evaluationCount);
-
-      console.log(data?.details?.momentFailureList?.value);
       setTop3Users(data?.details?.top3UsersByModules);
     } catch (error) {
       toast.error(`Fetch analytics! ${error.message}`);

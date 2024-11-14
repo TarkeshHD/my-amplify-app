@@ -14,7 +14,16 @@ const Logo = () => {
     logo = defaultLogo;
   }
 
-  return <img alt="avLogo" src={logo} height={height} />;
+  return (
+    <img
+      onClick={() => {
+        window.location.href = '/';
+      }}
+      alt="avLogo"
+      src={logo}
+      height={height}
+    />
+  );
 };
 
 export default Logo;

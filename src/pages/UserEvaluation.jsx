@@ -42,13 +42,10 @@ const Page = () => {
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
       );
 
-      console.log('trainingResponse', trainingResponse);
-      console.log('sortedData', sortedData);
       const sortedTrainingData = [...(trainingResponse.data?.trainings ?? [])].sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
       );
 
-      console.log('sortedTrainingData', response?.data?.totalVrSessionTime);
       setEvaluationTime(
         response?.data?.totalVrSessionTime > 0
           ? convertTimeToDescription(response?.data?.totalVrSessionTime)

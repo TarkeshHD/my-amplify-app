@@ -63,6 +63,10 @@ const Page = () => {
     });
   };
 
+  const handleRefresh = () => {
+    getEvaluations();
+  };
+
   return (
     <>
       <Helmet>
@@ -177,6 +181,7 @@ const Page = () => {
             exportBtnClicked={exportBtnClicked}
             exportBtnFalse={exportBtnFalse}
             updateAnalytic={updateAnalytic}
+            handleRefresh={handleRefresh}
           />
         </Stack>
       </Container>
