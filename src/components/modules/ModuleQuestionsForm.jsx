@@ -24,12 +24,14 @@ import {
 
 import { Add } from '@mui/icons-material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
+import MenuIcon from '@mui/icons-material/Menu';
+import { Box } from '@mui/system';
 import { useConfig } from '../../hooks/useConfig';
 import axios from '../../utils/axios';
 import { FormProvider, RHFRadioGroup, RHFTextField } from '../hook-form';
 import { RHFUploadSingleFile } from '../hook-form/RHFUpload';
-import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
-import MenuIcon from '@mui/icons-material/Menu';
+import { getFile } from '../../utils/utils';
 
 // ----------------------------------------------------------------------
 
@@ -64,6 +66,7 @@ export default function ModuleQuestionForm({ isEdit, currentModule }) {
       .required('Pass percentage is required')
       .min(1, 'Minimum value is 1')
       .max(100, 'Maximum value is 100'),
+    thumbnail: Yup.mixed(),
 
     // .length(formValues?.evaluation?.length || 0, 'Evaluation array length must be 10')), // Minimum value from config file from backend
   });
@@ -142,6 +145,8 @@ export default function ModuleQuestionForm({ isEdit, currentModule }) {
       // Make two requests and seperate Files from Body to seperate formdata and json request!
       const evaluationArr = values.evaluation;
       const formData = new FormData();
+
+      Object.keys(values).map((key) => formData.append(key, values[key]));
       const evaluation = [];
       evaluationArr.map((ques, index) => {
         // Use note to Identify what files should be updated respective to question document on backend!
@@ -286,6 +291,23 @@ export default function ModuleQuestionForm({ isEdit, currentModule }) {
           </Grid>
         </Grid>
       )}
+      <Grid item xs={12} lg={6}>
+        <Box mb={5}>
+          <Typography variant="subtitle2" color={'text.secondary'} mb={1}>
+            Thumbnail
+          </Typography>
+          <RHFUploadSingleFile
+            name="thumbnail"
+            label="Thumbnail"
+            onDrop={(v) => {
+              handleDrop(v, 'thumbnail');
+            }}
+            onRemove={() => {
+              handleRemove('thumbnail');
+            }}
+          />
+        </Box>
+      </Grid>
 
       <DragDropContext onDragEnd={handleDrag}>
         <Droppable droppableId="evaluation-items">
@@ -414,7 +436,7 @@ export default function ModuleQuestionForm({ isEdit, currentModule }) {
                                 InputProps={{ inputProps: { min: 1 } }}
                               />
                             </Grid>
-                            <Grid item xs={12}></Grid>
+                            <Grid item xs={12} />
 
                             <Grid item xs={12}>
                               <Typography variant="subtitle2" color={'text.disabled'}>

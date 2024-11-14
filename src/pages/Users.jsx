@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
 import CustomDialog from '../components/CustomDialog';
 import { SearchBar } from '../components/SearchBar';
 import AdminForm from '../components/users/AdminForm';
-import ImportDataForm from '../components/users/ImportDataForm';
+import ImportUserDataForm from '../components/users/ImportUserDataForm';
 import SuperAdminForm from '../components/users/SuperAdminForm';
 import TraineeForm from '../components/users/TraineeForm';
 import { useAuth } from '../hooks/useAuth';
@@ -50,6 +50,11 @@ const Page = () => {
       setFetchingData(false);
     }
   };
+
+  const handleRefresh = () => {
+    getUsers();
+  };
+
   const getDomains = async () => {
     try {
       const response = await axios.get('/domain/all');
@@ -102,6 +107,21 @@ const Page = () => {
       </Box>
     );
   }
+
+  const onCloseAdminForm = () => {
+    setOpenAdminForm(false);
+    handleRefresh();
+  };
+
+  const onCloseSuperAdminForm = () => {
+    setOpenSuperAdminForm(false);
+    handleRefresh();
+  };
+
+  const onCloseTraineeForm = () => {
+    setOpenTraineeForm(false);
+    handleRefresh();
+  };
 
   return (
     <>
@@ -200,6 +220,7 @@ const Page = () => {
             exportBtnFalse={exportBtnFalse}
             domains={domains}
             departments={departments}
+            handleRefresh={handleRefresh}
           />
 
           {/* Import User Data form */}
@@ -211,7 +232,7 @@ const Page = () => {
             open={openImportDataForm}
             title={<Typography variant="h5">Import User Data</Typography>}
           >
-            <ImportDataForm setOpenImportDataForm={setOpenImportDataForm} />
+            <ImportUserDataForm setOpenImportDataForm={setOpenImportDataForm} />
           </CustomDialog>
 
           {/* SUPER ADMIN FORM */}
@@ -222,7 +243,7 @@ const Page = () => {
             open={openSuperAdminForm}
             title={<Typography variant="h5">Super Admin</Typography>}
           >
-            {ssoOn === true ? <SuperAdminFormSso /> : <SuperAdminForm />}
+            {ssoOn === true ? <SuperAdminFormSso /> : <SuperAdminForm handleClose={onCloseSuperAdminForm} />}
           </CustomDialog>
 
           {/* ADMIN FORM */}
@@ -233,7 +254,11 @@ const Page = () => {
             open={openAdminForm}
             title={<Typography variant="h5">Add Admin</Typography>}
           >
-            {ssoOn === true ? <AdminFormSso domains={domains} /> : <AdminForm domains={domains} />}
+            {ssoOn === true ? (
+              <AdminFormSso domains={domains} />
+            ) : (
+              <AdminForm domains={domains} handleClose={onCloseAdminForm} />
+            )}
           </CustomDialog>
 
           {/* TRAINEE FORM */}
@@ -247,7 +272,7 @@ const Page = () => {
             {ssoOn === true ? (
               <TraineeFormSso domains={domains} departments={departments} />
             ) : (
-              <TraineeForm domains={domains} departments={departments} />
+              <TraineeForm domains={domains} departments={departments} handleClose={onCloseTraineeForm} />
             )}
           </CustomDialog>
         </Stack>

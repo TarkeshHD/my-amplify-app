@@ -12,16 +12,17 @@ import { Divider, Grid, IconButton, InputAdornment, Stack, SvgIcon, Tooltip, Typ
 
 import { Add } from '@mui/icons-material';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { useConfig } from '../../hooks/useConfig';
-import axios from '../../utils/axios';
-import { FormProvider, RHFRadioGroup, RHFTextField } from '../hook-form';
-import { RHFUploadSingleFile } from '../hook-form/RHFUpload';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import MenuIcon from '@mui/icons-material/Menu';
 
 import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
+import { Box } from '@mui/system';
+import { RHFUploadSingleFile } from '../hook-form/RHFUpload';
+import { FormProvider, RHFRadioGroup, RHFTextField } from '../hook-form';
+import axios from '../../utils/axios';
+import { useConfig } from '../../hooks/useConfig';
 
 // ----------------------------------------------------------------------
 
@@ -83,6 +84,7 @@ export default function ModuleQuestionActionForm({ isEdit, currentModule }) {
       .min(1, 'Minimum value is 1')
       .max(100, 'Maximum value is 100'),
     timeRequired: Yup.number().min(1, 'Minimum value is 1').max(100, 'Maximum value is 100'),
+    thumbnail: Yup.mixed(),
   });
 
   const defaultValues = useMemo(
@@ -179,6 +181,7 @@ export default function ModuleQuestionActionForm({ isEdit, currentModule }) {
       // Make two requests and seperate Files from Body to seperate formdata and json request!
       const evaluationArr = values.evaluation;
       const formData = new FormData();
+      Object.keys(values).map((key) => formData.append(key, values[key]));
       const evaluation = [];
       evaluationArr.map((ques, index) => {
         // Use note to Identify what files should be updated respective to question document on backend!
@@ -199,12 +202,9 @@ export default function ModuleQuestionActionForm({ isEdit, currentModule }) {
         description: values.description,
       };
 
-      const responseJson = await axios.post(`/module/questionsAction/update/${currentModule._id?.toString()}`, reqObj);
+      await axios.post(`/module/questionsAction/update/${currentModule._id?.toString()}`, reqObj);
 
-      //   const responseFiles = await axios.post(
-      //     `/module/questions/files/update/${currentModule._id?.toString()}`,
-      //     formData,
-      //   );
+      await axios.post(`/module/questions/files/update/${currentModule._id?.toString()}`, formData);
 
       toast.success(!isEdit ? 'Create success!' : 'Update success!');
       navigate(0);
@@ -328,6 +328,24 @@ export default function ModuleQuestionActionForm({ isEdit, currentModule }) {
           </Grid>
         </Grid>
       )}
+
+      <Grid item xs={12} lg={6}>
+        <Box mb={5}>
+          <Typography variant="subtitle2" color={'text.secondary'} mb={1}>
+            Thumbnail
+          </Typography>
+          <RHFUploadSingleFile
+            name="thumbnail"
+            label="Thumbnail"
+            onDrop={(v) => {
+              handleDrop(v, 'thumbnail');
+            }}
+            onRemove={() => {
+              handleRemove('thumbnail');
+            }}
+          />
+        </Box>
+      </Grid>
 
       <DragDropContext onDragEnd={handleDrag}>
         <Droppable droppableId="evaluation-items">
@@ -462,7 +480,7 @@ export default function ModuleQuestionActionForm({ isEdit, currentModule }) {
                                   InputProps={{ inputProps: { min: 1 } }}
                                 />
                               </Grid>
-                              <Grid item xs={12}></Grid>
+                              <Grid item xs={12} />
 
                               <Grid item xs={12}>
                                 <Typography variant="subtitle2" color={'text.disabled'}>
@@ -626,7 +644,7 @@ export default function ModuleQuestionActionForm({ isEdit, currentModule }) {
             <Typography variant="h6" color={'text.disabled'}>
               Total Points:{' '}
               {values?.evaluation?.reduce((acc, curr) => {
-                const currentWeightage = parseInt(curr.weightage);
+                const currentWeightage = parseInt(curr?.weightage);
                 return acc + (isNaN(currentWeightage) ? 0 : currentWeightage);
               }, 0)}
             </Typography>

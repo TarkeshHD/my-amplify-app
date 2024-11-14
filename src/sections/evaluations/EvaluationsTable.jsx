@@ -1,4 +1,4 @@
-import { Box, Button, Card, MenuItem, Skeleton, Stack, Typography } from '@mui/material';
+import { Box, Button, Card, MenuItem, Skeleton, Stack, Typography, IconButton, Tooltip } from '@mui/material';
 import {
   MRT_FullScreenToggleButton as MRTFullScreenToggleButton,
   MRT_ShowHideColumnsButton as MRTShowHideColumnsButton,
@@ -10,9 +10,10 @@ import moment from 'moment-timezone';
 import PropTypes from 'prop-types';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
-
-import { Delete, Edit, FileDownload } from '@mui/icons-material';
+import { debounce, isEmpty } from 'lodash';
+import { Delete, Edit, FileDownload, FilterAltOff } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
+
 import CustomDialog from '../../components/CustomDialog';
 import CustomDateRangePicker from '../../components/DatePicker/CustomDateRangePicker';
 import { SeverityPill } from '../../components/SeverityPill';
@@ -29,11 +30,11 @@ import {
   convertUnixToLocalTime,
   getEvaluationAnalytics,
 } from '../../utils/utils';
-
 import QuestionsActionGrid from '../../components/modules/QuestionActionGrid';
 import JsonLifeCycleEvaluationGrid from '../../components/modules/JsonLifeCycleEvaluationGrid';
 import JsonLifeCycleTrainingGrid from '../../components/modules/JsonLifeCycleTrainingGrid';
-import { debounce } from 'lodash';
+import ConfirmationDialog from '../../components/ConfirmationDialog';
+import { useAuth } from '../../hooks/useAuth';
 
 const statusMap = {
   Pending: 'warning',
@@ -63,13 +64,18 @@ const FAKE_DATA = [
 ];
 
 const EvaluationsTable = React.memo(
-  ({ count = 0, items = FAKE_DATA, fetchingData, exportBtnClicked, exportBtnFalse, updateAnalytic }) => {
+  ({ count = 0, items = FAKE_DATA, fetchingData, exportBtnClicked, exportBtnFalse, updateAnalytic, handleRefresh }) => {
     const exportBtnRef = useRef(null);
     const [exportRow, setExportRow] = useState([]);
     const [openEvaluationData, setOpenEvaluationData] = useState(null);
     const [openTrainingData, setOpenTrainingData] = useState(null);
     const [openExportOptions, setOpenExportOptions] = useState(false);
+    const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
+    const [rowSelection, setRowSelection] = useState({});
     const analyticsHiddenBtnRef = useRef(null);
+
+    const auth = useAuth();
+    const hasDeleteAccess = auth?.permissions?.includes('delete_evaluation');
 
     const navigate = useNavigate();
 
@@ -100,7 +106,6 @@ const EvaluationsTable = React.memo(
     // Create a debounced click function
     const debouncedClickForAnalytics = useCallback(
       debounce(() => {
-        console.log("I'm debounced");
         if (analyticsHiddenBtnRef.current) {
           analyticsHiddenBtnRef.current.click();
         }
@@ -112,11 +117,25 @@ const EvaluationsTable = React.memo(
     const columns = useMemo(() => {
       const baseColumns = [
         {
-          accessorKey: 'moduleId.name', // simple recommended way to define a column
+          accessorFn: (row) => `${row.moduleId?.name}${row.moduleId?.archived ? '-Deprecated' : ''}`,
+          filterFn: (row, _columnId, filterValue) => {
+            const moduleName = row.original?.moduleId?.name;
+            const archivedSuffix = row.original?.moduleId?.archived ? '-Deprecated' : '';
+            const fullModuleName = `${moduleName}${archivedSuffix}`;
+            if (!filterValue || filterValue.length === 0) return true;
+            return filterValue.includes(fullModuleName);
+          },
           header: `${data?.labels?.module?.singular || 'Module'}`,
           filterVariant: 'multi-select',
           size: 100,
-          Cell: ({ cell, column, row }) => <Typography>{row?.original?.moduleId?.name || '-'}</Typography>,
+          Cell: ({ cell, column, row }) =>
+            row?.original?.moduleId?.archived ? (
+              <SeverityPill color={'error'} tooltipTitle={'Deprecated'}>
+                <Delete sx={{ fontSize: 15, mr: 0.5 }} /> {row.original.moduleId.name}
+              </SeverityPill>
+            ) : (
+              <Typography>{row?.original?.moduleId?.name || '-'}</Typography>
+            ),
         },
 
         {
@@ -196,17 +215,50 @@ const EvaluationsTable = React.memo(
         },
         {
           accessorKey: 'userId.domainId.name', // simple recommended way to define a column
+          accessorFn: (row) => `${row.userId?.domainId?.name}${row.userId?.domainId?.archived ? '-Deprecated' : ''}`,
+          filterFn: (row, _columnId, filterValue) => {
+            const domainName = row.original?.userId?.domainId?.name;
+            const archivedSuffix = row.original?.userId?.domainId?.archived ? '-Deprecated' : '';
+            const fullDomainName = `${domainName}${archivedSuffix}`;
+            if (!filterValue || filterValue.length === 0) return true;
+            return filterValue.includes(fullDomainName);
+          },
           header: `${data?.labels?.domain?.singular || 'Domain'}`,
           filterVariant: 'multi-select',
           size: 100,
-          Cell: ({ cell, column, row }) => <Typography>{row?.original?.userId?.domainId?.name || '-'}</Typography>,
+          Cell: ({ cell, column, row }) =>
+            row.original?.userId?.domainId?.archived ? (
+              <SeverityPill color={'error'} tooltipTitle={'Deprecated'}>
+                {' '}
+                <Delete sx={{ fontSize: 15, mr: 0.5 }} /> {row.original?.userId?.domainId?.name}
+              </SeverityPill>
+            ) : (
+              <Typography>{row?.original?.userId?.domainId?.name || '-'}</Typography>
+            ),
         },
         {
           accessorKey: 'userId.departmentId.name', // simple recommended way to define a column
+          accessorFn: (row) =>
+            `${row.userId?.departmentId?.name}${row.userId?.departmentId?.archived ? '-Deprecated' : ''}`,
+          filterFn: (row, _columnId, filterValue) => {
+            const departmentName = row.original?.userId?.departmentId?.name;
+            const archivedSuffix = row.original?.userId?.departmentId?.archived ? '-Deprecated' : '';
+            const fullDepartmentName = `${departmentName}${archivedSuffix}`;
+            if (!filterValue || filterValue.length === 0) return true;
+            return filterValue.includes(fullDepartmentName);
+          },
           header: `${data?.labels?.department?.singular || 'Department'}`,
           filterVariant: 'multi-select',
           size: 100,
-          Cell: ({ cell, column, row }) => <Typography>{row?.original?.userId?.departmentId?.name || '-'}</Typography>,
+          Cell: ({ cell, column, row }) =>
+            row.original?.userId?.departmentId?.archived ? (
+              <SeverityPill color={'error'} tooltipTitle={'Deprecated'}>
+                {' '}
+                <Delete sx={{ fontSize: 15, mr: 0.5 }} /> {row.original?.userId?.departmentId?.name}
+              </SeverityPill>
+            ) : (
+              <Typography>{row?.original?.userId?.departmentId?.name || '-'}</Typography>
+            ),
         },
       ];
 
@@ -221,11 +273,26 @@ const EvaluationsTable = React.memo(
             Cell: ({ cell, column, row }) => <Typography>{row?.original?.userId?.name || '-'}</Typography>,
           },
           {
-            accessorKey: 'userId.username',
+            accessorFn: (row) => `${row.userId?.username}${row.userId?.archived ? '-Deprecated' : ''}`,
+            filterFn: (row, _columnId, filterValue) => {
+              const username = row.original.userId?.username;
+              const archivedSuffix = row.original.userId?.archived ? '-Deprecated' : '';
+              const fullUsername = `${username}${archivedSuffix}`;
+              if (!filterValue || filterValue.length === 0) return true;
+              return filterValue.includes(fullUsername);
+            },
             header: `${data?.labels?.user?.singular || 'User'}`,
             filterVariant: 'multi-select',
             size: 100,
-            Cell: ({ cell, column, row }) => <Typography>{row?.original?.userId?.username || '-'}</Typography>,
+            Cell: ({ cell, column, row }) =>
+              row?.original?.userId?.archived ? (
+                <SeverityPill color={'error'} tooltipTitle={'Deprecated'}>
+                  {' '}
+                  <Delete sx={{ fontSize: 15, mr: 0.5 }} /> {row?.original?.userId?.username || '-'}
+                </SeverityPill>
+              ) : (
+                <Typography>{row?.original?.userId?.username || '-'}</Typography>
+              ),
           },
         );
       }
@@ -257,6 +324,19 @@ const EvaluationsTable = React.memo(
     const handleExportRows = (rows, type) => {
       setOpenExportOptions(true);
       setExportRow(convertRowDatas(rows));
+    };
+
+    const onConfirmBulkDelete = async () => {
+      try {
+        setShowConfirmationDialog(false);
+        await axios.post(`/archive/bulkArchive`, { type: 'evaluation', data: Object.keys(rowSelection) });
+        toast.success('Evaluations deleted successfully');
+        setRowSelection({});
+        handleRefresh();
+      } catch (error) {
+        console.log(error);
+        toast.error(error.message || 'Failed to delete evaluations');
+      }
     };
 
     const handleRowClick = async (row) => {
@@ -350,9 +430,7 @@ const EvaluationsTable = React.memo(
         const id = row.id || row._id;
         await axios.post(`/evaluation/archive/${id}`);
         toast.success('Evaluation deleted successfully');
-        setTimeout(() => {
-          navigate(0);
-        }, 700);
+        handleRefresh();
       } catch (error) {
         console.log(error);
         toast.error(error.message || 'Failed to delete evaluation');
@@ -361,8 +439,13 @@ const EvaluationsTable = React.memo(
 
     const updateAnalytics = (tableValues) => {
       const evalautionAnalytic = getEvaluationAnalytics(tableValues);
-      console.log('rendering child');
       updateAnalytic(evalautionAnalytic);
+    };
+
+    const isColumnFiltersEmpty = (table) => {
+      const columnFilters = table?.getState()?.columnFilters;
+      // TODO: Need to handle filter reset and checks only with  table?.getState()?.columnFilters;
+      return !columnFilters || columnFilters.every((filter) => filter.value.length === 0);
     };
 
     return (
@@ -371,6 +454,24 @@ const EvaluationsTable = React.memo(
           <MaterialReactTable
             renderToolbarInternalActions={({ table }) => (
               <Box sx={{ display: 'flex', p: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                <Tooltip title="Clear filter" arrow>
+                  <IconButton
+                    sx={{ display: !isColumnFiltersEmpty(table) ? 'block' : 'none', mt: '6px' }}
+                    onClick={() => {
+                      table.resetColumnFilters();
+                    }}
+                  >
+                    <FilterAltOff color="warning" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Bulk delete" arrow>
+                  <IconButton
+                    onClick={() => setShowConfirmationDialog(true)}
+                    sx={{ display: hasDeleteAccess && !isEmpty(rowSelection) ? 'block' : 'none', mt: '6px' }}
+                  >
+                    <Delete color={isEmpty(rowSelection) ? 'grey' : 'error'} />
+                  </IconButton>
+                </Tooltip>
                 <MRTToggleFiltersButton table={table} />
                 <MRTShowHideColumnsButton table={table} />
                 <MRTFullScreenToggleButton table={table} />
@@ -446,9 +547,12 @@ const EvaluationsTable = React.memo(
             columns={columns}
             data={updatedItems}
             enableRowSelection // enable some features
+            onRowSelectionChange={setRowSelection}
+            getRowId={(row) => row._id}
             enableColumnOrdering
             state={{
               isLoading: fetchingData,
+              rowSelection,
             }}
             initialState={{ pagination: { pageSize: 10 }, showGlobalFilter: true, showColumnFilters: true }}
             muiTablePaginationProps={{
@@ -537,6 +641,16 @@ const EvaluationsTable = React.memo(
             <></>
           )}
         </CustomDialog>
+
+        <ConfirmationDialog
+          onClose={() => {
+            setShowConfirmationDialog(false);
+          }}
+          open={showConfirmationDialog}
+          title={'Delete'}
+          description={'Do you want to perform this bulk delete option?'}
+          onConfirm={onConfirmBulkDelete}
+        />
       </>
     );
   },

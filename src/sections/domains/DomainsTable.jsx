@@ -1,21 +1,28 @@
-import { Avatar, Box, Card, MenuItem, Typography } from '@mui/material';
-import { MaterialReactTable } from 'material-react-table';
+import { IconButton, Box, Card, MenuItem, Typography, Tooltip } from '@mui/material';
+import {
+  MaterialReactTable,
+  MRT_FullScreenToggleButton as MRTFullScreenToggleButton,
+  MRT_ShowHideColumnsButton as MRTShowHideColumnsButton,
+  MRT_ToggleFiltersButton as MRTToggleFiltersButton,
+} from 'material-react-table';
 import PropTypes from 'prop-types';
 import { useMemo, useState } from 'react';
+import { Stack } from '@mui/system';
+import { Delete, Edit, FilterAltOff } from '@mui/icons-material';
+import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
+import { set, isEmpty } from 'lodash';
 import { Scrollbar } from '../../components/Scrollbar';
 import SearchNotFound from '../../components/SearchNotFound';
 import { getInitials } from '../../utils/utils';
-import { Stack } from '@mui/system';
-import { Delete, Edit } from '@mui/icons-material';
 import axios from '../../utils/axios';
-import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
 import CustomDialog from '../../components/CustomDialog';
 import DomainForm from '../../components/domains/DomainForm';
 import EditDomainPasswordForm from '../../components/domains/EditDomainPasswordForm';
-import { set } from 'lodash';
+import ConfirmationDialog from '../../components/ConfirmationDialog';
+import { useAuth } from '../../hooks/useAuth';
 
-export const DomainsTable = ({ count = 0, items = [], fetchingData, domains = { domains } }) => {
+export const DomainsTable = ({ count = 0, items = [], fetchingData, domains = { domains }, handleRefresh }) => {
   const navigate = useNavigate();
   const [editFormDomains, setEditFormDomains] = useState(null);
   const columns = useMemo(
@@ -30,17 +37,33 @@ export const DomainsTable = ({ count = 0, items = [], fetchingData, domains = { 
 
   const [openEditPassForm, setOpenEditPassForm] = useState(null);
   const [openEditForm, setOpenEditForm] = useState(null);
+  const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
+  const [rowSelection, setRowSelection] = useState({});
+
+  const auth = useAuth();
+  const hasDeleteAccess = auth?.permissions?.includes('delete_domain');
 
   const onDeleteRow = async (row) => {
     try {
       await axios.delete(`/domain/${row?.original?._id}`);
       toast.success('Domain deleted successfully');
-      setTimeout(() => {
-        navigate(0);
-      }, 1000);
+      handleRefresh();
     } catch (error) {
       toast.error(error.message || 'Failed to delete domain');
       console.log(error);
+    }
+  };
+
+  const onConfirmBulkDelete = async () => {
+    try {
+      setShowConfirmationDialog(false);
+      await axios.post(`/archive/bulkArchive`, { type: 'domain', data: Object.keys(rowSelection) });
+      toast.success('Domains deleted successfully');
+      setRowSelection({});
+      handleRefresh();
+    } catch (error) {
+      console.log(error);
+      toast.error(error.message || 'Failed to delete domains');
     }
   };
 
@@ -48,6 +71,31 @@ export const DomainsTable = ({ count = 0, items = [], fetchingData, domains = { 
     <>
       <Card>
         <MaterialReactTable
+          renderToolbarInternalActions={({ table }) => (
+            <Box sx={{ display: 'flex', p: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <Tooltip title="Clear filter" arrow>
+                <IconButton
+                  sx={{ display: table?.getState()?.columnFilters?.length > 0 ? 'block' : 'none', mt: '6px' }}
+                  onClick={() => {
+                    table.resetColumnFilters();
+                  }}
+                >
+                  <FilterAltOff color="warning" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Bulk delete" arrow>
+                <IconButton
+                  onClick={() => setShowConfirmationDialog(true)}
+                  sx={{ display: hasDeleteAccess && !isEmpty(rowSelection) ? 'block' : 'none', mt: '6px' }}
+                >
+                  <Delete color={isEmpty(rowSelection) ? 'grey' : 'error'} />
+                </IconButton>
+              </Tooltip>
+              <MRTToggleFiltersButton table={table} />
+              <MRTShowHideColumnsButton table={table} />
+              <MRTFullScreenToggleButton table={table} />
+            </Box>
+          )}
           renderRowActionMenuItems={({ row, closeMenu, table }) => [
             <MenuItem
               key={0}
@@ -91,7 +139,9 @@ export const DomainsTable = ({ count = 0, items = [], fetchingData, domains = { 
               </Stack>
             </MenuItem>,
           ]}
+          getRowId={(row) => row._id}
           enableRowActions
+          onRowSelectionChange={setRowSelection}
           displayColumnDefOptions={{
             'mrt-row-actions': {
               header: null,
@@ -104,6 +154,7 @@ export const DomainsTable = ({ count = 0, items = [], fetchingData, domains = { 
           enableColumnOrdering
           state={{
             isLoading: fetchingData,
+            rowSelection,
           }}
           initialState={{ pagination: { pageSize: 5 }, showGlobalFilter: true }}
           muiTablePaginationProps={{
@@ -140,8 +191,18 @@ export const DomainsTable = ({ count = 0, items = [], fetchingData, domains = { 
         open={Boolean(openEditForm)}
         title={<Typography variant="h5">Edit Domain</Typography>}
       >
-        <DomainForm isEdit={true} currentDomain={openEditForm?.original} domains={editFormDomains} />
+        <DomainForm isEdit currentDomain={openEditForm?.original} domains={editFormDomains} />
       </CustomDialog>
+
+      <ConfirmationDialog
+        onClose={() => {
+          setShowConfirmationDialog(false);
+        }}
+        open={showConfirmationDialog}
+        title={'Delete'}
+        description={'Do you want to perform this bulk delete option?'}
+        onConfirm={onConfirmBulkDelete}
+      />
     </>
   );
 };

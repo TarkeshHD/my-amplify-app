@@ -1,22 +1,28 @@
-import { Delete, Edit } from '@mui/icons-material';
-import { Avatar, Box, Button, Card, IconButton, MenuItem, Stack, Typography } from '@mui/material';
-import { MaterialReactTable } from 'material-react-table';
+import { Delete, Edit, FilterAltOff } from '@mui/icons-material';
+import { Box, Button, Card, IconButton, MenuItem, Stack, Typography, Tooltip } from '@mui/material';
+import {
+  MaterialReactTable,
+  MRT_FullScreenToggleButton as MRTFullScreenToggleButton,
+  MRT_ShowHideColumnsButton as MRTShowHideColumnsButton,
+  MRT_ToggleFiltersButton as MRTToggleFiltersButton,
+} from 'material-react-table';
 import PropTypes from 'prop-types';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { isEmpty } from 'lodash';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+
 import CustomDialog from '../../components/CustomDialog';
-import { Scrollbar } from '../../components/Scrollbar';
-import SearchNotFound from '../../components/SearchNotFound';
 import ExportOptions from '../../components/export/ExportOptions';
 import EditPasswordForm from '../../components/users/EditPasswordForm';
 import { useConfig } from '../../hooks/useConfig';
-import { addToHistory, getInitials } from '../../utils/utils';
+import { addToHistory } from '../../utils/utils';
 import axios from '../../utils/axios';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import { useAuth } from '../../hooks/useAuth';
 import TraineeForm from '../../components/users/TraineeForm';
 import AdminForm from '../../components/users/AdminForm';
 import SuperAdminForm from '../../components/users/SuperAdminForm';
+import ConfirmationDialog from '../../components/ConfirmationDialog';
 
 export const UsersTable = ({
   count = 0,
@@ -26,11 +32,16 @@ export const UsersTable = ({
   exportBtnFalse,
   domains,
   departments,
+  handleRefresh,
 }) => {
   const exportBtnRef = useRef(null);
   const config = useConfig();
   const [openExportOptions, setOpenExportOptions] = useState(false);
   const [exportRow, setExportRow] = useState([]);
+  const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
+  const [rowSelection, setRowSelection] = useState({});
+  const auth = useAuth();
+  const hasDeleteAccess = auth?.permissions?.includes('delete_user');
   const { data } = config;
 
   const navigate = useNavigate();
@@ -48,12 +59,12 @@ export const UsersTable = ({
         {
           accessorKey: 'name', // simple recommended way to define a column
           header: 'Name',
-          filterVariant: 'multi-select',
+          enableColumnFilter: false,
         },
         {
           accessorKey: 'username', // simple recommended way to define a column
           header: 'Username',
-          filterVariant: 'multi-select',
+          enableColumnFilter: false,
         },
         {
           accessorKey: 'role', // simple recommended way to define a column
@@ -71,9 +82,7 @@ export const UsersTable = ({
               header: `${data?.features?.traineeType?.label?.singular || 'Trainee Type'}`,
               filterVariant: 'multi-select',
               size: 100,
-              Cell: ({ cell, column, row }) => {
-                return <Typography>{row?.original?.traineeType || 'NA'}</Typography>;
-              },
+              Cell: ({ cell, column, row }) => <Typography>{row?.original?.traineeType || 'NA'}</Typography>,
             }
           : null,
         {
@@ -89,8 +98,8 @@ export const UsersTable = ({
   const [openEditPassForm, setOpenEditPass] = useState(null);
   const [openEditForm, setOpenEditForm] = useState(null);
 
-  const convertRowDatas = (rows) => {
-    return rows.map((row) => {
+  const convertRowDatas = (rows) =>
+    rows.map((row) => {
       const values = row?.original;
       const convertedValue = [
         values?.name || 'NA',
@@ -106,7 +115,6 @@ export const UsersTable = ({
       convertedValue.push(values?.departmentId?.name || 'NA');
       return convertedValue;
     });
-  };
 
   const handleExportRows = (rows, type) => {
     setOpenExportOptions(true);
@@ -118,9 +126,7 @@ export const UsersTable = ({
       // Delete row
       const response = await axios.delete(`/user/archive/${row?.original?.id}`);
       toast.success('User deleted successfully');
-      setTimeout(() => {
-        navigate(0);
-      }, 1000);
+      handleRefresh();
     } catch (error) {
       console.log(error);
       toast.error(error.message || 'Failed to delete user');
@@ -143,12 +149,36 @@ export const UsersTable = ({
     navigate(`/evaluations/${row.original.id}`);
   };
 
+  const onConfirmBulkDelete = async () => {
+    try {
+      setShowConfirmationDialog(false);
+      await axios.post(`/archive/bulkArchive`, { type: 'user', data: Object.keys(rowSelection) });
+      toast.success('Users deleted successfully');
+      setRowSelection({});
+      handleRefresh();
+    } catch (error) {
+      setShowConfirmationDialog(false);
+      console.log(error);
+      toast.error(error.message || 'Failed to delete users');
+    }
+  };
+
+  const onCloseEditUserForm = () => {
+    setOpenEditForm(false);
+    handleRefresh();
+  };
+
+  const onCloseEditPasswordForm = () => {
+    setOpenEditPass(false);
+    handleRefresh();
+  };
+
   return (
     <>
       <Card>
         <MaterialReactTable
           renderToolbarInternalActions={({ table }) => (
-            <Box sx={{}}>
+            <Box sx={{ display: 'flex', p: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               <Button
                 ref={exportBtnRef}
                 sx={{ display: 'none' }}
@@ -158,6 +188,27 @@ export const UsersTable = ({
                   handleExportRows(table.getPrePaginationRowModel().rows);
                 }}
               ></Button>
+              <Tooltip title="Clear filter" arrow>
+                <IconButton
+                  sx={{ display: table?.getState()?.columnFilters?.length > 0 ? 'block' : 'none', mt: '6px' }}
+                  onClick={() => {
+                    table.resetColumnFilters();
+                  }}
+                >
+                  <FilterAltOff color="warning" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Bulk delete" arrow>
+                <IconButton
+                  onClick={() => setShowConfirmationDialog(true)}
+                  sx={{ display: hasDeleteAccess && !isEmpty(rowSelection) ? 'block' : 'none', mt: '6px' }}
+                >
+                  <Delete color={isEmpty(rowSelection) ? 'grey' : 'error'} />
+                </IconButton>
+              </Tooltip>
+              <MRTToggleFiltersButton table={table} />
+              <MRTShowHideColumnsButton table={table} />
+              <MRTFullScreenToggleButton table={table} />
             </Box>
           )}
           renderRowActionMenuItems={({ row, closeMenu, table }) => [
@@ -214,9 +265,12 @@ export const UsersTable = ({
           columns={columns}
           data={items}
           enableRowSelection // enable some features
+          onRowSelectionChange={setRowSelection}
+          getRowId={(row) => row._id}
           enableColumnOrdering
           state={{
             isLoading: fetchingData,
+            rowSelection,
           }}
           initialState={{ pagination: { pageSize: 10 }, showGlobalFilter: true, showColumnFilters: true }}
           muiTablePaginationProps={{
@@ -262,7 +316,7 @@ export const UsersTable = ({
         open={Boolean(openEditPassForm)}
         title={<Typography variant="h5">Edit Password</Typography>}
       >
-        <EditPasswordForm user={openEditPassForm?.original} />
+        <EditPasswordForm user={openEditPassForm?.original} handleClose={onCloseEditPasswordForm} />
       </CustomDialog>
 
       {/* Edit User Form */}
@@ -274,14 +328,35 @@ export const UsersTable = ({
         title={<Typography variant="h5">Edit User</Typography>}
       >
         {openEditForm?.original?.role === 'user' ? (
-          <TraineeForm isEdit={true} currentUser={openEditForm?.original} domains={domains} departments={departments} />
+          <TraineeForm
+            isEdit={true}
+            currentUser={openEditForm?.original}
+            domains={domains}
+            departments={departments}
+            handleClose={onCloseEditUserForm}
+          />
         ) : openEditForm?.original?.role === 'admin' ? (
-          <AdminForm isEdit={true} currentUser={openEditForm?.original} domains={domains} />
+          <AdminForm
+            isEdit={true}
+            currentUser={openEditForm?.original}
+            domains={domains}
+            handleClose={onCloseEditUserForm}
+          />
         ) : (
-          <SuperAdminForm isEdit={true} currentUser={openEditForm?.original} />
+          <SuperAdminForm isEdit={true} currentUser={openEditForm?.original} handleClose={onCloseEditUserForm} />
         )}
         {/* <EditUserForm user={openEditForm?.original} /> */}
       </CustomDialog>
+
+      <ConfirmationDialog
+        onClose={() => {
+          setShowConfirmationDialog(false);
+        }}
+        open={showConfirmationDialog}
+        title={'Delete'}
+        description={'Do you want to perform this bulk delete option?'}
+        onConfirm={onConfirmBulkDelete}
+      />
     </>
   );
 };

@@ -1,23 +1,33 @@
-import { Delete, Edit, QuestionAnswer, Quiz, EditNote } from '@mui/icons-material';
+/* eslint-disable react/prop-types */
+import { Delete, Edit, Quiz, EditNote, DriveFileRenameOutline, FilterAltOff } from '@mui/icons-material';
 import TimerIcon from '@mui/icons-material/Timer';
-import { Avatar, Box, Card, IconButton, MenuItem, Stack, Typography } from '@mui/material';
-import { MaterialReactTable } from 'material-react-table';
+import { Box, Card, MenuItem, Stack, Typography, IconButton, Tooltip } from '@mui/material';
+import {
+  MaterialReactTable,
+  MRT_FullScreenToggleButton as MRTFullScreenToggleButton,
+  MRT_ShowHideColumnsButton as MRTShowHideColumnsButton,
+  MRT_ToggleFiltersButton as MRTToggleFiltersButton,
+} from 'material-react-table';
 import PropTypes from 'prop-types';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { isEmpty } from 'lodash';
+import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
+
 import CustomDialog from '../../components/CustomDialog';
-import { Scrollbar } from '../../components/Scrollbar';
-import SearchNotFound from '../../components/SearchNotFound';
 import AssignModulesForm from '../../components/modules/AssignModulesForm';
 import ModuleQuestionForm from '../../components/modules/ModuleQuestionsForm';
 import ModuleTimeForm from '../../components/modules/ModuleTimeForm';
 import QuestionsGrid from '../../components/modules/QuestionsGrid';
-import { getFile, getInitials } from '../../utils/utils';
-import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
+import { getFile } from '../../utils/utils';
 import axios from '../../utils/axios';
 import ModuleQuestionActionForm from '../../components/modules/ModuleQuestionActionForm';
 import QuestionsActionGrid from '../../components/modules/QuestionActionGrid';
 import { useAuth } from '../../hooks/useAuth';
+import ConfirmationDialog from '../../components/ConfirmationDialog';
+import noImagesAvailable from '../../assets/no_image_available.jpg';
+import ModuleEditJsonForm from '../../components/modules/ModuleEditJsonForm';
+import JsonLifeCycleEvaluationGrid from '../../components/modules/JsonLifeCycleEvaluationGrid';
 
 export const ModulesTable = ({
   count = 0,
@@ -27,6 +37,7 @@ export const ModulesTable = ({
   domains = [],
   departments = [],
   users = [],
+  handleRefresh,
 }) => {
   const tableRef = useRef(null);
 
@@ -43,7 +54,15 @@ export const ModulesTable = ({
         header: 'Thumbnail',
         Cell: ({ cell, column }) => (
           <Box sx={{}}>
-            <img style={{ maxWidth: 80 }} alt="celll" src={getFile(cell?.getValue())} />
+            <img
+              style={{ maxWidth: 80 }}
+              alt="cell"
+              src={getFile(cell?.getValue())}
+              onError={(e) => {
+                e.target.onerror = null; // Prevent infinite loop if fallback also fails
+                e.target.src = noImagesAvailable; // Set the fallback image when the image fails to load
+              }}
+            />
           </Box>
         ),
       },
@@ -69,17 +88,18 @@ export const ModulesTable = ({
   const [openQuestionsForm, setOpenQuestionsForm] = useState(null);
   const [openTimeForm, setOpenTimeForm] = useState(null);
   const [openQuestionActionForm, setOpenQuestionActionForm] = useState(null);
+  const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
+  const [openEditFileForm, setOpenEditFileForm] = useState(null);
 
-  const navigate = useNavigate();
+  const auth = useAuth();
+  const hasDeleteAccess = auth?.permissions?.includes('delete_module');
 
   const onDeleteRow = async (row) => {
     const id = row.id || row._id;
     try {
       await axios.post(`/module/archive/${id}`);
       toast.success('Module deleted successfully');
-      setTimeout(() => {
-        navigate(0);
-      }, 700);
+      handleRefresh();
     } catch (error) {
       console.log(error);
       toast.error(error.message || 'Failed to delete evaluation');
@@ -92,10 +112,48 @@ export const ModulesTable = ({
     handleRowSelection(rowSelection);
   }, [rowSelection]);
 
+  const onConfirmBulkDelete = async () => {
+    try {
+      setShowConfirmationDialog(false);
+      await axios.post(`/archive/bulkArchive`, { type: 'module', data: Object.keys(rowSelection) });
+      toast.success('Modules deleted successfully');
+      setRowSelection({});
+      handleRefresh();
+    } catch (error) {
+      console.log(error);
+      toast.error(error.message || 'Failed to delete modules');
+    }
+  };
+
   return (
     <>
       <Card>
         <MaterialReactTable
+          renderToolbarInternalActions={({ table }) => (
+            <Box sx={{ display: 'flex', p: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <Tooltip title="Clear filter" arrow>
+                <IconButton
+                  sx={{ display: table?.getState()?.columnFilters?.length > 0 ? 'block' : 'none', mt: '6px' }}
+                  onClick={() => {
+                    table.resetColumnFilters();
+                  }}
+                >
+                  <FilterAltOff color="warning" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Bulk delete" arrow>
+                <IconButton
+                  onClick={() => setShowConfirmationDialog(true)}
+                  sx={{ display: hasDeleteAccess && !isEmpty(rowSelection) ? 'block' : 'none', mt: '6px' }}
+                >
+                  <Delete color={isEmpty(rowSelection) ? 'grey' : 'error'} />
+                </IconButton>
+              </Tooltip>
+              <MRTToggleFiltersButton table={table} />
+              <MRTShowHideColumnsButton table={table} />
+              <MRTFullScreenToggleButton table={table} />
+            </Box>
+          )}
           renderRowActionMenuItems={({ row, closeMenu, table }) => [
             <MenuItem
               key={0}
@@ -112,53 +170,76 @@ export const ModulesTable = ({
             </MenuItem>,
             currentUser?.user?.role === 'productAdmin' && (
               <>
-                {row.original.evaluationType === 'question' ? (
-                  <MenuItem
-                    key={1}
-                    onClick={() => {
-                      // onEditRow();
-                      setOpenQuestionsForm(row.original);
-                      closeMenu();
-                    }}
-                  >
-                    <Stack spacing={2} direction={'row'}>
-                      <Quiz />
-                      <Typography>Add/Edit Questions </Typography>
-                    </Stack>
-                  </MenuItem>
-                ) : row.original.evaluationType === 'time' ? (
-                  <MenuItem
-                    key={4}
-                    onClick={() => {
-                      // onEditRow();
-                      setOpenTimeForm(row.original);
-                      closeMenu();
-                    }}
-                  >
-                    <Stack spacing={2} direction={'row'}>
-                      <TimerIcon />
-                      <Typography>Add/Edit Time Evaluation</Typography>
-                    </Stack>
-                  </MenuItem>
-                ) : row?.original?.evaluationType === 'questionAction' ? (
-                  <MenuItem
-                    key={2}
-                    onClick={() => {
-                      // onEditRow();
-                      setOpenQuestionActionForm(row.original);
-                      closeMenu();
-                    }}
-                  >
-                    <Stack spacing={2} direction={'row'}>
-                      <EditNote />
-                      <Typography>Add/Edit Question Action Evaluation</Typography>
-                    </Stack>
-                  </MenuItem>
-                ) : (
-                  <></>
-                )}
+                {(() => {
+                  if (row.original.evaluationType === 'question') {
+                    return (
+                      <MenuItem
+                        key={1}
+                        onClick={() => {
+                          setOpenQuestionsForm(row.original);
+                          closeMenu();
+                        }}
+                      >
+                        <Stack spacing={2} direction={'row'}>
+                          <Quiz />
+                          <Typography>Edit Question Module</Typography>
+                        </Stack>
+                      </MenuItem>
+                    );
+                  }
+                  if (row.original.evaluationType === 'time') {
+                    return (
+                      <MenuItem
+                        key={4}
+                        onClick={() => {
+                          setOpenTimeForm(row.original);
+                          closeMenu();
+                        }}
+                      >
+                        <Stack spacing={2} direction={'row'}>
+                          <TimerIcon />
+                          <Typography>Edit Time Module</Typography>
+                        </Stack>
+                      </MenuItem>
+                    );
+                  }
+                  if (row?.original?.evaluationType === 'questionAction') {
+                    return (
+                      <MenuItem
+                        key={2}
+                        onClick={() => {
+                          setOpenQuestionActionForm(row.original);
+                          closeMenu();
+                        }}
+                      >
+                        <Stack spacing={2} direction={'row'}>
+                          <EditNote />
+                          <Typography>Edit Question Action Module</Typography>
+                        </Stack>
+                      </MenuItem>
+                    );
+                  }
+                  if (row?.original?.evaluationType === 'jsonLifeCycle') {
+                    return (
+                      <MenuItem
+                        key={3}
+                        onClick={() => {
+                          setOpenEditFileForm(row.original);
+                          closeMenu();
+                        }}
+                      >
+                        <Stack spacing={2} direction={'row'}>
+                          <DriveFileRenameOutline />
+                          <Typography>Edit JSON File Module</Typography>
+                        </Stack>
+                      </MenuItem>
+                    );
+                  }
+                  return null; // Render nothing for other evaluation types
+                })()}
               </>
             ),
+
             <MenuItem
               key={3}
               onClick={() => {
@@ -268,6 +349,18 @@ export const ModulesTable = ({
         />
       </CustomDialog>
 
+      {/* Json File Form */}
+      <CustomDialog
+        onClose={() => {
+          setOpenEditFileForm(false);
+        }}
+        sx={{ minWidth: '40vw' }}
+        open={Boolean(openEditFileForm)}
+        title={<Typography variant="h5">Json File Form</Typography>}
+      >
+        <ModuleEditJsonForm isEdit={openEditFileForm?.evaluation?.length !== 0} currentModule={openEditFileForm} />
+      </CustomDialog>
+
       {/* View Module Data */}
       <CustomDialog
         onClose={() => {
@@ -281,14 +374,39 @@ export const ModulesTable = ({
           </>
         }
       >
-        {openEvaluationData?.evaluationType === 'question' ? (
-          <QuestionsGrid evaluation={openEvaluationData?.evaluation} />
-        ) : openEvaluationData?.evaluationType === 'time' ? (
-          <ModuleTimeForm isEdit={false} currentModule={openEvaluationData} fieldDisabled={true} />
-        ) : (
-          <QuestionsActionGrid evaluation={openEvaluationData?.evaluation} />
-        )}
+        {(() => {
+          if (openEvaluationData?.evaluationType === 'question') {
+            return <QuestionsGrid evaluation={openEvaluationData?.evaluation} />;
+          }
+          if (openEvaluationData?.evaluationType === 'time') {
+            return <ModuleTimeForm isEdit={false} currentModule={openEvaluationData} fieldDisabled />;
+          }
+          if (openEvaluationData?.evaluationType === 'questionAction') {
+            return <QuestionsActionGrid evaluation={openEvaluationData?.evaluation} />;
+          }
+          if (openEvaluationData?.evaluationType === 'jsonLifeCycle') {
+            return (
+              <JsonLifeCycleEvaluationGrid
+                evalData={{
+                  evaluationDump: {
+                    ...openEvaluationData.evaluation[0],
+                  },
+                }}
+                showModule
+              />
+            );
+          }
+        })()}
       </CustomDialog>
+      <ConfirmationDialog
+        onClose={() => {
+          setShowConfirmationDialog(false);
+        }}
+        open={showConfirmationDialog}
+        title={'Delete'}
+        description={'Do you want to perform this bulk delete option?'}
+        onConfirm={onConfirmBulkDelete}
+      />
     </>
   );
 };

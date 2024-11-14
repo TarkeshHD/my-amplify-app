@@ -9,6 +9,7 @@ const initialState = {
   isAuthenticated: false,
   isInitialized: false,
   user: null,
+  permissions: [],
 };
 
 const AuthContext = createContext({
@@ -43,7 +44,13 @@ function AuthProvider({ children }) {
 
           response = res.data.details;
 
-          setState((prev) => ({ ...prev, isAuthenticated: true, isInitialized: true, user: response.user }));
+          setState((prev) => ({
+            ...prev,
+            isAuthenticated: true,
+            isInitialized: true,
+            user: response.user,
+            permissions: response.permissions,
+          }));
         } else {
           setSession(null);
           setState((prev) => ({ ...prev, isAuthenticated: false, isInitialized: true, user: null }));
@@ -69,7 +76,13 @@ function AuthProvider({ children }) {
       }
 
       setSession(response.token);
-      setState((prev) => ({ ...prev, isAuthenticated: true, isInitialized: true, user: response.user }));
+      setState((prev) => ({
+        ...prev,
+        isAuthenticated: true,
+        isInitialized: true,
+        user: response.user,
+        permissions: response.permissions,
+      }));
     } catch (error) {
       setState((prev) => ({ ...prev, isAuthenticated: false, isInitialized: true, user: null }));
       console.log(error.message);

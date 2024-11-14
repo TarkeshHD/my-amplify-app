@@ -9,12 +9,13 @@ import {
   SvgIcon,
   Button,
 } from '@mui/material';
-import { addToHistory, convertUnixToLocalTime, fetchScoresAndStatuses, removeFromHistory } from '../utils/utils';
-import DefaultImage from '../assets/No_Image_Available.jpg';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from '../utils/axios';
 import moment from 'moment-timezone';
+import { addToHistory, convertUnixToLocalTime, fetchScoresAndStatuses, removeFromHistory } from '../utils/utils';
+import DefaultImage from '../assets/no_image_available.jpg';
+import axios from '../utils/axios';
 import { useConfig } from '../hooks/useConfig';
+
 const fillTraineesEval = async (trainees, config) => {
   // Fill trainee values evaluation with pending or not attempted or pass or fail
   const promises = trainees.map(async (trainee) => {
@@ -23,10 +24,9 @@ const fillTraineesEval = async (trainees, config) => {
       traineeValues.evaluation.map(async (evaluation, index) => {
         if (evaluation === null) {
           return 'Not Attempted';
-        } else {
-          const { status } = await fetchScoresAndStatuses(evaluation, config);
-          return status;
         }
+        const { status } = await fetchScoresAndStatuses(evaluation, config);
+        return status;
       }),
     );
 

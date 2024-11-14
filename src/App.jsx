@@ -1,18 +1,15 @@
-import { ThemeProvider } from '@emotion/react';
-import { Button, CssBaseline } from '@mui/material';
-import { useState } from 'react';
+import { CssBaseline } from '@mui/material';
 import { HelmetProvider } from 'react-helmet-async';
-import { ToastContainer, toast } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 
-import reactLogo from './assets/react.svg';
+import { Auth0Provider } from '@auth0/auth0-react';
 import { AuthProvider } from './context/JWTContext';
 import Router from './routes/Router';
-import { createTheme } from './theme';
 
 import './App.css';
 import ConfigThemeWrapper from './components/ConfigThemeWrapper';
 import { ConfigProvider } from './context/ConfigurationContext';
-import { Auth0Provider } from '@auth0/auth0-react';
+
 function App() {
   return (
     <HelmetProvider>

@@ -22,7 +22,7 @@ DepartmentForm.propTypes = {
   currentDepartment: PropTypes.object,
 };
 
-export default function DepartmentForm({ isEdit, currentDepartment, domains = [] }) {
+export default function DepartmentForm({ isEdit, currentDepartment, domains = [], handleClose }) {
   const navigate = useNavigate();
   const config = useConfig();
   const { data } = config;
@@ -83,7 +83,7 @@ export default function DepartmentForm({ isEdit, currentDepartment, domains = []
       }
 
       toast.success(!isEdit ? 'Create success!' : 'Update success!');
-      navigate(0);
+      handleClose();
     } catch (error) {
       console.error(error);
       toast.error(error.message || 'Something went wrong!');
