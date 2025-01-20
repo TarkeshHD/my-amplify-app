@@ -39,7 +39,28 @@ export const SideNav = (props) => {
 
   const { user } = useAuth();
 
+  const isFreeTrialUser = data?.freeTrial;
+
   const items = getItems(data?.labels);
+
+  if (isFreeTrialUser) {
+    const analyticsIndex = items.findIndex((item) => item.title === 'Analytics');
+    const evaluationsIndex = items.findIndex((item) => item.title === 'Evaluations');
+    const trainingsIndex = items.findIndex((item) => item.title === 'Trainings');
+
+    const trainings = trainingsIndex !== -1 ? items.splice(trainingsIndex, 1)[0] : null;
+    const evaluations = evaluationsIndex !== -1 ? items.splice(evaluationsIndex, 1)[0] : null;
+    const analytics = analyticsIndex !== -1 ? items.splice(analyticsIndex, 1)[0] : null;
+
+    const organizationIndex = items.findIndex((item) => item.title === 'Organization');
+    if (organizationIndex !== -1) {
+      items.splice(organizationIndex, 1);
+    }
+
+    if (analytics) items.unshift(analytics);
+    if (evaluations) items.splice(1, 0, evaluations);
+    if (trainings) items.splice(2, 0, trainings);
+  }
 
   const content = (
     <Scrollbar
@@ -118,7 +139,9 @@ export const SideNav = (props) => {
             }}
           >
             {items.map((item) => {
-              if (item?.doNotRenderForUser?.includes(user.role)) return false;
+              if (item?.doNotRenderForUser?.includes(user.role)) {
+                return false;
+              }
               const active = item.path ? pathname === item.path : false;
               const hasChildren = item.children;
 

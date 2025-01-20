@@ -21,6 +21,7 @@ import DomainForm from '../../components/domains/DomainForm';
 import EditDomainPasswordForm from '../../components/domains/EditDomainPasswordForm';
 import ConfirmationDialog from '../../components/ConfirmationDialog';
 import { useAuth } from '../../hooks/useAuth';
+import CustomGrid from '../../components/grid/CustomGrid';
 
 export const DomainsTable = ({ count = 0, items = [], fetchingData, domains = { domains }, handleRefresh }) => {
   const navigate = useNavigate();
@@ -67,110 +68,64 @@ export const DomainsTable = ({ count = 0, items = [], fetchingData, domains = { 
     }
   };
 
+  const rowActionMenuItems = ({ row, closeMenu, table }) => [
+    <MenuItem
+      key={0}
+      onClick={() => {
+        onDeleteRow(row);
+        closeMenu();
+      }}
+      sx={{ color: 'error.main' }}
+    >
+      <Stack spacing={2} direction={'row'}>
+        <Delete />
+        <Typography>Delete</Typography>
+      </Stack>
+    </MenuItem>,
+    <MenuItem
+      key={1}
+      onClick={() => {
+        // Removing the current domain from the domain lists
+        const currentDomains = domains.filter((domain) => domain._id !== row.original._id);
+        setEditFormDomains(currentDomains);
+        setOpenEditForm(row);
+        closeMenu();
+      }}
+    >
+      <Stack spacing={2} direction={'row'}>
+        <Edit />
+        <Typography>Edit</Typography>
+      </Stack>
+    </MenuItem>,
+    <MenuItem
+      key={3}
+      onClick={() => {
+        // onEditRow();
+        closeMenu();
+        setOpenEditPassForm(row);
+      }}
+    >
+      <Stack spacing={2} direction={'row'}>
+        <Edit />
+        <Typography>Edit Password</Typography>
+      </Stack>
+    </MenuItem>,
+  ];
+
   return (
     <>
-      <Card>
-        <MaterialReactTable
-          renderToolbarInternalActions={({ table }) => (
-            <Box sx={{ display: 'flex', p: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-              <Tooltip title="Clear filter" arrow>
-                <IconButton
-                  sx={{ display: table?.getState()?.columnFilters?.length > 0 ? 'block' : 'none', mt: '6px' }}
-                  onClick={() => {
-                    table.resetColumnFilters();
-                  }}
-                >
-                  <FilterAltOff color="warning" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Bulk delete" arrow>
-                <IconButton
-                  onClick={() => setShowConfirmationDialog(true)}
-                  sx={{ display: hasDeleteAccess && !isEmpty(rowSelection) ? 'block' : 'none', mt: '6px' }}
-                >
-                  <Delete color={isEmpty(rowSelection) ? 'grey' : 'error'} />
-                </IconButton>
-              </Tooltip>
-              <MRTToggleFiltersButton table={table} />
-              <MRTShowHideColumnsButton table={table} />
-              <MRTFullScreenToggleButton table={table} />
-            </Box>
-          )}
-          renderRowActionMenuItems={({ row, closeMenu, table }) => [
-            <MenuItem
-              key={0}
-              onClick={() => {
-                onDeleteRow(row);
-                closeMenu();
-              }}
-              sx={{ color: 'error.main' }}
-            >
-              <Stack spacing={2} direction={'row'}>
-                <Delete />
-                <Typography>Delete</Typography>
-              </Stack>
-            </MenuItem>,
-            <MenuItem
-              key={1}
-              onClick={() => {
-                // Removing the current domain from the domain lists
-                const currentDomains = domains.filter((domain) => domain._id !== row.original._id);
-                setEditFormDomains(currentDomains);
-                setOpenEditForm(row);
-                closeMenu();
-              }}
-            >
-              <Stack spacing={2} direction={'row'}>
-                <Edit />
-                <Typography>Edit</Typography>
-              </Stack>
-            </MenuItem>,
-            <MenuItem
-              key={3}
-              onClick={() => {
-                // onEditRow();
-                closeMenu();
-                setOpenEditPassForm(row);
-              }}
-            >
-              <Stack spacing={2} direction={'row'}>
-                <Edit />
-                <Typography>Edit Password</Typography>
-              </Stack>
-            </MenuItem>,
-          ]}
-          getRowId={(row) => row._id}
-          enableRowActions
-          onRowSelectionChange={setRowSelection}
-          displayColumnDefOptions={{
-            'mrt-row-actions': {
-              header: null,
-            },
-          }}
-          positionActionsColumn="last"
-          columns={columns}
-          data={items}
-          enableRowSelection // enable some features
-          enableColumnOrdering
-          state={{
-            isLoading: fetchingData,
-            rowSelection,
-          }}
-          initialState={{ pagination: { pageSize: 5 }, showGlobalFilter: true }}
-          muiTablePaginationProps={{
-            rowsPerPageOptions: [5, 10, 15, 20, 25],
-          }}
-          enableExpanding
-          getSubRows={(row) => row.nestedDomains}
-          enableGlobalFilterModes
-          positionGlobalFilter="left"
-          muiSearchTextFieldProps={{
-            placeholder: `Search ${items.length} rows`,
-            sx: { minWidth: '300px' },
-            variant: 'outlined',
-          }}
-        />
-      </Card>
+      <CustomGrid
+        data={items}
+        columns={columns}
+        rowActionMenuItems={rowActionMenuItems}
+        setRowSelection={setRowSelection}
+        rowSelection={rowSelection}
+        fetchingData={fetchingData}
+        setShowConfirmationDialog={setShowConfirmationDialog}
+        hasDeleteAccess={hasDeleteAccess}
+        showExportButton={false}
+        enableExpanding
+      />
 
       {/* Edit Password Form */}
       <CustomDialog

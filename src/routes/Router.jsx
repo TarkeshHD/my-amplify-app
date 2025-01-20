@@ -63,10 +63,10 @@ const Router = () => {
           {isArchiveEnabled && <Route path="archive" element={<Archive />} />}
         </Route>
         <Route path="auth">
-          <Route path="sso-redirect" element={<SsoRedirect />} />
           <Route path="login" element={<Login />} />
           <Route path="register" element={<div>Register</div>} />
         </Route>
+        <Route path="auth/sso-redirect" element={<SsoRedirect />} />
         <Route path="*" element={<ErrorPage />} />
       </Routes>
     </>

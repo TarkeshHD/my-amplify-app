@@ -53,6 +53,7 @@ export default function EditPasswordForm({ user, handleClose, ...props }) {
 
   const onSubmit = async (values) => {
     try {
+      console.log('values', values);
       const response = await axios.post(`/user/update/${user._id}`, values);
       toast.success('Password updated successfully!');
       handleClose();

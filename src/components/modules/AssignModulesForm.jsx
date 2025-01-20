@@ -51,7 +51,7 @@ export default function AssignModulesForm({
               <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                 <TabList onChange={handleTabChange}>
                   {(user?.role === 'productAdmin' || user?.role === 'superAdmin') && <Tab label="Domain" value="1" />}
-                  {user?.role === 'admin' && <Tab label="Department / User Special Access " value="2" />}
+                  {user?.role === 'productAdmin' && <Tab label="Department / User Special Access " value="2" />}
                 </TabList>
               </Box>
 

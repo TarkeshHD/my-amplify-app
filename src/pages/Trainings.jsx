@@ -19,6 +19,7 @@ import { TrainingsTable } from '../sections/trainings/TrainingsTable';
 import { isEqual } from 'lodash';
 import { DashboardTasksProgress } from '../sections/dashboard/DashboardTasksProgress';
 import { DashboardDiffCard } from '../sections/dashboard/DashboardDiffCard';
+import { PremiumFeatureWrapper } from '../components/premium/PremiumFeatureWrapper';
 
 const Page = () => {
   const [fetchingData, setFetchingData] = useState(false);

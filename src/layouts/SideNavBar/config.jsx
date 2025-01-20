@@ -25,6 +25,8 @@ export function getItems(labels) {
   const config = useConfig();
   const { data } = config;
 
+  const isFreeTrialUser = data?.freeTrial;
+
   const auth = useAuth();
   const { user } = auth;
 

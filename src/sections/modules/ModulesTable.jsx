@@ -28,6 +28,7 @@ import ConfirmationDialog from '../../components/ConfirmationDialog';
 import noImagesAvailable from '../../assets/no_image_available.jpg';
 import ModuleEditJsonForm from '../../components/modules/ModuleEditJsonForm';
 import JsonLifeCycleEvaluationGrid from '../../components/modules/JsonLifeCycleEvaluationGrid';
+import CustomGrid from '../../components/grid/CustomGrid';
 
 export const ModulesTable = ({
   count = 0,
@@ -125,171 +126,125 @@ export const ModulesTable = ({
     }
   };
 
+  const handleRowClick = (row) => {
+    setOpenEvalutationData(row.original);
+  };
+
+  const rowActionMenuItems = ({ row, closeMenu, table }) => [
+    <MenuItem
+      key={0}
+      onClick={() => {
+        onDeleteRow(row.original);
+        closeMenu();
+      }}
+      sx={{ color: 'error.main' }}
+    >
+      <Stack spacing={2} direction={'row'}>
+        <Delete />
+        <Typography>Delete</Typography>
+      </Stack>
+    </MenuItem>,
+    currentUser?.user?.role === 'productAdmin' && (
+      <>
+        {(() => {
+          if (row.original.evaluationType === 'question') {
+            return (
+              <MenuItem
+                key={1}
+                onClick={() => {
+                  setOpenQuestionsForm(row.original);
+                  closeMenu();
+                }}
+              >
+                <Stack spacing={2} direction={'row'}>
+                  <Quiz />
+                  <Typography>Edit Question Module</Typography>
+                </Stack>
+              </MenuItem>
+            );
+          }
+          if (row.original.evaluationType === 'time') {
+            return (
+              <MenuItem
+                key={4}
+                onClick={() => {
+                  setOpenTimeForm(row.original);
+                  closeMenu();
+                }}
+              >
+                <Stack spacing={2} direction={'row'}>
+                  <TimerIcon />
+                  <Typography>Edit Time Module</Typography>
+                </Stack>
+              </MenuItem>
+            );
+          }
+          if (row?.original?.evaluationType === 'questionAction') {
+            return (
+              <MenuItem
+                key={2}
+                onClick={() => {
+                  setOpenQuestionActionForm(row.original);
+                  closeMenu();
+                }}
+              >
+                <Stack spacing={2} direction={'row'}>
+                  <EditNote />
+                  <Typography>Edit Question Action Module</Typography>
+                </Stack>
+              </MenuItem>
+            );
+          }
+          if (row?.original?.evaluationType === 'jsonLifeCycle') {
+            return (
+              <MenuItem
+                key={3}
+                onClick={() => {
+                  setOpenEditFileForm(row.original);
+                  closeMenu();
+                }}
+              >
+                <Stack spacing={2} direction={'row'}>
+                  <DriveFileRenameOutline />
+                  <Typography>Edit JSON File Module</Typography>
+                </Stack>
+              </MenuItem>
+            );
+          }
+          return null; // Render nothing for other evaluation types
+        })()}
+      </>
+    ),
+
+    <MenuItem
+      key={3}
+      onClick={() => {
+        // onEditRow();
+        setOpenAssignModules(row.original);
+        closeMenu();
+      }}
+    >
+      <Stack spacing={2} direction={'row'}>
+        <Edit />
+        <Typography>Assigned Entities</Typography>
+      </Stack>
+    </MenuItem>,
+  ];
+
   return (
     <>
-      <Card>
-        <MaterialReactTable
-          renderToolbarInternalActions={({ table }) => (
-            <Box sx={{ display: 'flex', p: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-              <Tooltip title="Clear filter" arrow>
-                <IconButton
-                  sx={{ display: table?.getState()?.columnFilters?.length > 0 ? 'block' : 'none', mt: '6px' }}
-                  onClick={() => {
-                    table.resetColumnFilters();
-                  }}
-                >
-                  <FilterAltOff color="warning" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Bulk delete" arrow>
-                <IconButton
-                  onClick={() => setShowConfirmationDialog(true)}
-                  sx={{ display: hasDeleteAccess && !isEmpty(rowSelection) ? 'block' : 'none', mt: '6px' }}
-                >
-                  <Delete color={isEmpty(rowSelection) ? 'grey' : 'error'} />
-                </IconButton>
-              </Tooltip>
-              <MRTToggleFiltersButton table={table} />
-              <MRTShowHideColumnsButton table={table} />
-              <MRTFullScreenToggleButton table={table} />
-            </Box>
-          )}
-          renderRowActionMenuItems={({ row, closeMenu, table }) => [
-            <MenuItem
-              key={0}
-              onClick={() => {
-                onDeleteRow(row.original);
-                closeMenu();
-              }}
-              sx={{ color: 'error.main' }}
-            >
-              <Stack spacing={2} direction={'row'}>
-                <Delete />
-                <Typography>Delete</Typography>
-              </Stack>
-            </MenuItem>,
-            currentUser?.user?.role === 'productAdmin' && (
-              <>
-                {(() => {
-                  if (row.original.evaluationType === 'question') {
-                    return (
-                      <MenuItem
-                        key={1}
-                        onClick={() => {
-                          setOpenQuestionsForm(row.original);
-                          closeMenu();
-                        }}
-                      >
-                        <Stack spacing={2} direction={'row'}>
-                          <Quiz />
-                          <Typography>Edit Question Module</Typography>
-                        </Stack>
-                      </MenuItem>
-                    );
-                  }
-                  if (row.original.evaluationType === 'time') {
-                    return (
-                      <MenuItem
-                        key={4}
-                        onClick={() => {
-                          setOpenTimeForm(row.original);
-                          closeMenu();
-                        }}
-                      >
-                        <Stack spacing={2} direction={'row'}>
-                          <TimerIcon />
-                          <Typography>Edit Time Module</Typography>
-                        </Stack>
-                      </MenuItem>
-                    );
-                  }
-                  if (row?.original?.evaluationType === 'questionAction') {
-                    return (
-                      <MenuItem
-                        key={2}
-                        onClick={() => {
-                          setOpenQuestionActionForm(row.original);
-                          closeMenu();
-                        }}
-                      >
-                        <Stack spacing={2} direction={'row'}>
-                          <EditNote />
-                          <Typography>Edit Question Action Module</Typography>
-                        </Stack>
-                      </MenuItem>
-                    );
-                  }
-                  if (row?.original?.evaluationType === 'jsonLifeCycle') {
-                    return (
-                      <MenuItem
-                        key={3}
-                        onClick={() => {
-                          setOpenEditFileForm(row.original);
-                          closeMenu();
-                        }}
-                      >
-                        <Stack spacing={2} direction={'row'}>
-                          <DriveFileRenameOutline />
-                          <Typography>Edit JSON File Module</Typography>
-                        </Stack>
-                      </MenuItem>
-                    );
-                  }
-                  return null; // Render nothing for other evaluation types
-                })()}
-              </>
-            ),
-
-            <MenuItem
-              key={3}
-              onClick={() => {
-                // onEditRow();
-                setOpenAssignModules(row.original);
-                closeMenu();
-              }}
-            >
-              <Stack spacing={2} direction={'row'}>
-                <Edit />
-                <Typography>Assigned Entities</Typography>
-              </Stack>
-            </MenuItem>,
-          ]}
-          muiTableBodyRowProps={({ row }) => ({
-            onClick: () => {
-              setOpenEvalutationData(row.original);
-            },
-            sx: { cursor: 'pointer' },
-          })}
-          enableRowActions
-          displayColumnDefOptions={{
-            'mrt-row-actions': {
-              header: null,
-            },
-          }}
-          positionActionsColumn="last"
-          columns={columns}
-          data={items}
-          enableRowSelection // enable some features
-          enableColumnOrdering
-          state={{
-            isLoading: fetchingData,
-            rowSelection,
-          }}
-          initialState={{ pagination: { pageSize: 5 }, showGlobalFilter: true }}
-          muiTablePaginationProps={{
-            rowsPerPageOptions: [5, 10, 15, 20, 25],
-          }}
-          enableGlobalFilterModes
-          positionGlobalFilter="left"
-          muiSearchTextFieldProps={{
-            placeholder: `Search ${items.length} rows`,
-            sx: { minWidth: '300px' },
-            variant: 'outlined',
-          }}
-          onRowSelectionChange={setRowSelection}
-          getRowId={(originalRow) => originalRow._id}
-        />
-      </Card>
+      <CustomGrid
+        data={items}
+        columns={columns}
+        rowActionMenuItems={rowActionMenuItems}
+        setRowSelection={setRowSelection}
+        rowSelection={rowSelection}
+        fetchingData={fetchingData}
+        handleRowClick={handleRowClick}
+        setShowConfirmationDialog={setShowConfirmationDialog}
+        hasDeleteAccess={hasDeleteAccess}
+        showExportButton={false}
+      />
 
       {/* Questions Form */}
       <CustomDialog

@@ -28,10 +28,15 @@ import {
   timelineOppositeContentClasses,
   TimelineSeparator,
 } from '@mui/lab';
-import { ArrowForwardIos, CancelRounded, CheckCircleRounded } from '@mui/icons-material';
+import { ArrowForwardIos, CancelRounded, CheckCircleRounded, WorkspacePremium } from '@mui/icons-material';
 
+import axios from '../../utils/axios';
+import { toast } from 'react-toastify';
 import { SeverityPill } from '../SeverityPill';
 import { convertTimeToDescription, convertUnixToLocalTime } from '../../utils/utils';
+import { useConfig } from '../../hooks/useConfig';
+import { PremiumFeatureAlert } from '../premium/PremiumFeatureAlert';
+import { UpgradeModel } from '../premium/UpgradeModal';
 
 const Accordion = styled((props) => <MuiAccordion disableGutters elevation={0} square {...props} />)(({ theme }) => ({
   border: `1px solid ${theme.palette.divider}`,
@@ -61,8 +66,13 @@ const AccordionDetails = styled(MuiAccordionDetails)(({ theme }) => ({
   borderTop: '1px solid rgba(0, 0, 0, .125)',
 }));
 const JsonLifeCycleEvaluationGrid = ({ evalData, showModule = false }) => {
-  console.log('evalData', evalData);
+  const { data: configData } = useConfig();
+  const isFreeTrialUser = configData?.freeTrial;
+  if (isFreeTrialUser) {
+    evalData.evaluationDump.chapters = evalData?.evaluationDump?.chapters?.slice(0, 1);
+  }
   const [expanded, setExpanded] = React.useState('panel1');
+  const [successFormOpen, setSuccessFormOpen] = React.useState(false);
 
   const handleChange = (panel) => (event, newExpanded) => {
     setExpanded(newExpanded ? panel : false);
@@ -190,6 +200,24 @@ const JsonLifeCycleEvaluationGrid = ({ evalData, showModule = false }) => {
     );
   };
 
+  const onClickUpgrade = async () => {
+    if (localStorage.getItem('hasRequestedAccountUpgrade') === 'true') {
+      setSuccessFormOpen(true);
+    }
+    try {
+      const response = await axios.post('/user/upgrade-account', {});
+      if (response.data.success) {
+        localStorage.setItem('hasRequestedAccountUpgrade', true);
+        setSuccessFormOpen(true);
+      } else {
+        toast.error('Failed to request for account upgrade.');
+      }
+    } catch (error) {
+      toast.error('An error occurred while requesting for account upgrade.');
+      console.error(error);
+    }
+  };
+
   return (
     <Grid container spacing={1}>
       <Grid item xs={12}>
@@ -314,6 +342,14 @@ const JsonLifeCycleEvaluationGrid = ({ evalData, showModule = false }) => {
           </Accordion>
         </Grid>
       ))}
+      {isFreeTrialUser && (
+        <PremiumFeatureAlert
+          onClickUpgrade={onClickUpgrade}
+          message="Upgrade to unlock more evaluation insights"
+          sx={{ margin: 1 }}
+        />
+      )}
+      <UpgradeModel isModalOpen={successFormOpen} setModalOpen={setSuccessFormOpen} />
     </Grid>
   );
 };

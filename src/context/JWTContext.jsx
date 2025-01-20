@@ -1,14 +1,17 @@
 import PropTypes from 'prop-types';
 import { createContext, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useMsal } from '@azure/msal-react';
 import axios from '../utils/axios';
 import { isTokenValid, setSession } from '../utils/jwt';
-import { useNavigate } from 'react-router-dom';
 import { setToastWithExpiration } from '../utils/utils';
+import { useConfig } from '../hooks/useConfig';
 
 const initialState = {
   isAuthenticated: false,
   isInitialized: false,
   user: null,
+  ssoLoginCompleted: false,
   permissions: [],
 };
 
@@ -28,14 +31,17 @@ AuthProvider.propTypes = {
 function AuthProvider({ children }) {
   const [state, setState] = useState(initialState);
   const navigate = useNavigate();
+  const { data: configData } = useConfig();
   // State must have fields like isAuthenticated, user etc.
 
   // On first render check if we have a token already, validate user and login
   useEffect(() => {
     const initialize = async () => {
       try {
+        console.log('Initializing Auth Context');
         const token = localStorage.getItem('accessToken');
         setSession(token);
+        console.log('Token:', token);
         if (token && isTokenValid(token)) {
           // Make Login/Authentication API call to check token if we have token
           let response = {};
@@ -43,6 +49,11 @@ function AuthProvider({ children }) {
           const res = await axios.post('/auth/login/token', {});
 
           response = res.data.details;
+
+          if (configData?.freeTrial && response?.user?.role !== 'productAdmin') {
+            console.log('Free Trial User');
+            response.user.role = 'superAdmin';
+          }
 
           setState((prev) => ({
             ...prev,
@@ -62,7 +73,7 @@ function AuthProvider({ children }) {
     };
 
     initialize();
-  }, []);
+  }, [configData]);
 
   // Type -> Pass what type of authentication API needs to be called!
   const login = async (data, type = 'BasicAuth') => {
@@ -73,6 +84,14 @@ function AuthProvider({ children }) {
       if (type === 'BasicAuth') {
         const res = await axios.post('/auth/login/basic', data);
         response = res.data.details;
+      }
+
+      if (configData?.freeTrial) {
+        response.user.role = 'superAdmin';
+
+        if (response?.user?.hasRequestedAccountUpgrade) {
+          localStorage.setItem('hasRequestedAccountUpgrade', true);
+        }
       }
 
       setSession(response.token);
@@ -94,18 +113,27 @@ function AuthProvider({ children }) {
     try {
       let response = {};
       const res = await axios.post('/auth/login/sso', {
-        email: email,
-        name: name,
-        inviteLink: inviteLink,
+        email,
+        name,
+        inviteLink,
       });
 
       response = res.data.details;
+      console.log('SSO login response:', response);
+      sessionStorage.setItem('ssoLoginCompleted', true);
 
-      setToastWithExpiration(res.data.message, 5000);
       setSession(response.token);
-      setState((prev) => ({ ...prev, isAuthenticated: true, isInitialized: true, user: response.user }));
+      setState((prev) => ({
+        ...prev,
+        isAuthenticated: true,
+        isInitialized: true,
+        user: response.user,
+        permissions: response.permissions,
+      }));
+      setToastWithExpiration(res.data.message, 5000);
     } catch (error) {
-      console.error('SSO login error:', error);
+      setState((prev) => ({ ...prev, isAuthenticated: false, isInitialized: true, user: null }));
+      console.log(error.message);
       throw error;
     }
   };
@@ -129,9 +157,23 @@ function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
+      if (configData?.features?.auth?.types[0] === 'AzureAdAuth') {
+        console.log('hereee logout');
+        // const { instance } = useMsal();
+        // instance.logoutRedirect();
+      }
       // Remove session
       setSession(null);
-      setState((prev) => ({ ...prev, isAuthenticated: false, isInitialized: true, user: null }));
+      sessionStorage.setItem('ssoLoginCompleted', false);
+
+      setState((prev) => ({
+        ...prev,
+        isAuthenticated: false,
+        isInitialized: true,
+        ssoLoginCompleted: false,
+        permissions: [],
+        user: null,
+      }));
       console.log('logout');
     } catch (error) {
       setState((prev) => ({ ...prev, isAuthenticated: false, isInitialized: true, user: null }));

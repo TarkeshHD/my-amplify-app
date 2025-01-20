@@ -2,27 +2,68 @@ import { Box, Grid, Stack, Tab, Tabs, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth0 } from '@auth0/auth0-react';
+import { LoadingButton } from '@mui/lab';
+import { useMsal } from '@azure/msal-react';
 import VRIllustration from '../../assets/vr-boy-illustration.svg';
 import Logo from '../../components/Logo';
 import BaseLoginForm from '../../components/login/BaseLoginForm';
 import BasicLoginForm from '../../components/login/BasicLoginForm';
 import { useAuth } from '../../hooks/useAuth';
 import { useConfig } from '../../hooks/useConfig';
-import { useAuth0 } from '@auth0/auth0-react';
-import { displayPendingToast, setItemWithExpiration } from '../../utils/utils';
-import { LoadingButton } from '@mui/lab';
+import {
+  displayPendingToast,
+  getItemWithExpiration,
+  setItemWithExpiration,
+  setToastWithExpiration,
+} from '../../utils/utils';
 
 const Page = () => {
   const config = useConfig();
   const navigate = useNavigate();
   const auth = useAuth();
+  const { loginSSO } = useAuth();
+  const { instance, accounts } = useMsal();
+
   const [inviteToken, setInviteToken] = useState('');
 
   const [method, setMethod] = useState([]);
   const [viewMethod, setViewMethod] = useState('BasicAuth');
   const handleMethodChange = useCallback((event, value) => {
+    console.log('here value', value);
     setViewMethod(value);
   }, []);
+
+  useEffect(() => {
+    // IIFE to trigger authentication immediately
+    (async () => {
+      console.log('🚀 Starting authentication process');
+
+      try {
+        const setSSOLoginCompleted = sessionStorage.getItem('ssoLoginCompleted');
+        if (accounts.length !== 0 && setSSOLoginCompleted === 'true') {
+          // Wait for MSAL to be ready
+
+          // If no account is found, trigger login redirect
+
+          // Get user info
+          const email = accounts[0]?.username || 'Unknown';
+          const name = accounts[0]?.name || 'User';
+          const inviteLink = getItemWithExpiration('inviteLink');
+          console.log('invite link', inviteLink);
+
+          // Perform SSO login
+          await loginSSO(email, name, inviteLink);
+          console.log('✅ SSO login successful. Redirecting...');
+          navigate('/'); // Redirect after successful login
+        }
+      } catch (error) {
+        console.error('❌ Authentication error:', error);
+        setToastWithExpiration(`Error: ${error.message || 'Something went wrong.'}`, 5000);
+        navigate('/auth/login'); // Redirect to login page on error
+      }
+    })(); // Immediately invoked async function
+  }, [accounts, instance]);
 
   useEffect(() => {
     if (config?.isConfigfileFetched && config?.data?.features?.auth?.types.length > 0) {
@@ -37,6 +78,37 @@ const Page = () => {
   }, [config.isConfigfileFetched]);
 
   useEffect(() => {
+    // IIFE to trigger authentication immediately
+    (async () => {
+      console.log('🚀 Starting authentication process');
+
+      try {
+        if (accounts.length !== 0) {
+          // Wait for MSAL to be ready
+
+          // If no account is found, trigger login redirect
+
+          // Get user info
+          const email = accounts[0]?.username || 'Unknown';
+          const name = accounts[0]?.name || 'User';
+
+          console.log('📧 Email:', email);
+          console.log('👤 Name:', name);
+
+          // Perform SSO login
+          await loginSSO(email, name);
+          console.log('✅ SSO login successful. Redirecting...');
+          navigate('/'); // Redirect after successful login
+        }
+      } catch (error) {
+        console.error('❌ Authentication error:', error);
+        setToastWithExpiration(`Error: ${error.message || 'Something went wrong.'}`, 5000);
+        navigate('/auth/login'); // Redirect to login page on error
+      }
+    })(); // Immediately invoked async function
+  }, [accounts, instance]);
+
+  useEffect(() => {
     displayPendingToast();
     const params = new URLSearchParams(window.location.search);
     setInviteToken(params.get('invite'));
@@ -45,6 +117,12 @@ const Page = () => {
   const { loginWithRedirect } = useAuth0();
 
   const { user, isAuthenticated, isLoading } = useAuth0();
+
+  useEffect(() => {
+    if (isAuthenticated && user?.email) {
+      navigate('/');
+    }
+  }, [user, isAuthenticated]);
 
   return (
     <Box
@@ -180,6 +258,8 @@ const Page = () => {
 
 const getLoginComponents = (value, inviteToken) => {
   const { loginWithRedirect } = useAuth0();
+  const { instance } = useMsal();
+  console.log('value', value);
   switch (value) {
     case 'BasicAuth':
       return <BasicLoginForm />;
@@ -205,6 +285,24 @@ const getLoginComponents = (value, inviteToken) => {
           }}
         >
           Log In / Sign Up Using OKTA
+        </LoadingButton>
+      );
+    case 'AzureAdAuth': // New case for Azure AD
+      return (
+        <LoadingButton
+          size="medium"
+          sx={{ mt: 1 }}
+          type="submit"
+          variant="outlined"
+          onClick={() => {
+            setItemWithExpiration('inviteLink', inviteToken, 1000 * 60 * 5); // Expiration with 5 minutes
+            instance.loginRedirect({
+              scopes: ['User.Read', 'openid', 'profile', 'email'], // Permissions for profile access
+              redirectUri: `${import.meta.env.VITE_SSO_OKTA_REDIRECT_URI}`, // Redirect URI after login
+            });
+          }}
+        >
+          Log In / Sign Up Using Microsoft Azure AD
         </LoadingButton>
       );
     default:

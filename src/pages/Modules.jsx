@@ -10,6 +10,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useConfig } from '../hooks/useConfig';
 import { ModulesTable } from '../sections/modules/ModulesTable';
 import axios from '../utils/axios';
+import { PremiumFeatureWrapper } from '../components/premium/PremiumFeatureWrapper';
 
 const Page = () => {
   const [openModuleForm, setOpenModuleForm] = useState(false);
@@ -27,7 +28,13 @@ const Page = () => {
     setSelectedTabModuleForm(newValue);
   };
 
+  const { user } = useAuth();
+  const config = useConfig();
+  const { data: configData } = config;
+  const isGuestUser = configData?.freeTrial && user?.role !== 'productAdmin';
+
   const getModules = async () => {
+    if (isGuestUser) return;
     try {
       setFetchingData(true);
       const response = await axios.get('/module/all');
@@ -46,6 +53,7 @@ const Page = () => {
   };
 
   const getDomains = async () => {
+    if (isGuestUser) return;
     try {
       const response = await axios.get('/domain/all');
 
@@ -57,6 +65,7 @@ const Page = () => {
   };
 
   const getDepartments = async () => {
+    if (isGuestUser) return;
     try {
       const response = await axios.get('/department/all');
 
@@ -70,6 +79,7 @@ const Page = () => {
   };
 
   const getUsers = async () => {
+    if (isGuestUser) return;
     try {
       const response = await axios.get('/user/all');
       setUsers(response?.data?.details.users);
@@ -103,10 +113,6 @@ const Page = () => {
     getModules();
   };
 
-  const { user } = useAuth();
-  const config = useConfig();
-  const { data: configData } = config;
-
   if (user?.role === 'user') {
     // page not found
     return (
@@ -123,98 +129,100 @@ const Page = () => {
       </Helmet>
 
       <Container maxWidth="xl">
-        <Stack spacing={3}>
-          <Stack direction="row" justifyContent="space-between" spacing={4}>
-            <Stack spacing={1}>
-              <Typography variant="h4">{configData?.labels?.module?.plural || 'Modules'}</Typography>
-            </Stack>
-            <Stack alignItems="center" direction="row" spacing={1}>
-              <Tooltip
-                title={`Select rows to assign ${configData?.labels?.module?.plural?.toLowerCase() || 'modules'}`}
-              >
-                <span>
+        <PremiumFeatureWrapper sx={{ top: '63%' }} message="Unlock AI JSON Uploads for Auto-Creating VR Stories">
+          <Stack spacing={3}>
+            <Stack direction="row" justifyContent="space-between" spacing={4}>
+              <Stack spacing={1}>
+                <Typography variant="h4">{configData?.labels?.module?.plural || 'Modules'}</Typography>
+              </Stack>
+              <Stack alignItems="center" direction="row" spacing={1}>
+                <Tooltip
+                  title={`Select rows to assign ${configData?.labels?.module?.plural?.toLowerCase() || 'modules'}`}
+                >
+                  <span>
+                    <Button
+                      startIcon={
+                        <SvgIcon fontSize="small">
+                          <PeopleAlt />
+                        </SvgIcon>
+                      }
+                      variant="contained"
+                      onClick={() => {
+                        setOpenAssignForm(true);
+                      }}
+                      disabled={selectedRows.length === 0}
+                    >
+                      Assign {configData?.labels?.module?.plural || 'Modules'}
+                    </Button>
+                  </span>
+                </Tooltip>
+
+                {user.role === 'productAdmin' && (
                   <Button
                     startIcon={
                       <SvgIcon fontSize="small">
-                        <PeopleAlt />
+                        <Add />
                       </SvgIcon>
                     }
                     variant="contained"
                     onClick={() => {
-                      setOpenAssignForm(true);
+                      setOpenModuleForm(true);
                     }}
-                    disabled={selectedRows.length === 0}
                   >
-                    Assign {configData?.labels?.module?.plural || 'Modules'}
+                    Add {configData?.labels?.module?.singular || 'Module'}
                   </Button>
-                </span>
-              </Tooltip>
-
-              {user.role === 'productAdmin' && (
-                <Button
-                  startIcon={
-                    <SvgIcon fontSize="small">
-                      <Add />
-                    </SvgIcon>
-                  }
-                  variant="contained"
-                  onClick={() => {
-                    setOpenModuleForm(true);
-                  }}
-                >
-                  Add {configData?.labels?.module?.singular || 'Module'}
-                </Button>
-              )}
+                )}
+              </Stack>
             </Stack>
-          </Stack>
 
-          <Alert severity="info">
-            <Typography variant="subtitle2">
-              Select {configData?.labels?.module?.singular || 'Module'} to assign them to{' '}
-              {configData?.labels?.domain?.plural?.toLowerCase() || 'domains'} and{' '}
-              {configData?.labels?.department?.plural?.toLowerCase() || 'departments'}
-            </Typography>
-          </Alert>
+            <Alert severity="info">
+              <Typography variant="subtitle2">
+                Select {configData?.labels?.module?.singular || 'Module'} to assign them to{' '}
+                {configData?.labels?.domain?.plural?.toLowerCase() || 'domains'} and{' '}
+                {configData?.labels?.department?.plural?.toLowerCase() || 'departments'}
+              </Typography>
+            </Alert>
 
-          <ModulesTable
-            handleRowSelection={handleRowSelection}
-            items={data}
-            fetchingData={fetchingData}
-            count={data.length}
-            domains={domains}
-            departments={departments}
-            users={users}
-            handleRefresh={handleRefresh}
-          />
-
-          {/* MODULE FORM */}
-          <CustomDialog
-            onClose={() => {
-              setOpenModuleForm(false);
-            }}
-            sx={{ minWidth: '40vw' }}
-            open={openModuleForm}
-            title={<Typography variant="h5">Add {configData?.labels?.module?.singular || 'Module'}</Typography>}
-          >
-            <ModuleForm />
-          </CustomDialog>
-
-          {/* ASSIGN MODULES FORM */}
-          <CustomDialog
-            onClose={() => {
-              setOpenAssignForm(false);
-            }}
-            open={openAssignForm}
-            title={<Typography variant="h5">Assign {configData?.labels?.module?.singular || 'Module'}</Typography>}
-          >
-            <AssignModulesForm
-              selectedModules={selectedRows}
+            <ModulesTable
+              handleRowSelection={handleRowSelection}
+              items={data}
+              fetchingData={fetchingData}
+              count={data.length}
               domains={domains}
               departments={departments}
               users={users}
+              handleRefresh={handleRefresh}
             />
-          </CustomDialog>
-        </Stack>
+
+            {/* MODULE FORM */}
+            <CustomDialog
+              onClose={() => {
+                setOpenModuleForm(false);
+              }}
+              sx={{ minWidth: '40vw' }}
+              open={openModuleForm}
+              title={<Typography variant="h5">Add {configData?.labels?.module?.singular || 'Module'}</Typography>}
+            >
+              <ModuleForm />
+            </CustomDialog>
+
+            {/* ASSIGN MODULES FORM */}
+            <CustomDialog
+              onClose={() => {
+                setOpenAssignForm(false);
+              }}
+              open={openAssignForm}
+              title={<Typography variant="h5">Assign {configData?.labels?.module?.singular || 'Module'}</Typography>}
+            >
+              <AssignModulesForm
+                selectedModules={selectedRows}
+                domains={domains}
+                departments={departments}
+                users={users}
+              />
+            </CustomDialog>
+          </Stack>
+        </PremiumFeatureWrapper>
       </Container>
     </>
   );

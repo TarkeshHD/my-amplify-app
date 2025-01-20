@@ -1,16 +1,10 @@
-import { Delete, Edit, FilterAltOff } from '@mui/icons-material';
-import { Box, Button, Card, IconButton, MenuItem, Stack, Typography, Tooltip } from '@mui/material';
-import {
-  MaterialReactTable,
-  MRT_FullScreenToggleButton as MRTFullScreenToggleButton,
-  MRT_ShowHideColumnsButton as MRTShowHideColumnsButton,
-  MRT_ToggleFiltersButton as MRTToggleFiltersButton,
-} from 'material-react-table';
+import { Delete, Edit } from '@mui/icons-material';
+import { MenuItem, Stack, Typography } from '@mui/material';
 import PropTypes from 'prop-types';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { isEmpty } from 'lodash';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { isEmpty } from 'lodash';
 
 import CustomDialog from '../../components/CustomDialog';
 import ExportOptions from '../../components/export/ExportOptions';
@@ -23,6 +17,7 @@ import TraineeForm from '../../components/users/TraineeForm';
 import AdminForm from '../../components/users/AdminForm';
 import SuperAdminForm from '../../components/users/SuperAdminForm';
 import ConfirmationDialog from '../../components/ConfirmationDialog';
+import CustomGrid from '../../components/grid/CustomGrid';
 
 export const UsersTable = ({
   count = 0,
@@ -33,7 +28,9 @@ export const UsersTable = ({
   domains,
   departments,
   handleRefresh,
+  handleRowSelection,
 }) => {
+  console.log('FETCHING DATA', fetchingData);
   const exportBtnRef = useRef(null);
   const config = useConfig();
   const [openExportOptions, setOpenExportOptions] = useState(false);
@@ -52,6 +49,19 @@ export const UsersTable = ({
       exportBtnFalse();
     }
   }, [exportBtnClicked]);
+
+  useEffect(() => {
+    if (!isEmpty(rowSelection)) {
+      // Get the full row data based on the selected IDs
+      const selectedRows = Object.keys(rowSelection).map(
+        (id) => items.find((row) => row._id === id), // Match the ID with the original data
+      );
+
+      handleRowSelection(selectedRows); // Pass the full row data
+    } else {
+      handleRowSelection([]); // Reset the selection if no rows are selected
+    }
+  }, [rowSelection, items]);
 
   const columns = useMemo(
     () =>
@@ -173,6 +183,51 @@ export const UsersTable = ({
     handleRefresh();
   };
 
+  const rowActionMenuItems = ({ row, closeMenu, table }) => [
+    <MenuItem
+      key={0}
+      onClick={() => {
+        onDeleteRow(row);
+        closeMenu();
+      }}
+      sx={{ color: 'error.main' }}
+    >
+      <Stack spacing={2} direction={'row'}>
+        <Delete />
+        <Typography>Delete</Typography>
+      </Stack>
+    </MenuItem>,
+    <MenuItem
+      key={1}
+      onClick={() => {
+        onEditRow(row);
+        closeMenu();
+      }}
+    >
+      <Stack spacing={2} direction={'row'}>
+        <Edit />
+        <Typography>Edit</Typography>
+      </Stack>
+    </MenuItem>,
+    <MenuItem
+      key={3}
+      onClick={() => {
+        // onEditRow();
+        closeMenu();
+        if (row.original.role === 'user') {
+          toast.error("Trainee's password cannot be edited");
+          return;
+        }
+        setOpenEditPass(row);
+      }}
+    >
+      <Stack spacing={2} direction={'row'}>
+        <Edit />
+        <Typography>Edit Password</Typography>
+      </Stack>
+    </MenuItem>,
+  ];
+
   return (
     <>
       <Card>
@@ -187,7 +242,7 @@ export const UsersTable = ({
                 onClick={() => {
                   handleExportRows(table.getPrePaginationRowModel().rows);
                 }}
-              ></Button>
+              />
               <Tooltip title="Clear filter" arrow>
                 <IconButton
                   sx={{ display: table?.getState()?.columnFilters?.length > 0 ? 'block' : 'none', mt: '6px' }}
@@ -242,10 +297,10 @@ export const UsersTable = ({
               onClick={() => {
                 // onEditRow();
                 closeMenu();
-                if (row.original.role === 'user') {
-                  toast.error("Trainee's password cannot be edited");
-                  return;
-                }
+                // if (row.original.role === 'user') {
+                //   toast.error("Trainee's password cannot be edited");
+                //   return;
+                // }
                 setOpenEditPass(row);
               }}
             >
@@ -274,7 +329,7 @@ export const UsersTable = ({
           }}
           initialState={{ pagination: { pageSize: 10 }, showGlobalFilter: true, showColumnFilters: true }}
           muiTablePaginationProps={{
-            rowsPerPageOptions: [5, 10, 15, 20, 25],
+            rowsPerPageOptions: [10, 20, 50, 75, 100],
           }}
           enableGlobalFilterModes
           positionGlobalFilter="left"
@@ -292,6 +347,19 @@ export const UsersTable = ({
           })}
         />
       </Card>
+      <CustomGrid
+        data={items}
+        columns={columns}
+        rowActionMenuItems={rowActionMenuItems}
+        setRowSelection={setRowSelection}
+        rowSelection={rowSelection}
+        fetchingData={fetchingData}
+        handleRowClick={handleRowClick}
+        setShowConfirmationDialog={setShowConfirmationDialog}
+        hasDeleteAccess={hasDeleteAccess}
+        handleExportRows={handleExportRows}
+        exportBtnRef={exportBtnRef}
+      />
 
       {/* View export options */}
       <CustomDialog
@@ -327,25 +395,31 @@ export const UsersTable = ({
         open={Boolean(openEditForm)}
         title={<Typography variant="h5">Edit User</Typography>}
       >
-        {openEditForm?.original?.role === 'user' ? (
-          <TraineeForm
-            isEdit={true}
-            currentUser={openEditForm?.original}
-            domains={domains}
-            departments={departments}
-            handleClose={onCloseEditUserForm}
-          />
-        ) : openEditForm?.original?.role === 'admin' ? (
-          <AdminForm
-            isEdit={true}
-            currentUser={openEditForm?.original}
-            domains={domains}
-            handleClose={onCloseEditUserForm}
-          />
-        ) : (
-          <SuperAdminForm isEdit={true} currentUser={openEditForm?.original} handleClose={onCloseEditUserForm} />
-        )}
-        {/* <EditUserForm user={openEditForm?.original} /> */}
+        {(() => {
+          const role = openEditForm?.original?.role;
+          if (role === 'user') {
+            return (
+              <TraineeForm
+                isEdit
+                currentUser={openEditForm?.original}
+                domains={domains}
+                departments={departments}
+                handleClose={onCloseEditUserForm}
+              />
+            );
+          }
+          if (role === 'admin') {
+            return (
+              <AdminForm
+                isEdit
+                currentUser={openEditForm?.original}
+                domains={domains}
+                handleClose={onCloseEditUserForm}
+              />
+            );
+          }
+          return <SuperAdminForm isEdit currentUser={openEditForm?.original} handleClose={onCloseEditUserForm} />;
+        })()}
       </CustomDialog>
 
       <ConfirmationDialog

@@ -11,6 +11,7 @@ import { DashboardDiffCard } from '../sections/dashboard/DashboardDiffCard';
 import { DashboardTasksProgress } from '../sections/dashboard/DashboardTasksProgress';
 import { LineChart } from '../sections/dashboard/DashboardLineChart';
 import { DashboardBarChart } from '../sections/dashboard/DashboardBarChart';
+import { PremiumFeatureWrapper } from '../components/premium/PremiumFeatureWrapper';
 
 const Page = () => {
   const [fetchingData, setFetchingData] = useState(false);
@@ -74,76 +75,77 @@ const Page = () => {
       </Helmet>
 
       <Container maxWidth="xl">
-        <Stack spacing={3}>
-          <Stack direction="row" justifyContent="space-between" spacing={4}>
-            <Stack spacing={1}>
-              <Typography variant="h4">{configData?.labels?.evaluation?.singular || 'Evaluation'}</Typography>
+        <PremiumFeatureWrapper sx={{ top: '70%' }} message="Upgrade to view evaluation insights">
+          <Stack spacing={3}>
+            <Stack direction="row" justifyContent="space-between" spacing={4}>
+              <Stack spacing={1}>
+                <Typography variant="h4">{configData?.labels?.evaluation?.singular || 'Evaluation'}</Typography>
+              </Stack>
+              <Stack alignItems="center" direction="row" spacing={1}>
+                <Button
+                  onClick={() => {
+                    setExportBtnClicked(true);
+                  }}
+                  variant="outlined"
+                  startIcon={
+                    <SvgIcon fontSize="small">
+                      <Download />
+                    </SvgIcon>
+                  }
+                >
+                  Export
+                </Button>
+              </Stack>
             </Stack>
-            <Stack alignItems="center" direction="row" spacing={1}>
-              <Button
-                onClick={() => {
-                  setExportBtnClicked(true);
-                }}
-                variant="outlined"
-                startIcon={
-                  <SvgIcon fontSize="small">
-                    <Download />
-                  </SvgIcon>
-                }
-              >
-                Export
-              </Button>
-            </Stack>
-          </Stack>
-          <Box
-            sx={{
-              width: '100%',
-              overflowX: { xs: 'auto', md: 'visible' },
-              '&::-webkit-scrollbar': { display: 'none' },
-              scrollbarWidth: 'none',
-            }}
-          >
-            <Stack
-              direction="row"
-              spacing={4}
+            <Box
               sx={{
-                pb: { xs: 2, md: 0 },
-                width: { xs: 'max-content', md: '100%' },
+                width: '100%',
+                overflowX: { xs: 'auto', md: 'visible' },
+                '&::-webkit-scrollbar': { display: 'none' },
+                scrollbarWidth: 'none',
               }}
             >
-              <DashboardDiffCard
-                title={`Total Evaluations Done`}
-                icon={<EventAvailable />}
-                positive={evalautionAnalytics?.totalEvaluations > 0}
-                sx={{ height: '100%', width: 350 }}
-                value={evalautionAnalytics?.totalEvaluations || 0}
-                info={`Total number of evaluations done.`}
-              />
-              <DashboardTasksProgress
-                title="Pass Percentage"
-                icon={<TrendingUp />}
-                iconColor={'success.main'}
-                sx={{ height: '100%', width: 350 }}
-                value={evalautionAnalytics?.passPercentage || 0}
-              />
-              <DashboardDiffCard
-                title={`Total User Attempts`}
-                icon={<People />}
-                iconColor={'primary.main'}
-                positive={evalautionAnalytics?.totalUserAttempts > 0}
-                sx={{ height: '100%', width: 350 }}
-                value={evalautionAnalytics?.totalUserAttempts || 0}
-                info={`Total number of users who tried evaluations.`}
-              />
-              <DashboardTasksProgress
-                title="Incomplete Evaluations"
-                icon={<PendingActions />}
-                sx={{ height: '100%', width: 350 }}
-                value={evalautionAnalytics?.incompletionRate || 0}
-              />
-            </Stack>
-          </Box>
-          {/* <Box
+              <Stack
+                direction="row"
+                spacing={4}
+                sx={{
+                  pb: { xs: 2, md: 0 },
+                  width: { xs: 'max-content', md: '100%' },
+                }}
+              >
+                <DashboardDiffCard
+                  title={`Total Evaluations Done`}
+                  icon={<EventAvailable />}
+                  positive={evalautionAnalytics?.totalEvaluations > 0}
+                  sx={{ height: '100%', width: 350 }}
+                  value={evalautionAnalytics?.totalEvaluations || 0}
+                  info={`Total number of evaluations done.`}
+                />
+                <DashboardTasksProgress
+                  title="Pass Percentage"
+                  icon={<TrendingUp />}
+                  iconColor={'success.main'}
+                  sx={{ height: '100%', width: 350 }}
+                  value={evalautionAnalytics?.passPercentage || 0}
+                />
+                <DashboardDiffCard
+                  title={`Total User Attempts`}
+                  icon={<People />}
+                  iconColor={'primary.main'}
+                  positive={evalautionAnalytics?.totalUserAttempts > 0}
+                  sx={{ height: '100%', width: 350 }}
+                  value={evalautionAnalytics?.totalUserAttempts || 0}
+                  info={`Total number of users who tried evaluations.`}
+                />
+                <DashboardTasksProgress
+                  title="Incomplete Evaluations"
+                  icon={<PendingActions />}
+                  sx={{ height: '100%', width: 350 }}
+                  value={evalautionAnalytics?.incompletionRate || 0}
+                />
+              </Stack>
+            </Box>
+            {/* <Box
             sx={{
               width: '100%',
               overflowX: { xs: 'auto', md: 'visible' },
@@ -160,12 +162,12 @@ const Page = () => {
               }}
             >
               <Box sx={{ flex: 1 }}> */}{' '}
-          {/* Ensures the first chart takes up half the width */}
-          {/* <LineChart categories={departments} chartData={chartData} title="User Engagement by Department" />
+            {/* Ensures the first chart takes up half the width */}
+            {/* <LineChart categories={departments} chartData={chartData} title="User Engagement by Department" />
               </Box>
               <Box sx={{ flex: 1 }}> */}{' '}
-          {/* Ensures the second chart takes up the other half */}
-          {/* <DashboardBarChart
+            {/* Ensures the second chart takes up the other half */}
+            {/* <DashboardBarChart
                   chartSeries={chartDataBar}
                   title="Department-wise User Completion Data"
                   categories={departments}
@@ -174,16 +176,17 @@ const Page = () => {
               </Box>
             </Stack>
           </Box> */}
-          <EvaluationsTable
-            fetchingData={fetchingData}
-            items={data}
-            count={data.length}
-            exportBtnClicked={exportBtnClicked}
-            exportBtnFalse={exportBtnFalse}
-            updateAnalytic={updateAnalytic}
-            handleRefresh={handleRefresh}
-          />
-        </Stack>
+            <EvaluationsTable
+              fetchingData={fetchingData}
+              items={data}
+              count={data.length}
+              exportBtnClicked={exportBtnClicked}
+              exportBtnFalse={exportBtnFalse}
+              updateAnalytic={updateAnalytic}
+              handleRefresh={handleRefresh}
+            />
+          </Stack>
+        </PremiumFeatureWrapper>
       </Container>
     </>
   );

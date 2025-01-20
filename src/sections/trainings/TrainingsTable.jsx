@@ -1,4 +1,4 @@
-import { Box, Button, Card, MenuItem, Typography, IconButton, Tooltip } from '@mui/material';
+import { Box, Button, Card, MenuItem, Typography, IconButton, Tooltip, Skeleton } from '@mui/material';
 import {
   MRT_FullScreenToggleButton as MRTFullScreenToggleButton,
   MRT_ShowHideColumnsButton as MRTShowHideColumnsButton,
@@ -27,6 +27,7 @@ import JsonLifeCycleTrainingGrid from '../../components/modules/JsonLifeCycleTra
 import { convertTimeToDescription, convertUnixToLocalTime, getTrainingAnalytics } from '../../utils/utils';
 import ConfirmationDialog from '../../components/ConfirmationDialog';
 import { useAuth } from '../../hooks/useAuth';
+import CustomGrid from '../../components/grid/CustomGrid';
 
 const statusMap = {
   ongoing: 'warning',
@@ -104,9 +105,8 @@ export const TrainingsTable = ({
   const columns = useMemo(() => {
     const baseColumns = [
       {
-        accessorFn: (row) => {
-          return `${row.userId?.departmentId?.name}${row.userId?.departmentId?.archived ? '-Deprecated' : ''}`;
-        },
+        accessorFn: (row) =>
+          `${row.userId?.departmentId?.name}${row.userId?.departmentId?.archived ? '-Deprecated' : ''}`,
         filterFn: (row, _columnId, filterValue) => {
           const departmentName = row.original?.userId?.departmentId?.name;
           const archivedSuffix = row.original?.userId?.departmentId?.archived ? '-Deprecated' : '';
@@ -128,9 +128,7 @@ export const TrainingsTable = ({
           ),
       },
       {
-        accessorFn: (row) => {
-          return `${row.moduleId?.name}${row.moduleId?.archived ? '-Deprecated' : ''}`;
-        },
+        accessorFn: (row) => `${row.moduleId?.name}${row.moduleId?.archived ? '-Deprecated' : ''}`,
         filterFn: (row, _columnId, filterValue) => {
           const moduleName = row.original?.moduleId?.name;
           const archivedSuffix = row.original?.moduleId?.archived ? '-Deprecated' : '';
@@ -360,11 +358,22 @@ export const TrainingsTable = ({
     updateAnalytic(trainingAnalytic);
   };
 
-  const isColumnFiltersEmpty = (table) => {
-    const columnFilters = table?.getState()?.columnFilters;
-    // TODO: Need to handle filter reset and checks only with  table?.getState()?.columnFilters;
-    return !columnFilters || columnFilters.every((filter) => filter.value.length === 0);
-  };
+  const rowActionMenuItems = ({ row, closeMenu, table }) => [
+    <MenuItem
+      key={0}
+      onClick={() => {
+        onDeleteRow(row.original);
+        // onDeleteRow();
+        closeMenu();
+      }}
+      sx={{ color: 'error.main' }}
+    >
+      <Stack spacing={2} direction={'row'}>
+        <Delete />
+        <Typography>Delete</Typography>
+      </Stack>
+    </MenuItem>,
+  ];
 
   return (
     <>
@@ -477,7 +486,25 @@ export const TrainingsTable = ({
           ]}
         />
       </Card>
-
+      =======
+      <CustomGrid
+        data={updatedItems}
+        columns={columns}
+        rowActionMenuItems={rowActionMenuItems}
+        setRowSelection={setRowSelection}
+        rowSelection={rowSelection}
+        fetchingData={fetchingData}
+        handleRowClick={handleRowClick}
+        setShowConfirmationDialog={setShowConfirmationDialog}
+        hasDeleteAccess={hasDeleteAccess}
+        handleExportRows={handleExportRows}
+        exportBtnRef={exportBtnRef}
+        updateAnalytics={updateAnalytics}
+        enableRowClick
+        enableFacetedValues
+        enableAnalyticsHiddenButton
+        analyticsHiddenBtnRef={analyticsHiddenBtnRef}
+      />
       {/* View export options */}
       <CustomDialog
         // sx={{ minWidth: '30vw' }}
@@ -493,9 +520,7 @@ export const TrainingsTable = ({
           closeExportOptions={() => setOpenExportOptions(false)}
         />
       </CustomDialog>
-
       {/* View Training Data */}
-
       <CustomDialog
         onClose={() => {
           setOpenTrainingData(false);
@@ -504,9 +529,18 @@ export const TrainingsTable = ({
         open={Boolean(openTrainingData && openTrainingData?.trainingType === 'jsonLifeCycle')}
         title={<Typography variant="h5">{data?.labels?.training?.singular || 'Training'}</Typography>}
       >
-        <JsonLifeCycleTrainingGrid trainingData={openTrainingData} />
+        {openTrainingData?.loading ? (
+          <Box>
+            <Skeleton variant="text" sx={{ fontSize: '1rem' }} />
+            <Skeleton variant="rectangular" width={210} height={60} />
+            <Skeleton variant="rounded" width={210} height={60} />
+          </Box>
+        ) : openTrainingData?.trainingType === 'jsonLifeCycle' ? (
+          <JsonLifeCycleTrainingGrid trainingData={openTrainingData} />
+        ) : (
+          <></>
+        )}
       </CustomDialog>
-
       <ConfirmationDialog
         onClose={() => {
           setShowConfirmationDialog(false);
@@ -516,6 +550,7 @@ export const TrainingsTable = ({
         description={'Do you want to perform this bulk delete option?'}
         onConfirm={onConfirmBulkDelete}
       ></ConfirmationDialog>
+      />
     </>
   );
 };
