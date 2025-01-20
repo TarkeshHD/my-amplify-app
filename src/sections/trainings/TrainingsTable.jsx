@@ -377,116 +377,6 @@ export const TrainingsTable = ({
 
   return (
     <>
-      <Card>
-        <MaterialReactTable
-          renderToolbarInternalActions={({ table }) => (
-            <Box sx={{ display: 'flex', p: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-              <Tooltip title="Clear filter" arrow>
-                <IconButton
-                  sx={{ display: !isColumnFiltersEmpty(table) ? 'block' : 'none', mt: '6px' }}
-                  onClick={() => {
-                    table.resetColumnFilters();
-                  }}
-                >
-                  <FilterAltOff color="warning" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Bulk delete" arrow>
-                <IconButton
-                  onClick={() => setShowConfirmationDialog(true)}
-                  sx={{ display: hasDeleteAccess && !isEmpty(rowSelection) ? 'block' : 'none', mt: '6px' }}
-                >
-                  <Delete color={isEmpty(rowSelection) ? 'grey' : 'error'} />
-                </IconButton>
-              </Tooltip>
-              <MRTToggleFiltersButton table={table} />
-              <MRTShowHideColumnsButton table={table} />
-              <MRTFullScreenToggleButton table={table} />
-
-              <Button
-                ref={exportBtnRef}
-                sx={{ display: 'none' }}
-                disabled={table.getPrePaginationRowModel().rows.length === 0}
-                // export all rows, including from the next page, (still respects filtering and sorting)
-                onClick={() => {
-                  handleExportRows(table.getPrePaginationRowModel().rows);
-                }}
-                startIcon={<FileDownload />}
-                variant="contained"
-              >
-                Export Data
-              </Button>
-              {/* Process Button - Hidden */}
-              <Button
-                ref={analyticsHiddenBtnRef}
-                sx={{ display: 'none' }}
-                disabled={table.getPrePaginationRowModel().rows.length === 0}
-                onClick={() => {
-                  updateAnalytics(table.getPrePaginationRowModel().rows); // Sending table data to an outside function
-                }}
-                variant="contained"
-              >
-                Analytics Hidden Button
-              </Button>
-            </Box>
-          )}
-          muiTableBodyRowProps={({ row }) => ({
-            onClick: () => {
-              handleRowClick(row);
-            },
-            sx: { cursor: 'pointer' },
-          })}
-          enableRowActions
-          displayColumnDefOptions={{
-            'mrt-row-actions': {
-              header: null,
-            },
-          }}
-          positionActionsColumn="last"
-          columns={columns}
-          data={updatedItems}
-          enableRowSelection // enable some features
-          onRowSelectionChange={setRowSelection}
-          getRowId={(row) => row._id}
-          enableColumnOrdering
-          state={{
-            isLoading: fetchingData,
-            rowSelection,
-          }}
-          initialState={{ pagination: { pageSize: 5 }, showGlobalFilter: true, showColumnFilters: true }}
-          muiTablePaginationProps={{
-            rowsPerPageOptions: [5, 10, 15, 20, 25],
-          }}
-          enableGlobalFilterModes
-          positionGlobalFilter="left"
-          muiSearchTextFieldProps={{
-            placeholder: `Search ${updatedItems.length} rows`,
-            sx: { minWidth: '300px' },
-            variant: 'outlined',
-          }}
-          enableFacetedValues
-          renderEmptyRowsFallback={() => {
-            updateAnalytics([]);
-          }}
-          renderRowActionMenuItems={({ row, closeMenu, table }) => [
-            <MenuItem
-              key={0}
-              onClick={() => {
-                onDeleteRow(row.original);
-                // onDeleteRow();
-                closeMenu();
-              }}
-              sx={{ color: 'error.main' }}
-            >
-              <Stack spacing={2} direction={'row'}>
-                <Delete />
-                <Typography>Delete</Typography>
-              </Stack>
-            </MenuItem>,
-          ]}
-        />
-      </Card>
-      =======
       <CustomGrid
         data={updatedItems}
         columns={columns}
@@ -549,7 +439,6 @@ export const TrainingsTable = ({
         title={'Delete'}
         description={'Do you want to perform this bulk delete option?'}
         onConfirm={onConfirmBulkDelete}
-      ></ConfirmationDialog>
       />
     </>
   );
