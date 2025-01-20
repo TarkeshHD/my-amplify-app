@@ -16,6 +16,7 @@ import { ModulesTable } from '../sections/modules/ModulesTable';
 import { UsersTable } from '../sections/users/UsersTable';
 import axios from '../utils/axios';
 import { DevicesTable } from '../sections/devices/DevicesTable';
+import { PremiumFeatureWrapper } from '../components/premium/PremiumFeatureWrapper';
 
 const Page = () => {
   const [fetchingData, setFetchingData] = useState(false);
@@ -24,8 +25,10 @@ const Page = () => {
 
   const config = useConfig();
   const { data: configData } = config;
-
+  const { user } = useAuth();
+  const isGuestUser = configData?.freeTrial && user?.role !== 'productAdmin';
   const getDevices = async () => {
+    if (isGuestUser) return;
     try {
       setFetchingData(true);
       const response = await axios.get('/device/all');
@@ -49,9 +52,7 @@ const Page = () => {
 
   useEffect(() => {
     getDevices();
-  }, []);
-
-  const { user } = useAuth();
+  }, [isGuestUser]);
 
   if (user?.role === 'user') {
     // page not found
@@ -69,36 +70,38 @@ const Page = () => {
       </Helmet>
 
       <Container maxWidth="xl">
-        <Stack spacing={3}>
-          <Stack direction="row" justifyContent="space-between" spacing={4}>
-            <Stack spacing={1}>
-              <Typography variant="h4">{'Device'}</Typography>
+        <PremiumFeatureWrapper sx={{ top: '68%' }} message="Upgrade to view device insights">
+          <Stack spacing={3}>
+            <Stack direction="row" justifyContent="space-between" spacing={4}>
+              <Stack spacing={1}>
+                <Typography variant="h4">{'Device'}</Typography>
+              </Stack>
+              <Stack alignItems="center" direction="row" spacing={1}>
+                <Button
+                  onClick={() => {
+                    setExportBtnClicked(true);
+                  }}
+                  variant="outlined"
+                  startIcon={
+                    <SvgIcon fontSize="small">
+                      <Download />
+                    </SvgIcon>
+                  }
+                >
+                  Export
+                </Button>
+              </Stack>
             </Stack>
-            <Stack alignItems="center" direction="row" spacing={1}>
-              <Button
-                onClick={() => {
-                  setExportBtnClicked(true);
-                }}
-                variant="outlined"
-                startIcon={
-                  <SvgIcon fontSize="small">
-                    <Download />
-                  </SvgIcon>
-                }
-              >
-                Export
-              </Button>
-            </Stack>
-          </Stack>
 
-          <DevicesTable
-            fetchingData={fetchingData}
-            items={data}
-            count={data.length}
-            exportBtnClicked={exportBtnClicked}
-            exportBtnFalse={exportBtnFalse}
-          />
-        </Stack>
+            <DevicesTable
+              fetchingData={fetchingData}
+              items={data}
+              count={data.length}
+              exportBtnClicked={exportBtnClicked}
+              exportBtnFalse={exportBtnFalse}
+            />
+          </Stack>
+        </PremiumFeatureWrapper>
       </Container>
     </>
   );

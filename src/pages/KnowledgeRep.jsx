@@ -12,6 +12,7 @@ import axios from '../utils/axios';
 
 import AddFileForm from '../components/knowledgeRep/AddFileForm';
 import { FAKE_DATA } from '../components/knowledgeRep/fakeData';
+import { PremiumFeatureWrapper } from '../components/premium/PremiumFeatureWrapper';
 
 const Page = () => {
   const [openFileUpload, setOpenFileUpload] = useState(false);
@@ -72,7 +73,8 @@ const Page = () => {
       if (folder.name === targetFolderName) {
         const newItem = [...folder.items]; // since while comparing, they use mem address, we need to create a new copy
         return newItem;
-      } else if (folder.type === 'Folder' && folder.items && folder.items.length > 0) {
+      }
+      if (folder.type === 'Folder' && folder.items && folder.items.length > 0) {
         // if not, and if it's a folder, and has items inside, call the function again with the items as folders
         const foundInSubfolder = getFiles(folder.items, targetFolderName);
         if (foundInSubfolder) {
@@ -123,44 +125,46 @@ const Page = () => {
         <title>Knowledge Repository | VRse Builder</title>
       </Helmet>
 
-      <Container maxWidth="xl">
-        <Stack spacing={3}>
-          <Stack direction="row" justifyContent="space-between" spacing={4}>
-            <Stack spacing={1}>
-              <Typography variant="h4">Knowledge Repository</Typography>
+      <PremiumFeatureWrapper sx={{ top: '40%' }}>
+        <Container maxWidth="xl">
+          <Stack spacing={3}>
+            <Stack direction="row" justifyContent="space-between" spacing={4}>
+              <Stack spacing={1}>
+                <Typography variant="h4">Knowledge Repository</Typography>
+              </Stack>
+              <Stack alignItems="center" direction="row" spacing={1}>
+                <Button
+                  startIcon={
+                    <SvgIcon fontSize="small">
+                      <Add />
+                    </SvgIcon>
+                  }
+                  variant="contained"
+                  onClick={() => {
+                    setOpenFileUpload(true);
+                  }}
+                >
+                  Add File
+                </Button>
+              </Stack>
             </Stack>
-            <Stack alignItems="center" direction="row" spacing={1}>
-              <Button
-                startIcon={
-                  <SvgIcon fontSize="small">
-                    <Add />
-                  </SvgIcon>
-                }
-                variant="contained"
-                onClick={() => {
-                  setOpenFileUpload(true);
-                }}
-              >
-                Add File
-              </Button>
-            </Stack>
+            <div>{workingDirectoryPath}</div>
+
+            <FileTable items={data} fetchingData={fetchingData} addWorkingDirectory={addWorkingDirectory} />
+
+            {/* ADD FILE */}
+            <CustomDialog
+              onClose={() => {
+                setOpenFileUpload(false);
+              }}
+              open={openFileUpload}
+              title={<>Add </>}
+            >
+              <AddFileForm user={user} updateNewFile={updateNewFile} setOpenFileUpload={setOpenFileUpload} />
+            </CustomDialog>
           </Stack>
-          <div>{workingDirectoryPath}</div>
-
-          <FileTable items={data} fetchingData={fetchingData} addWorkingDirectory={addWorkingDirectory} />
-
-          {/* ADD FILE */}
-          <CustomDialog
-            onClose={() => {
-              setOpenFileUpload(false);
-            }}
-            open={openFileUpload}
-            title={<>Add </>}
-          >
-            <AddFileForm user={user} updateNewFile={updateNewFile} setOpenFileUpload={setOpenFileUpload} />
-          </CustomDialog>
-        </Stack>
-      </Container>
+        </Container>
+      </PremiumFeatureWrapper>
     </>
   );
 };

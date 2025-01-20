@@ -30,8 +30,13 @@ import {
 } from '@mui/lab';
 import { ArrowForwardIos, CancelRounded, CheckCircleRounded } from '@mui/icons-material';
 
+import axios from '../../utils/axios';
+import { useConfig } from '../../hooks/useConfig';
+import { toast } from 'react-toastify';
 import { SeverityPill } from '../SeverityPill';
 import { convertTimeToDescription, convertUnixToLocalTime } from '../../utils/utils';
+import { PremiumFeatureAlert } from '../premium/PremiumFeatureAlert';
+import { UpgradeModel } from '../premium/UpgradeModal';
 
 const Accordion = styled((props) => <MuiAccordion disableGutters elevation={0} square {...props} />)(({ theme }) => ({
   border: `1px solid ${theme.palette.divider}`,
@@ -62,6 +67,13 @@ const AccordionDetails = styled(MuiAccordionDetails)(({ theme }) => ({
 }));
 const JsonLifeCycleTrainingGrid = ({ trainingData }) => {
   const [expanded, setExpanded] = React.useState('panel1');
+  const [successFormOpen, setSuccessFormOpen] = React.useState(false);
+  const { data: configData } = useConfig();
+
+  const isFreeTrialUser = configData?.freeTrial;
+  if (isFreeTrialUser) {
+    trainingData.trainingDumpJson.chapters = trainingData?.trainingDumpJson?.chapters?.slice(0, 1);
+  }
 
   const handleChange = (panel) => (event, newExpanded) => {
     setExpanded(newExpanded ? panel : false);
@@ -119,6 +131,24 @@ const JsonLifeCycleTrainingGrid = ({ trainingData }) => {
         )}
       </Box>
     );
+  };
+
+  const onClickUpgrade = async () => {
+    if (localStorage.getItem('hasRequestedAccountUpgrade') === 'true') {
+      setSuccessFormOpen(true);
+    }
+    try {
+      const response = await axios.post('/user/upgrade-account', {});
+      if (response.data.success) {
+        localStorage.setItem('hasRequestedAccountUpgrade', true);
+        setSuccessFormOpen(true);
+      } else {
+        toast.error('Failed to request for account upgrade.');
+      }
+    } catch (error) {
+      toast.error('An error occurred while requesting for account upgrade.');
+      console.error(error);
+    }
   };
 
   return (
@@ -216,6 +246,14 @@ const JsonLifeCycleTrainingGrid = ({ trainingData }) => {
           </Accordion>
         </Grid>
       ))}
+      {isFreeTrialUser && (
+        <PremiumFeatureAlert
+          onClickUpgrade={onClickUpgrade}
+          message="Upgrade to unlock more evaluation insights"
+          sx={{ margin: 1 }}
+        />
+      )}
+      <UpgradeModel isModalOpen={successFormOpen} setModalOpen={setSuccessFormOpen} />
     </Grid>
   );
 };

@@ -9,6 +9,8 @@ import Router from './routes/Router';
 import './App.css';
 import ConfigThemeWrapper from './components/ConfigThemeWrapper';
 import { ConfigProvider } from './context/ConfigurationContext';
+import { MsalProvider } from '@azure/msal-react';
+import { msalInstance } from './msalConfig';
 
 function App() {
   return (
@@ -23,22 +25,24 @@ function App() {
               redirect_uri: `${import.meta.env.VITE_SSO_OKTA_REDIRECT_URI}`,
             }}
           >
-            <AuthProvider>
-              <ToastContainer
-                position="top-right"
-                autoClose={5000}
-                hideProgressBar={false}
-                newestOnTop={false}
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-                theme="dark"
-                style={{ textAlign: 'start' }}
-              />
-              <Router />
-            </AuthProvider>
+            <MsalProvider instance={msalInstance}>
+              <AuthProvider>
+                <ToastContainer
+                  position="top-right"
+                  autoClose={5000}
+                  hideProgressBar={false}
+                  newestOnTop={false}
+                  closeOnClick
+                  rtl={false}
+                  pauseOnFocusLoss
+                  draggable
+                  pauseOnHover
+                  theme="dark"
+                  style={{ textAlign: 'start' }}
+                />
+                <Router />
+              </AuthProvider>
+            </MsalProvider>
           </Auth0Provider>
         </ConfigThemeWrapper>
       </ConfigProvider>

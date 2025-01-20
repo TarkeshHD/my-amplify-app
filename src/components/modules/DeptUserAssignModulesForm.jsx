@@ -96,6 +96,7 @@ const DeptUserAssignModulesForm = ({
         departmentsAccess,
         usersAccess,
       };
+
       if (isEdit) {
         delete reqObj.modules;
         const response = await axios.post(`/module/assign/update/special/${selectedModules[0]}`, reqObj);
@@ -105,7 +106,7 @@ const DeptUserAssignModulesForm = ({
       }
 
       toast.success('Updated Successfully');
-      navigate(0);
+      // navigate(0);
     } catch (error) {
       console.error(error);
       toast.error(error.message || 'Something went wrong!');

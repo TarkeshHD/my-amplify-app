@@ -26,6 +26,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { fetchScoresAndStatuses } from '../../utils/utils';
 import QuestionsActionGrid from '../../components/modules/QuestionActionGrid';
 import DeviceGrid from '../../components/modules/DeviceGrid';
+import CustomGrid from '../../components/grid/CustomGrid';
 
 const statusMap = {
   Pending: 'warning',
@@ -222,64 +223,17 @@ export const DevicesTable = ({ count = 0, items = FAKE_DATA, fetchingData, expor
 
   return (
     <>
-      <Card>
-        <MaterialReactTable
-          renderToolbarInternalActions={({ table }) => (
-            <Box sx={{ display: 'flex', p: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-              <MRTToggleFiltersButton table={table} />
-              <MRTShowHideColumnsButton table={table} />
-              <MRTFullScreenToggleButton table={table} />
-
-              <Button
-                ref={exportBtnRef}
-                sx={{ display: 'none' }}
-                disabled={table.getPrePaginationRowModel().rows.length === 0}
-                // export all rows, including from the next page, (still respects filtering and sorting)
-                onClick={() => {
-                  handleExportRows(table.getPrePaginationRowModel().rows);
-                }}
-                startIcon={<FileDownload />}
-                variant="contained"
-              >
-                Export Data
-              </Button>
-            </Box>
-          )}
-          renderRowActionMenuItems={({ row, closeMenu, table }) => []}
-          muiTableBodyRowProps={({ row }) => ({
-            onClick: () => {
-              handleRowClick(row);
-            },
-            sx: { cursor: 'pointer' },
-          })}
-          enableRowActions
-          displayColumnDefOptions={{
-            'mrt-row-actions': {
-              header: null,
-            },
-          }}
-          positionActionsColumn="last"
-          columns={columns}
-          data={updatedItems}
-          enableRowSelection // enable some features
-          enableColumnOrdering
-          state={{
-            isLoading: fetchingData,
-          }}
-          initialState={{ pagination: { pageSize: 10 }, showGlobalFilter: true, showColumnFilters: true }}
-          muiTablePaginationProps={{
-            rowsPerPageOptions: [5, 10, 15, 20, 25],
-          }}
-          enableGlobalFilterModes
-          positionGlobalFilter="left"
-          muiSearchTextFieldProps={{
-            placeholder: `Search ${updatedItems.length} rows`,
-            sx: { minWidth: '300px' },
-            variant: 'outlined',
-          }}
-          enableFacetedValues
-        />
-      </Card>
+      <CustomGrid
+        data={updatedItems}
+        columns={columns}
+        fetchingData={fetchingData}
+        handleRowClick={handleRowClick}
+        handleExportRows={handleExportRows}
+        exportBtnRef={exportBtnRef}
+        enableRowClick={true}
+        enableFacetedValues={true}
+        enableRowSelection={false}
+      />
 
       {/* View export options */}
       <CustomDialog

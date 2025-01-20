@@ -10,17 +10,18 @@ import PropTypes from 'prop-types';
 import { useMemo, useState } from 'react';
 import { isEmpty } from 'lodash';
 
+import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 import CustomDialog from '../../components/CustomDialog';
 import { Scrollbar } from '../../components/Scrollbar';
 import SearchNotFound from '../../components/SearchNotFound';
 import { useConfig } from '../../hooks/useConfig';
 import { getInitials } from '../../utils/utils';
-import { toast } from 'react-toastify';
 import axios from '../../utils/axios';
-import { useNavigate } from 'react-router-dom';
 import DepartmentForm from '../../components/departments/DepartmentForm';
 import ConfirmationDialog from '../../components/ConfirmationDialog';
 import { useAuth } from '../../hooks/useAuth';
+import CustomGrid from '../../components/grid/CustomGrid';
 
 export const DepartmentsTable = ({ count = 0, items = [], fetchingData, domains, handleRefresh }) => {
   const config = useConfig();
@@ -75,92 +76,47 @@ export const DepartmentsTable = ({ count = 0, items = [], fetchingData, domains,
     handleRefresh();
   };
 
+  const rowActionMenuItems = ({ row, closeMenu, table }) => [
+    <MenuItem
+      key={0}
+      onClick={() => {
+        onDeleteRow(row);
+        closeMenu();
+      }}
+      sx={{ color: 'error.main' }}
+    >
+      <Stack spacing={2} direction={'row'}>
+        <Delete />
+        <Typography>Delete</Typography>
+      </Stack>
+    </MenuItem>,
+    <MenuItem
+      key={1}
+      onClick={() => {
+        setOpenEditForm(row);
+        closeMenu();
+      }}
+    >
+      <Stack spacing={2} direction={'row'}>
+        <Edit />
+        <Typography>Edit</Typography>
+      </Stack>
+    </MenuItem>,
+  ];
+
   return (
     <>
-      <Card>
-        <MaterialReactTable
-          renderToolbarInternalActions={({ table }) => (
-            <Box sx={{ display: 'flex', p: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-              <Tooltip title="Clear filter" arrow>
-                <IconButton
-                  sx={{ display: table?.getState()?.columnFilters?.length > 0 ? 'block' : 'none', mt: '6px' }}
-                  onClick={() => {
-                    table.resetColumnFilters();
-                  }}
-                >
-                  <FilterAltOff color="warning" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Bulk delete" arrow>
-                <IconButton
-                  onClick={() => setShowConfirmationDialog(true)}
-                  sx={{ display: hasDeleteAccess && !isEmpty(rowSelection) ? 'block' : 'none', mt: '6px' }}
-                >
-                  <Delete color={isEmpty(rowSelection) ? 'grey' : 'error'} />
-                </IconButton>
-              </Tooltip>
-              <MRTToggleFiltersButton table={table} />
-              <MRTShowHideColumnsButton table={table} />
-              <MRTFullScreenToggleButton table={table} />
-            </Box>
-          )}
-          renderRowActionMenuItems={({ row, closeMenu, table }) => [
-            <MenuItem
-              key={0}
-              onClick={() => {
-                onDeleteRow(row);
-                closeMenu();
-              }}
-              sx={{ color: 'error.main' }}
-            >
-              <Stack spacing={2} direction={'row'}>
-                <Delete />
-                <Typography>Delete</Typography>
-              </Stack>
-            </MenuItem>,
-            <MenuItem
-              key={1}
-              onClick={() => {
-                setOpenEditForm(row);
-                closeMenu();
-              }}
-            >
-              <Stack spacing={2} direction={'row'}>
-                <Edit />
-                <Typography>Edit</Typography>
-              </Stack>
-            </MenuItem>,
-          ]}
-          enableRowActions
-          displayColumnDefOptions={{
-            'mrt-row-actions': {
-              header: null,
-            },
-          }}
-          positionActionsColumn="last"
-          columns={columns}
-          data={items}
-          enableRowSelection // enable some features
-          getRowId={(row) => row._id}
-          onRowSelectionChange={setRowSelection}
-          enableColumnOrdering
-          state={{
-            isLoading: fetchingData,
-            rowSelection,
-          }}
-          initialState={{ pagination: { pageSize: 10 }, showGlobalFilter: true }}
-          muiTablePaginationProps={{
-            rowsPerPageOptions: [5, 10, 15, 20, 25],
-          }}
-          enableGlobalFilterModes
-          positionGlobalFilter="left"
-          muiSearchTextFieldProps={{
-            placeholder: `Search ${items.length} rows`,
-            sx: { minWidth: '300px' },
-            variant: 'outlined',
-          }}
-        />
-      </Card>
+      <CustomGrid
+        data={items}
+        columns={columns}
+        rowActionMenuItems={rowActionMenuItems}
+        setRowSelection={setRowSelection}
+        rowSelection={rowSelection}
+        fetchingData={fetchingData}
+        setShowConfirmationDialog={setShowConfirmationDialog}
+        hasDeleteAccess={hasDeleteAccess}
+        showExportButton={false}
+      />
       {/* Edit Domain Form */}
       <CustomDialog
         onClose={() => {
@@ -170,7 +126,7 @@ export const DepartmentsTable = ({ count = 0, items = [], fetchingData, domains,
         title={<Typography variant="h5">Edit Department</Typography>}
       >
         <DepartmentForm
-          isEdit={true}
+          isEdit
           currentDepartment={openEditForm?.original}
           domains={domains}
           handleClose={onCloseDepartmentForm}

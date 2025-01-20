@@ -9,6 +9,7 @@ import {
   HowToReg,
   DeviceHub,
   Devices,
+  WorkspacePremium,
 } from '@mui/icons-material';
 import { Alert, Button, Container, Unstable_Grid2 as Grid } from '@mui/material';
 
@@ -31,12 +32,16 @@ import { calculatePercentageChange, convertTimeToDescription } from '../../utils
 import { DashboardRankingCard } from '../../sections/dashboard/DashboardRankingCard';
 import { DashboardTable } from '../../sections/dashboard/DashboardTable';
 import ReportPDF from './ReportPDF';
+import { PremiumFeatureWrapper } from '../premium/PremiumFeatureWrapper';
+import { UpgradeModel } from '../premium/UpgradeModal';
+import { PremiumFeatureAlert } from '../premium/PremiumFeatureAlert';
 
 const now = new Date();
 
 const Analytics = () => {
   const config = useConfig();
   const { data } = config;
+  const isFreeTrialUser = data?.freeTrial;
 
   const auth = useAuth();
 
@@ -63,6 +68,7 @@ const Analytics = () => {
   const [top3Users, setTop3Users] = useState([]);
   const [top5FailureMoments, setTop5FailureMoments] = useState([]);
   const [totalVRSessionInMilliseconds, setTotalVRSessionInMilliseconds] = useState(0);
+  const [successFormOpen, setSuccessFormOpen] = useState(false);
 
   const [domainName, setDomainName] = useState(false);
 
@@ -174,25 +180,48 @@ const Analytics = () => {
     fetchData();
   }, []);
 
+  console.log('role', auth?.user?.role);
+
+  const onClickUpgrade = async () => {
+    if (localStorage.getItem('hasRequestedAccountUpgrade') === 'true') {
+      setSuccessFormOpen(true);
+    }
+    try {
+      console.log('Here');
+      const response = await axios.post('/user/upgrade-account', {});
+      if (response.data.success) {
+        localStorage.setItem('hasRequestedAccountUpgrade', true);
+        setSuccessFormOpen(true);
+      } else {
+        toast.error('Failed to request for account upgrade.');
+      }
+    } catch (error) {
+      toast.error('An error occurred while requesting for account upgrade.');
+      console.error(error);
+    }
+  };
+
   return (
     <Container maxWidth="xl">
       <Box sx={{ justifyContent: 'space-between', display: 'flex', alignItems: 'center' }}>
         <h1>Analytics</h1>
-        <PDFDownloadLink
-          document={
-            <ReportPDF
-              totalUsers={totalUsers}
-              totalVRSessionInMilliseconds={totalVRSessionInMilliseconds}
-              incompletionPercentage={incompletionPercentage}
-              passPercentage={passPercentage}
-              moments={top5FailureMoments.slice(0, 2)}
-              deviceCount={deviceCount}
-            />
-          }
-          fileName="autovrse_training_report.pdf"
-        >
-          {({ loading }) => (loading ? 'Loading document...' : <Button variant="contained">Generate report</Button>)}
-        </PDFDownloadLink>
+        {!isFreeTrialUser && (
+          <PDFDownloadLink
+            document={
+              <ReportPDF
+                totalUsers={totalUsers}
+                totalVRSessionInMilliseconds={totalVRSessionInMilliseconds}
+                incompletionPercentage={incompletionPercentage}
+                passPercentage={passPercentage}
+                moments={top5FailureMoments.slice(0, 2)}
+                deviceCount={deviceCount}
+              />
+            }
+            fileName="autovrse_training_report.pdf"
+          >
+            {({ loading }) => (loading ? 'Loading document...' : <Button variant="contained">Generate report</Button>)}
+          </PDFDownloadLink>
+        )}
       </Box>
       <Grid container spacing={2}>
         {domainName && (
@@ -202,7 +231,6 @@ const Analytics = () => {
             </Alert>
           </Grid>
         )}
-
         <Grid xs={12} sm={6} lg={3}>
           <DashboardDiffCard
             title={`Total ${data?.labels?.user?.plural || 'Users'}`}
@@ -246,7 +274,9 @@ const Analytics = () => {
         </Grid>
 
         <Grid gridRow={'span 2'} xs={12} md={8} lg={9}>
-          <DashboardTable moments={top5FailureMoments} iconColor="primary.main" />
+          <PremiumFeatureWrapper message="Premium Feature" sx={{ top: '100%' }} hideUpgradeButton>
+            <DashboardTable moments={top5FailureMoments} iconColor="primary.main" />
+          </PremiumFeatureWrapper>
         </Grid>
 
         <Grid item xs={12} sm={6} lg={3}>
@@ -265,54 +295,71 @@ const Analytics = () => {
             />
           </Box>
         </Grid>
+        <>
+          <Grid item sx={12} sm={9}>
+            <PremiumFeatureWrapper message="" noLogo hideUpgradeButton>
+              <DashboardPieChart
+                title={`${
+                  auth?.user?.role === 'admin'
+                    ? data?.labels?.department?.singular || 'Department'
+                    : data?.labels?.domain?.singular || 'Domain'
+                } ${data?.labels?.user?.plural || 'Users'}`}
+                chartSeries={domainOrDeptVal[0]}
+                labels={domainOrDeptVal[1]}
+              />
+            </PremiumFeatureWrapper>
+          </Grid>
+          <Grid item xs={12} sm={6} lg={3}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 2 }}>
+              <PremiumFeatureWrapper message="" noLogo hideUpgradeButton>
+                <DashboardDiffCard
+                  title={`Total Number Of Device`}
+                  icon={<Devices />}
+                  iconColor={'primary.main'}
+                  value={deviceCount}
+                  difference={lastMonthDeviceCount}
+                  positive={lastMonthDeviceCount > 0}
+                />
 
-        <Grid item xs={12} sm={6} lg={3}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 2 }}>
-            <DashboardPieChart
-              title={`${
-                auth?.user?.role === 'admin'
-                  ? data?.labels?.department?.singular || 'Department'
-                  : data?.labels?.domain?.singular || 'Domain'
-              } ${data?.labels?.user?.plural || 'Users'}`}
-              chartSeries={domainOrDeptVal[0]}
-              labels={domainOrDeptVal[1]}
-            />
-            <DashboardDiffCard
-              title={`Total Number Of Device`}
-              icon={<Devices />}
-              iconColor={'primary.main'}
-              value={deviceCount}
-              difference={lastMonthDeviceCount}
-              positive={lastMonthDeviceCount > 0}
-            />
-
-            <DashboardDiffCard
-              title={`Total Number Of ${auth?.user?.role === 'admin' ? 'Department' : 'Domain'}`}
-              value={domainCount}
-              icon={<DeviceHub />}
-              difference={0}
-              positive={lastMonthTimeSpentInEvaluation < 0}
-            />
-          </Box>
-        </Grid>
-
-        <Grid item xs={12} sm={9}>
-          <DashboardBarChart
-            title="Monthly Evaluation Sessions"
-            chartSeries={[
-              {
-                name: 'Total Evaluations',
-                data: monthlyTotalEval,
-              },
-              {
-                name: 'Passed Evaluations',
-                data: monthlyPassEval,
-              },
-            ]}
-            sx={{ height: '100%' }}
+                <DashboardDiffCard
+                  title={`Total Number Of ${auth?.user?.role === 'admin' ? 'Department' : 'Domain'}`}
+                  value={domainCount}
+                  icon={<DeviceHub />}
+                  difference={0}
+                  positive={lastMonthTimeSpentInEvaluation < 0}
+                />
+              </PremiumFeatureWrapper>
+            </Box>
+          </Grid>
+        </>
+        {!(isFreeTrialUser && auth?.user?.role !== 'productAdmin') && (
+          <>
+            <Grid item xs={12}>
+              <DashboardBarChart
+                title="Monthly Evaluation Sessions"
+                chartSeries={[
+                  {
+                    name: 'Total Evaluations',
+                    data: monthlyTotalEval,
+                  },
+                  {
+                    name: 'Passed Evaluations',
+                    data: monthlyPassEval,
+                  },
+                ]}
+                sx={{ height: '100%' }}
+              />
+            </Grid>
+          </>
+        )}
+        {isFreeTrialUser && auth?.user?.role !== 'productAdmin' && (
+          <PremiumFeatureAlert
+            message="Elevate Your VR Training Insights - Upgrade to Unlock Advanced Analytics"
+            onClickUpgrade={onClickUpgrade}
           />
-        </Grid>
+        )}
       </Grid>
+      <UpgradeModel isModalOpen={successFormOpen} setModalOpen={setSuccessFormOpen} />
     </Container>
   );
 };
