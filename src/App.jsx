@@ -11,6 +11,7 @@ import ConfigThemeWrapper from './components/ConfigThemeWrapper';
 import { ConfigProvider } from './context/ConfigurationContext';
 import { MsalProvider } from '@azure/msal-react';
 import { msalInstance } from './msalConfig';
+console.log('cheeck');
 
 function App() {
   return (
