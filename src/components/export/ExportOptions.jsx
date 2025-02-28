@@ -7,47 +7,45 @@ import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import { handleExportCsv, handleExportExcel, handleExportPdf } from '../../utils/exportTable';
 import ExportButton from './ExportBtn';
 
-const ExportOptions = ({ headers, exportRow, closeExportOptions }) => {
-  return (
-    <Box
-      sx={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        gap: '1rem',
+const ExportOptions = ({ source, exportRow, closeExportOptions }) => (
+  <Box
+    sx={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      gap: '1rem',
+    }}
+  >
+    <ExportButton
+      onClick={() => {
+        handleExportCsv(source, exportRow);
+        closeExportOptions();
       }}
+      variant="outlined"
     >
-      <ExportButton
-        onClick={() => {
-          handleExportCsv(headers, exportRow);
-          closeExportOptions();
-        }}
-        variant="outlined"
-      >
-        <FileCopyIcon />
-        <div>Export As CSV</div>
-      </ExportButton>
-      <ExportButton
-        onClick={() => {
-          handleExportExcel(headers, exportRow);
-          closeExportOptions();
-        }}
-        variant="outlined"
-      >
-        <MicrosoftIcon />
-        <div>Export As Excel</div>
-      </ExportButton>
-      <ExportButton
-        onClick={() => {
-          handleExportPdf(headers, exportRow);
-          closeExportOptions();
-        }}
-        variant="outlined"
-      >
-        <PictureAsPdfIcon />
-        <div>Export As PDF</div>
-      </ExportButton>
-    </Box>
-  );
-};
+      <FileCopyIcon />
+      <div>Export As CSV</div>
+    </ExportButton>
+    <ExportButton
+      onClick={() => {
+        handleExportExcel(source, exportRow);
+        closeExportOptions();
+      }}
+      variant="outlined"
+    >
+      <MicrosoftIcon />
+      <div>Export As Excel</div>
+    </ExportButton>
+    <ExportButton
+      onClick={() => {
+        handleExportPdf(source, exportRow);
+        closeExportOptions();
+      }}
+      variant="outlined"
+    >
+      <PictureAsPdfIcon />
+      <div>Export As PDF</div>
+    </ExportButton>
+  </Box>
+);
 
 export default ExportOptions;

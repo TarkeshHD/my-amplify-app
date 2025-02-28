@@ -162,13 +162,14 @@ export default function TraineeForm({ isEdit, currentUser, domains = [], departm
                 name="department"
                 label={data?.labels?.department?.singular || 'Department'}
                 placeholder={data?.labels?.department?.singular || 'Department'}
-                options={[...departments, 'None']}
+                options={[...departments.filter((dept) => dept?.domainId?._id === values.domainId), 'None']}
                 getOptionLabel={(option) => {
                   if (typeof option === 'string') {
                     return option;
                   }
                   return option?.name || '';
                 }}
+                disabled={values?.domain === 'None'}
                 onChangeCustom={(value) => {
                   setValue('department', value?.name);
                   setValue('departmentId', value?._id);
@@ -199,7 +200,7 @@ export default function TraineeForm({ isEdit, currentUser, domains = [], departm
 
             <Stack alignItems="flex-end" sx={{ mt: 3 }}>
               <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
-                {!isEdit ? 'Create ' + (data?.labels?.user?.singular || 'User') : 'Save Changes'}
+                {!isEdit ? `Create ${data?.labels?.user?.singular || 'User'}` : 'Save Changes'}
               </LoadingButton>
             </Stack>
           </Box>

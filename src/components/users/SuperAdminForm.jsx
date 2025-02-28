@@ -29,7 +29,7 @@ export default function SuperAdminForm({ isEdit, currentUser, handleClose }) {
   const NewUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     username: Yup.string().required('Username is required'),
-    password: Yup.string().required('Password is required'),
+    password: !isEdit ? Yup.string().required('Password is required') : undefined,
     role: Yup.string().required(),
   });
 

@@ -22,22 +22,30 @@ const Page = () => {
   const [fetchingData, setFetchingData] = useState(false);
   const [data, setData] = useState([]);
   const [exportBtnClicked, setExportBtnClicked] = useState(false);
+  const [totalDocs, setTotalDocs] = useState(false);
 
   const config = useConfig();
   const { data: configData } = config;
   const { user } = useAuth();
   const isGuestUser = configData?.freeTrial && user?.role !== 'productAdmin';
-  const getDevices = async () => {
+  const getDevices = async (params) => {
     if (isGuestUser) return;
     try {
       setFetchingData(true);
-      const response = await axios.get('/device/all');
-      // Sort the array in descending order by the "createdAt" property
-      const sortedData = [...(response.data?.details ?? [])].sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
-      );
+      const storedSizes = JSON.parse(localStorage.getItem('tablePageSize')) || {};
+      const storedPageSize = storedSizes?.devices || 10;
 
-      setData(sortedData);
+      const queryParams = {
+        page: params?.pageIndex ?? 1,
+        limit: params?.pageSize ?? storedPageSize,
+        sort: JSON.stringify(params?.sorting) ?? JSON.stringify({ createdAt: -1 }),
+        filters: JSON.stringify(params?.filters) ?? JSON.stringify({}),
+      };
+
+      const response = await axios.get('/device/all', { params: queryParams });
+
+      setData(response?.data?.devices?.docs);
+      setTotalDocs(response?.data?.devices?.totalDocs);
     } catch (error) {
       toast.error(error.message || `Failed to fetch devices'}`);
       console.log(error);
@@ -96,9 +104,10 @@ const Page = () => {
             <DevicesTable
               fetchingData={fetchingData}
               items={data}
-              count={data.length}
+              count={totalDocs}
               exportBtnClicked={exportBtnClicked}
               exportBtnFalse={exportBtnFalse}
+              onUrlParamsChange={getDevices}
             />
           </Stack>
         </PremiumFeatureWrapper>

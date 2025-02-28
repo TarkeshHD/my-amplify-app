@@ -23,7 +23,14 @@ import ConfirmationDialog from '../../components/ConfirmationDialog';
 import { useAuth } from '../../hooks/useAuth';
 import CustomGrid from '../../components/grid/CustomGrid';
 
-export const DepartmentsTable = ({ count = 0, items = [], fetchingData, domains, handleRefresh }) => {
+export const DepartmentsTable = ({
+  count = 0,
+  items = [],
+  fetchingData,
+  domains,
+  handleRefresh,
+  onUrlParamsChange,
+}) => {
   const config = useConfig();
   const { data } = config;
   const [openEditForm, setOpenEditForm] = useState(null);
@@ -42,6 +49,8 @@ export const DepartmentsTable = ({ count = 0, items = [], fetchingData, domains,
       {
         accessorFn: (row) => row?.domainId?.name || 'NA', // simple recommended way to define a column
         header: `${data?.labels?.domain?.singular || 'Domain'}`,
+        filterVariant: 'multi-select',
+        filterSelectOptions: domains?.map((domain) => ({ text: domain?.name, value: domain?._id })),
       },
     ],
     [],
@@ -116,6 +125,9 @@ export const DepartmentsTable = ({ count = 0, items = [], fetchingData, domains,
         setShowConfirmationDialog={setShowConfirmationDialog}
         hasDeleteAccess={hasDeleteAccess}
         showExportButton={false}
+        rowCount={count}
+        onUrlParamsChange={onUrlParamsChange}
+        tableSource="departments"
       />
       {/* Edit Domain Form */}
       <CustomDialog

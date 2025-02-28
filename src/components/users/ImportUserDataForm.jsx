@@ -17,7 +17,7 @@ import { readExcelFile } from '../../utils/utils';
 
 const expectedValues = ['Name', 'Employee Code', 'Domain', 'Department'];
 
-const ImportUserDataForm = ({ setOpenImportDataForm }) => {
+const ImportUserDataForm = ({ setOpenImportDataForm, domains, departments }) => {
   const navigate = useNavigate();
   const [sendFiles, setSendFiles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -110,9 +110,43 @@ const ImportUserDataForm = ({ setOpenImportDataForm }) => {
 
     // Define the header row
     const header = expectedValues;
+    const domainValues = domains?.map((domain) => domain.name);
 
     // Add the header row to the worksheet
     worksheet.addRow(header);
+
+    const domainColumnIndex = header.findIndex((col) => col === 'Domain') + 1;
+
+    if (domainColumnIndex > 0) {
+      worksheet.dataValidations.add(
+        `${String.fromCharCode(64 + domainColumnIndex)}2:${String.fromCharCode(64 + domainColumnIndex)}1000`,
+        {
+          type: 'list',
+          allowBlank: true,
+          formulae: [`"${domainValues.join(',')}"`],
+        },
+      );
+
+      const domainColumn = worksheet.getColumn(domainColumnIndex);
+      domainColumn.width = 15;
+    }
+
+    const departmentValues = departments?.map((department) => department.name);
+    const departmentColumnIndex = header.findIndex((col) => col === 'Department') + 1;
+
+    if (departmentColumnIndex > 0) {
+      worksheet.dataValidations.add(
+        `${String.fromCharCode(64 + departmentColumnIndex)}2:${String.fromCharCode(64 + departmentColumnIndex)}1000`,
+        {
+          type: 'list',
+          allowBlank: true,
+          formulae: [`"${departmentValues.join(',')}"`],
+        },
+      );
+
+      const departmentColumn = worksheet.getColumn(departmentColumnIndex);
+      departmentColumn.width = 15;
+    }
 
     // Generate a buffer for the Excel file
     return workbook.xlsx.writeBuffer().then((buffer) => {

@@ -1,17 +1,9 @@
-import { Box, Button, Card, MenuItem, Skeleton, Stack, Typography, IconButton, Tooltip } from '@mui/material';
-import {
-  MRT_FullScreenToggleButton as MRTFullScreenToggleButton,
-  MRT_ShowHideColumnsButton as MRTShowHideColumnsButton,
-  MRT_ToggleDensePaddingButton as MRTToggleDensePaddingButton,
-  MRT_ToggleFiltersButton as MRTToggleFiltersButton,
-  MaterialReactTable,
-} from 'material-react-table';
-import moment from 'moment-timezone';
+import { Box, MenuItem, Skeleton, Stack, Typography } from '@mui/material';
 import PropTypes from 'prop-types';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
-import { debounce, isEmpty } from 'lodash';
-import { Delete, Edit, FileDownload, FilterAltOff } from '@mui/icons-material';
+import { debounce } from 'lodash';
+import { Delete, Edit } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import CustomDialog from '../../components/CustomDialog';
@@ -25,8 +17,6 @@ import axios from '../../utils/axios';
 import {
   capitalizeFirstLetter,
   convertTimeToDescription,
-  getInitials,
-  fetchScoresAndStatuses,
   convertUnixToLocalTime,
   getEvaluationAnalytics,
 } from '../../utils/utils';
@@ -36,6 +26,7 @@ import JsonLifeCycleTrainingGrid from '../../components/modules/JsonLifeCycleTra
 import ConfirmationDialog from '../../components/ConfirmationDialog';
 import { useAuth } from '../../hooks/useAuth';
 import CustomGrid from '../../components/grid/CustomGrid';
+import { useSharedData } from '../../hooks/useSharedData';
 
 const statusMap = {
   Pending: 'warning',
@@ -43,6 +34,8 @@ const statusMap = {
   Fail: 'error',
   ongoing: 'warning',
   completed: 'success',
+  passed: 'success',
+  failed: 'error',
 };
 
 const FAKE_DATA = [
@@ -65,7 +58,16 @@ const FAKE_DATA = [
 ];
 
 const EvaluationsTable = React.memo(
-  ({ count = 0, items = FAKE_DATA, fetchingData, exportBtnClicked, exportBtnFalse, updateAnalytic, handleRefresh }) => {
+  ({
+    count = 0,
+    items = FAKE_DATA,
+    fetchingData,
+    exportBtnClicked,
+    exportBtnFalse,
+    updateAnalytic,
+    handleRefresh,
+    onUrlParamsChange,
+  }) => {
     const exportBtnRef = useRef(null);
     const [exportRow, setExportRow] = useState([]);
     const [openEvaluationData, setOpenEvaluationData] = useState(null);
@@ -81,6 +83,7 @@ const EvaluationsTable = React.memo(
     const navigate = useNavigate();
 
     const { userIdParam } = useParams();
+    const { domains, departments, modules } = useSharedData();
 
     const config = useConfig();
     const { data } = config;
@@ -91,18 +94,6 @@ const EvaluationsTable = React.memo(
         exportBtnFalse();
       }
     }, [exportBtnClicked]);
-
-    const [updatedItems, setUpdatedItems] = useState(items);
-    useEffect(() => {}, [updatedItems]);
-    const updateItems = async () => {
-      const newItems = await Promise.all(items.map(fetchScoresAndStatuses));
-      setUpdatedItems(newItems);
-    };
-
-    // Call the updateItems function to update your items
-    useEffect(() => {
-      updateItems();
-    }, [items]);
 
     // Create a debounced click function
     const debouncedClickForAnalytics = useCallback(
@@ -128,12 +119,16 @@ const EvaluationsTable = React.memo(
           },
           header: `${data?.labels?.module?.singular || 'Module'}`,
           filterVariant: 'multi-select',
+          filterSelectOptions: modules?.map((module) => ({
+            text: module?.archived ? `${module?.name}-Deprecated` : module?.name,
+            value: module?._id,
+          })),
           size: 100,
           Cell: ({ cell, column, row }) =>
             row?.original?.moduleId?.archived ? (
-              <SeverityPill color={'error'} tooltipTitle={'Deprecated'}>
-                <Delete sx={{ fontSize: 15, mr: 0.5 }} /> {row.original.moduleId.name}
-              </SeverityPill>
+              <Typography sx={{ color: 'darkred' }}>
+                {`${row?.original?.moduleId?.name} - Deprecated` || '-'}
+              </Typography>
             ) : (
               <Typography>{row?.original?.moduleId?.name || '-'}</Typography>
             ),
@@ -189,7 +184,7 @@ const EvaluationsTable = React.memo(
         {
           accessorKey: 'duration', // simple recommended way to define a column
           header: 'Duration',
-          filterVariant: 'multi-select',
+          enableColumnFilter: false,
           Cell: ({ cell, column, row }) => {
             const endTime = row?.original?.endTime ? row?.original?.endTime : undefined;
             const startTime = row?.original?.startTime;
@@ -198,11 +193,12 @@ const EvaluationsTable = React.memo(
             return <Typography>{duration > 0 ? convertTimeToDescription(duration) : '-'}</Typography>;
           },
         },
-
         {
           accessorKey: 'score', // simple recommended way to define a column
           header: 'Score',
           filterVariant: 'multi-select',
+          enableColumnFilter: false,
+          enableSorting: false,
         },
         {
           accessorFn: (row) => capitalizeFirstLetter(row.status), // simple recommended way to define a column
@@ -213,6 +209,10 @@ const EvaluationsTable = React.memo(
             return <SeverityPill color={statusMap[status]}>{status}</SeverityPill>;
           },
           filterVariant: 'multi-select',
+          filterSelectOptions: Object.keys(statusMap).map((status) => ({
+            text: status.toUpperCase(),
+            value: status.toLowerCase(),
+          })),
         },
         {
           accessorKey: 'userId.domainId.name', // simple recommended way to define a column
@@ -226,13 +226,17 @@ const EvaluationsTable = React.memo(
           },
           header: `${data?.labels?.domain?.singular || 'Domain'}`,
           filterVariant: 'multi-select',
+          enableSorting: false,
+          filterSelectOptions: domains?.map((domain) => ({
+            text: domain?.archived ? `${domain?.name}-Deprecated` : domain?.name,
+            value: domain?._id,
+          })),
           size: 100,
           Cell: ({ cell, column, row }) =>
             row.original?.userId?.domainId?.archived ? (
-              <SeverityPill color={'error'} tooltipTitle={'Deprecated'}>
-                {' '}
-                <Delete sx={{ fontSize: 15, mr: 0.5 }} /> {row.original?.userId?.domainId?.name}
-              </SeverityPill>
+              <Typography sx={{ color: 'darkred' }}>
+                {`${row?.original?.userId?.domainId?.name} - Deprecated` || '-'}
+              </Typography>
             ) : (
               <Typography>{row?.original?.userId?.domainId?.name || '-'}</Typography>
             ),
@@ -249,14 +253,18 @@ const EvaluationsTable = React.memo(
             return filterValue.includes(fullDepartmentName);
           },
           header: `${data?.labels?.department?.singular || 'Department'}`,
+          enableSorting: false,
           filterVariant: 'multi-select',
+          filterSelectOptions: departments?.map((department) => ({
+            text: department?.archived ? `${department?.name}-Deprecated` : department?.name,
+            value: department?._id,
+          })),
           size: 100,
           Cell: ({ cell, column, row }) =>
             row.original?.userId?.departmentId?.archived ? (
-              <SeverityPill color={'error'} tooltipTitle={'Deprecated'}>
-                {' '}
-                <Delete sx={{ fontSize: 15, mr: 0.5 }} /> {row.original?.userId?.departmentId?.name}
-              </SeverityPill>
+              <Typography sx={{ color: 'darkred' }}>
+                {`${row?.original?.userId?.departmentId?.name} - Deprecated` || '-'}
+              </Typography>
             ) : (
               <Typography>{row?.original?.userId?.departmentId?.name || '-'}</Typography>
             ),
@@ -269,8 +277,8 @@ const EvaluationsTable = React.memo(
           {
             accessorKey: 'userId.name',
             header: `Name`,
-            filterVariant: 'multi-select',
             size: 100,
+            enableSorting: false,
             Cell: ({ cell, column, row }) => <Typography>{row?.original?.userId?.name || '-'}</Typography>,
           },
           {
@@ -283,14 +291,13 @@ const EvaluationsTable = React.memo(
               return filterValue.includes(fullUsername);
             },
             header: `${data?.labels?.user?.singular || 'User'}`,
-            filterVariant: 'multi-select',
             size: 100,
+            enableSorting: false,
             Cell: ({ cell, column, row }) =>
               row?.original?.userId?.archived ? (
-                <SeverityPill color={'error'} tooltipTitle={'Deprecated'}>
-                  {' '}
-                  <Delete sx={{ fontSize: 15, mr: 0.5 }} /> {row?.original?.userId?.username || '-'}
-                </SeverityPill>
+                <Typography sx={{ color: 'darkred' }}>
+                  {`${row?.original?.userId?.username} - Deprecated` || '-'}
+                </Typography>
               ) : (
                 <Typography>{row?.original?.userId?.username || '-'}</Typography>
               ),
@@ -305,21 +312,21 @@ const EvaluationsTable = React.memo(
 
     const convertRowDatas = (rows) =>
       rows.map((row) => {
-        const startTime = convertUnixToLocalTime(row?.original?.startTime);
-        const endTime = row?.original?.endTime ? convertUnixToLocalTime(row?.original?.endTime) : 'Pending';
-        const duration = row?.original?.endTime ? row?.original?.endTime - row?.original?.startTime : undefined;
-        const values = row.original;
-        return [
-          values?.userId?.name || '-',
-          values?.userId?.username || '-',
-          values?.moduleId?.name || '-',
-          values?.userId?.domainId?.name || '-',
-          values?.departmentId?.name || '-',
-          `${startTime} - ${endTime}`,
-          duration > 0 ? convertTimeToDescription(duration) : '-',
-          values?.score || '-',
-          capitalizeFirstLetter(values?.status) || '-',
-        ];
+        const startTime = convertUnixToLocalTime(row?.startTime);
+        const endTime = row?.endTime ? convertUnixToLocalTime(row?.endTime) : 'Pending';
+        const duration = row?.endTime ? row?.endTime - row?.startTime : undefined;
+        const values = row;
+        return {
+          name: values?.userId?.name || '-',
+          username: values?.userId?.username || '-',
+          moduleName: values?.moduleId?.name || '-',
+          domainName: values?.userId?.domainId?.name || '-',
+          departmentName: values?.departmentId?.name || '-',
+          session: `${startTime} - ${endTime}`,
+          duration: duration > 0 ? convertTimeToDescription(duration) : '-',
+          score: values?.score || '-',
+          status: capitalizeFirstLetter(values?.status) || '-',
+        };
       });
 
     const handleExportRows = (rows, type) => {
@@ -346,9 +353,9 @@ const EvaluationsTable = React.memo(
         const doc = row?.original;
         let response;
         if (doc?.trainingType === 'jsonLifeCycle') {
-          response = await axios.get(`/training/${doc._id}`);
+          response = await axios.get(`/training/${row.id}`);
         } else if (!doc?.trainingType) {
-          response = await axios.get(`/evaluation/${doc.id}`);
+          response = await axios.get(`/evaluation/${row.id}`);
         } else {
           return;
         }
@@ -475,7 +482,7 @@ const EvaluationsTable = React.memo(
     return (
       <>
         <CustomGrid
-          data={updatedItems}
+          data={items}
           columns={columns}
           rowActionMenuItems={rowActionMenuItems}
           setRowSelection={setRowSelection}
@@ -486,11 +493,13 @@ const EvaluationsTable = React.memo(
           hasDeleteAccess={hasDeleteAccess}
           handleExportRows={handleExportRows}
           exportBtnRef={exportBtnRef}
-          updateAnalytics={updateAnalytics}
           enableRowClick
           enableFacetedValues
           enableAnalyticsHiddenButton
           analyticsHiddenBtnRef={analyticsHiddenBtnRef}
+          onUrlParamsChange={onUrlParamsChange}
+          rowCount={count}
+          tableSource="evaluations"
         />
 
         {/* View export options */}
@@ -503,7 +512,7 @@ const EvaluationsTable = React.memo(
           title={<Typography variant="h5">Export Options</Typography>}
         >
           <ExportOptions
-            headers={columns.map((column) => column.header)}
+            source={'evaluations'}
             exportRow={exportRow}
             closeExportOptions={() => setOpenExportOptions(false)}
           />

@@ -12,6 +12,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 
 import { Delete, Edit, FileDownload } from '@mui/icons-material';
+import { useNavigate, useParams } from 'react-router-dom';
 import CustomDialog from '../../components/CustomDialog';
 import CustomDateRangePicker from '../../components/DatePicker/CustomDateRangePicker';
 import { SeverityPill } from '../../components/SeverityPill';
@@ -20,10 +21,8 @@ import QuestionsGrid from '../../components/modules/QuestionsGrid';
 import TimeGrid from '../../components/modules/TimeGrid';
 import { useConfig } from '../../hooks/useConfig';
 import axios from '../../utils/axios';
-import { capitalizeFirstLetter, convertUnixToLocalTime, getInitials } from '../../utils/utils';
-import { useNavigate, useParams } from 'react-router-dom';
+import { capitalizeFirstLetter, convertUnixToLocalTime, getInitials, fetchScoresAndStatuses } from '../../utils/utils';
 
-import { fetchScoresAndStatuses } from '../../utils/utils';
 import QuestionsActionGrid from '../../components/modules/QuestionActionGrid';
 import DeviceGrid from '../../components/modules/DeviceGrid';
 import CustomGrid from '../../components/grid/CustomGrid';
@@ -53,7 +52,14 @@ const FAKE_DATA = [
   },
 ];
 
-export const DevicesTable = ({ count = 0, items = FAKE_DATA, fetchingData, exportBtnClicked, exportBtnFalse }) => {
+export const DevicesTable = ({
+  count = 0,
+  items = FAKE_DATA,
+  fetchingData,
+  exportBtnClicked,
+  exportBtnFalse,
+  onUrlParamsChange,
+}) => {
   const exportBtnRef = useRef(null);
   const [exportRow, setExportRow] = useState([]);
   const [openDeviceData, setOpenDeviceData] = useState(null);
@@ -88,44 +94,36 @@ export const DevicesTable = ({ count = 0, items = FAKE_DATA, fetchingData, expor
       {
         accessorKey: 'deviceId', // simple recommended way to define a column
         header: `${'Device ID'}`,
-        filterVariant: 'multi-select',
         size: 100,
-        Cell: ({ cell, column, row }) => {
-          return <Typography>{row?.original?.deviceId || '-'}</Typography>;
-        },
+        Cell: ({ cell, column, row }) => <Typography>{row?.original?.deviceId || '-'}</Typography>,
       },
       {
         accessorKey: 'macAddr', // simple recommended way to define a column
         header: `${'MAC Addresss'}`,
-        filterVariant: 'multi-select',
         size: 100,
-        Cell: ({ cell, column, row }) => {
-          return <Typography>{row?.original?.macAddr || '-'}</Typography>;
-        },
+        Cell: ({ cell, column, row }) => <Typography>{row?.original?.macAddr || '-'}</Typography>,
       },
       {
         accessorKey: 'uniqueDomainCount.toString()', // simple recommended way to define a column
         header: `Total Number of Domains`,
         filterVariant: 'multi-select',
-        size: 100,
-        Cell: ({ cell, column, row }) => {
-          return <Typography>{row?.original?.uniqueDomainCount.toString()}</Typography>;
-        },
+        size: 250,
+        enableColumnFilter: false,
+        Cell: ({ cell, column, row }) => <Typography>{row?.original?.uniqueDomainCount.toString()}</Typography>,
       },
       {
         accessorKey: 'uniqueUserCount.toString()', // simple recommended way to define a column
         header: `Total Number of Users`,
         filterVariant: 'multi-select',
-        size: 100,
-        Cell: ({ cell, column, row }) => {
-          return <Typography>{row?.original?.uniqueUserCount.toString()}</Typography>;
-        },
+        size: 250,
+        enableColumnFilter: false,
+        Cell: ({ cell, column, row }) => <Typography>{row?.original?.uniqueUserCount.toString()}</Typography>,
       },
       {
         accessorKey: 'domainsHistory[0].name', // simple recommended way to define a column
         header: `Last Logged In Domain`,
-        filterVariant: 'multi-select',
-        size: 100,
+        size: 250,
+        enableColumnFilter: false,
         Cell: ({ cell, column, row }) => {
           const time = convertUnixToLocalTime(row?.original?.domainsHistory[0]?.time);
           return (
@@ -140,7 +138,7 @@ export const DevicesTable = ({ count = 0, items = FAKE_DATA, fetchingData, expor
       {
         accessorKey: 'usersHistory[0].name', // simple recommended way to define a column
         header: `Last Logged In User`,
-        filterVariant: 'multi-select',
+        enableColumnFilter: false,
         size: 100,
         Cell: ({ cell, column, row }) => {
           const time = convertUnixToLocalTime(row?.original?.usersHistory[0]?.time);
@@ -155,6 +153,7 @@ export const DevicesTable = ({ count = 0, items = FAKE_DATA, fetchingData, expor
         accessorKey: 'ipAddress[0].name', // simple recommended way to define a column
         header: `Last Logged In IP`,
         filterVariant: 'multi-select',
+        enableColumnFilter: false,
         size: 100,
         Cell: ({ cell, column, row }) => {
           const time = convertUnixToLocalTime(row?.original?.ipAddress[0]?.time);
@@ -173,20 +172,22 @@ export const DevicesTable = ({ count = 0, items = FAKE_DATA, fetchingData, expor
   // Set below flag as well as use it as 'Row' Object to be passed inside forms
 
   const convertRowDatas = (rows) => {
-    return rows.map((row) => {
-      const startTime = convertUnixToLocalTime(row?.original?.startTime);
-      const endTime = row?.original?.endTime ? convertUnixToLocalTime(row?.original?.endTime) : 'Pending';
-      const values = row.original;
-      return [
-        values?.deviceId || '-',
-        values?.macAddr || '-',
-        values?.uniqueDomainCount.toString() || '-',
-        values?.uniqueUserCount.toString() || '-',
-        values?.domainsHistory[0]?.name || '-',
-        values?.usersHistory[0]?.name || '-',
-        values?.ipAddress[0]?.ip || '-',
-      ];
+    const data = rows.map((row) => {
+      const startTime = convertUnixToLocalTime(row?.startTime);
+      const endTime = row?.endTime ? convertUnixToLocalTime(row?.endTime) : 'Pending';
+      const values = row;
+      return {
+        deviceId: values?.deviceId || '-',
+        macAddress: values?.macAddr || '-',
+        uniqueDomainCount: values?.uniqueDomainCount.toString() || '-',
+        uniqueUserCount: values?.uniqueUserCount.toString() || '-',
+        domainsHistory: values?.domainsHistory[0]?.name || '-',
+        usersHistory: values?.usersHistory[0]?.name || '-',
+        ipAddress: values?.ipAddress[0]?.ip || '-',
+      };
     });
+    console.log(data);
+    return data;
   };
 
   const handleExportRows = (rows, type) => {
@@ -230,9 +231,12 @@ export const DevicesTable = ({ count = 0, items = FAKE_DATA, fetchingData, expor
         handleRowClick={handleRowClick}
         handleExportRows={handleExportRows}
         exportBtnRef={exportBtnRef}
-        enableRowClick={true}
-        enableFacetedValues={true}
+        enableRowClick
+        enableFacetedValues
         enableRowSelection={false}
+        onUrlParamsChange={onUrlParamsChange}
+        rowCount={count}
+        tableSource="devices"
       />
 
       {/* View export options */}
@@ -245,7 +249,7 @@ export const DevicesTable = ({ count = 0, items = FAKE_DATA, fetchingData, expor
         title={<Typography variant="h5">Export Options</Typography>}
       >
         <ExportOptions
-          headers={columns.map((column) => column.header)}
+          source={'devices'}
           exportRow={exportRow}
           closeExportOptions={() => setOpenExportOptions(false)}
         />

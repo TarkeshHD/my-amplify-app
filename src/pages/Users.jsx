@@ -1,24 +1,23 @@
-import { Add, CloseRounded, Download, PeopleAlt, Upload } from '@mui/icons-material';
-import { Box, Button, Container, DialogActions, IconButton, Stack, SvgIcon, Tooltip, Typography } from '@mui/material';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Add, Download, PeopleAlt, Upload } from '@mui/icons-material';
+import { Box, Button, Container, Stack, SvgIcon, Tooltip, Typography } from '@mui/material';
+import { useCallback, useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'react-toastify';
+import { isEmpty } from 'lodash';
+
 import CustomDialog from '../components/CustomDialog';
-import { SearchBar } from '../components/SearchBar';
 import AdminForm from '../components/users/AdminForm';
 import ImportUserDataForm from '../components/users/ImportUserDataForm';
 import SuperAdminForm from '../components/users/SuperAdminForm';
 import TraineeForm from '../components/users/TraineeForm';
 import { useAuth } from '../hooks/useAuth';
 import { useConfig } from '../hooks/useConfig';
-import { useSelection } from '../hooks/useSelection';
+import { useSharedData } from '../hooks/useSharedData';
 import { UsersTable } from '../sections/users/UsersTable';
 import axios from '../utils/axios';
-import { applyPagination } from '../utils/utils';
 import SuperAdminFormSso from '../components/users/SuperAdminFormSso';
 import AdminFormSso from '../components/users/AdminFormSso';
 import TraineeFormSso from '../components/users/TraineeFormSso';
-import AssignModulesForm from '../components/modules/AssignModulesForm';
 import AssignUsersForm from '../components/users/AssignUsersForm';
 import { PremiumFeatureWrapper } from '../components/premium/PremiumFeatureWrapper';
 
@@ -29,12 +28,11 @@ const Page = () => {
   const [openTraineeForm, setOpenTraineeForm] = useState(false);
   const [fetchingData, setFetchingData] = useState(false);
   const [data, setData] = useState([]);
-  const [modulesData, setModulesData] = useState([]);
-  const [domains, setDomains] = useState([]);
-  const [departments, setDepartments] = useState([]);
   const [ssoOn, setSsoOn] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
   const [openAssignForm, setOpenAssignForm] = useState(false);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const { domains, departments, modules } = useSharedData();
 
   const config = useConfig();
   const { data: configData } = config;
@@ -48,16 +46,21 @@ const Page = () => {
     );
   }, []);
 
-  const getUsers = async () => {
-    if (isGuestUser) return;
+  const getUsers = async (params) => {
     try {
       setFetchingData(true);
-      const response = await axios.get('/user/all');
-      // Sort the array in descending order by the "createdAt" property
-      const sortedData = [...(response.data?.details?.users ?? [])].sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
-      );
-      setData(sortedData);
+      const storedSizes = JSON.parse(localStorage.getItem('tablePageSize')) || {};
+      const storedPageSize = storedSizes?.users || 10;
+      const queryParams = {
+        page: params?.pageIndex ?? 1,
+        limit: params?.pageSize ?? storedPageSize,
+        sort: !isEmpty(params?.sorting) ? JSON.stringify(params?.sorting) : JSON.stringify({ createdAt: -1 }),
+        filters: JSON.stringify(params?.filters),
+      };
+
+      const response = await axios.get('/user/all', { params: queryParams });
+      setData(response?.data?.users?.docs);
+      setTotalUsers(response.data?.users?.totalDocs);
     } catch (error) {
       toast.error(error.message || 'Failed to fetch users');
       console.log(error);
@@ -70,63 +73,8 @@ const Page = () => {
     getUsers();
   };
 
-  const getDomains = async () => {
-    if (isGuestUser) return;
-    try {
-      const response = await axios.get('/domain/all');
-
-      setDomains(response?.data?.details);
-    } catch (error) {
-      toast.error(error.message || 'Failed to fetch users');
-      console.log(error);
-    }
-  };
-
-  const getDepartments = async () => {
-    if (isGuestUser) return;
-    try {
-      const response = await axios.get('/department/all');
-
-      setDepartments(response?.data?.details);
-    } catch (error) {
-      toast.error(error.message || 'Failed to fetch users');
-      console.log(error);
-    }
-  };
-
-  const getModules = async () => {
-    if (isGuestUser) return;
-    try {
-      setFetchingData(true);
-      const response = await axios.get('/module/all');
-      // Sort the array in descending order by the "createdAt" property
-      const sortedData = [...(response.data?.details ?? [])].sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
-      );
-
-      setModulesData(sortedData);
-    } catch (error) {
-      toast.error(error.message || `Failed to fetch ${data?.labels?.user?.plural?.toLowerCase() || 'users'}`);
-      console.log(error);
-    } finally {
-      setFetchingData(false);
-    }
-  };
-
-  useEffect(() => {
-    getDepartments();
-  }, []);
-
-  useEffect(() => {
-    getDomains();
-  }, []);
-
   useEffect(() => {
     getUsers();
-  }, []);
-
-  useEffect(() => {
-    getModules();
   }, []);
 
   const [exportBtnClicked, setExportBtnClicked] = useState(false);
@@ -280,13 +228,14 @@ const Page = () => {
 
             <UsersTable
               fetchingData={fetchingData}
-              count={data.length}
+              count={totalUsers}
               items={data}
               exportBtnClicked={exportBtnClicked}
               exportBtnFalse={exportBtnFalse}
               domains={domains}
               departments={departments}
               handleRefresh={handleRefresh}
+              onUrlParamsChange={getUsers}
               handleRowSelection={handleRowSelection}
             />
 
@@ -299,7 +248,11 @@ const Page = () => {
               open={openImportDataForm}
               title={<Typography variant="h5">Import User Data</Typography>}
             >
-              <ImportUserDataForm setOpenImportDataForm={setOpenImportDataForm} />
+              <ImportUserDataForm
+                setOpenImportDataForm={setOpenImportDataForm}
+                domains={domains}
+                departments={departments}
+              />
             </CustomDialog>
 
             {/* SUPER ADMIN FORM */}

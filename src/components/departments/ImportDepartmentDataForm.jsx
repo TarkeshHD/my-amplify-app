@@ -17,7 +17,7 @@ import { readExcelFile } from '../../utils/utils';
 
 const expectedValues = ['Name', 'Domain'];
 
-const ImportDepartmentDataForm = ({ setOpenImportDataForm }) => {
+const ImportDepartmentDataForm = ({ setOpenImportDataForm, domains }) => {
   const navigate = useNavigate();
   const [sendFiles, setSendFiles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -102,13 +102,27 @@ const ImportDepartmentDataForm = ({ setOpenImportDataForm }) => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Sheet 1');
 
-    // Define the header row
     const header = expectedValues;
+    const domainValues = domains?.map((domain) => domain.name);
 
-    // Add the header row to the worksheet
     worksheet.addRow(header);
 
-    // Generate a buffer for the Excel file
+    const domainColumnIndex = header.findIndex((col) => col === 'Domain') + 1;
+
+    if (domainColumnIndex > 0) {
+      worksheet.dataValidations.add(
+        `${String.fromCharCode(64 + domainColumnIndex)}2:${String.fromCharCode(64 + domainColumnIndex)}1000`,
+        {
+          type: 'list',
+          allowBlank: true,
+          formulae: [`"${domainValues.join(',')}"`],
+        },
+      );
+
+      const domainColumn = worksheet.getColumn(domainColumnIndex);
+      domainColumn.width = 15;
+    }
+
     return workbook.xlsx.writeBuffer().then((buffer) => {
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const url = window.URL.createObjectURL(blob);

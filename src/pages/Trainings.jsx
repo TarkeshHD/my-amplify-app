@@ -1,22 +1,23 @@
-import { Add, CloseRounded, Download, EventAvailable, PendingActions, People } from '@mui/icons-material';
-import { Box, Button, Container, DialogActions, IconButton, Stack, SvgIcon, Tooltip, Typography } from '@mui/material';
+import { Add, CloseRounded, CheckCircle, Download, EventAvailable, PendingActions, People } from '@mui/icons-material';
+import {
+  Box,
+  Button,
+  Container,
+  DialogActions,
+  Grid,
+  IconButton,
+  Stack,
+  SvgIcon,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'react-toastify';
-import CustomDialog from '../components/CustomDialog';
-import { SearchBar } from '../components/SearchBar';
-import QuestionsGrid from '../components/modules/QuestionsGrid';
-import AdminForm from '../components/users/AdminForm';
-import SuperAdminForm from '../components/users/SuperAdminForm';
-import TraineeForm from '../components/users/TraineeForm';
-import { useAuth } from '../hooks/useAuth';
+import { isEqual, isEmpty } from 'lodash';
 import { useConfig } from '../hooks/useConfig';
-import { useSelection } from '../hooks/useSelection';
-import { ModulesTable } from '../sections/modules/ModulesTable';
-import { UsersTable } from '../sections/users/UsersTable';
 import axios from '../utils/axios';
 import { TrainingsTable } from '../sections/trainings/TrainingsTable';
-import { isEqual } from 'lodash';
 import { DashboardTasksProgress } from '../sections/dashboard/DashboardTasksProgress';
 import { DashboardDiffCard } from '../sections/dashboard/DashboardDiffCard';
 import { PremiumFeatureWrapper } from '../components/premium/PremiumFeatureWrapper';
@@ -25,6 +26,7 @@ const Page = () => {
   const [fetchingData, setFetchingData] = useState(false);
   const [data, setData] = useState([]);
   const [exportBtnClicked, setExportBtnClicked] = useState(false);
+  const [totalTrainings, setTotalTrainings] = useState(0);
 
   const config = useConfig();
   const { data: configData } = config;
@@ -33,18 +35,26 @@ const Page = () => {
     totalTrainings: 0,
     totalUserAttempts: 0,
     incompletionRate: 0,
+    pendingTrainings: 0,
   });
 
-  const getTrainings = async () => {
+  const getTrainings = async (params) => {
     try {
       setFetchingData(true);
-      const response = await axios.get('/training/');
-      // Sort the array in descending order by the "createdAt" property
-      const sortedData = [...(response.data?.details ?? [])].sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
-      );
+      const storedSizes = JSON.parse(localStorage.getItem('tablePageSize')) || {};
+      const storedPageSize = storedSizes?.trainings || 10;
+      const queryParams = {
+        page: params?.pageIndex ?? 1,
+        limit: params?.pageSize ?? storedPageSize,
+        sort: !isEmpty(params?.sorting) ? JSON.stringify(params?.sorting) : JSON.stringify({ createdAt: -1 }),
+        filters: JSON.stringify(params?.filters),
+      };
 
-      setData(sortedData);
+      const response = await axios.get('/training/', { params: queryParams });
+
+      setData(response?.data?.trainings.docs);
+      setTotalTrainings(response?.data?.trainings.totalDocs);
+      setTrainingAnalytics(response?.data?.stats);
     } catch (error) {
       toast.error(error.message || `Failed to fetch ${data?.labels?.user?.plural?.toLowerCase() || 'users'}`);
       console.log(error);
@@ -105,56 +115,52 @@ const Page = () => {
             </Stack>
           </Stack>
 
-          <Box
-            sx={{
-              width: '100%',
-              overflowX: { xs: 'auto', md: 'visible' },
-              '&::-webkit-scrollbar': { display: 'none' },
-              scrollbarWidth: 'none',
-            }}
-          >
-            <Stack
-              direction="row"
-              spacing={4}
-              sx={{
-                pb: { xs: 2, md: 0 },
-                width: { xs: 'max-content', md: '100%' },
-              }}
-            >
-              <DashboardDiffCard
-                title={`Total Evaluations Done`}
-                icon={<EventAvailable />}
-                positive={trainingAnalytics?.totalEvaluations > 0}
-                sx={{ height: '100%', width: 350 }}
-                value={trainingAnalytics?.totalEvaluations || 0}
-                info={`Total number of trainings done.`}
-              />
-              <DashboardDiffCard
-                title={`Total User Attempts`}
-                icon={<People />}
-                iconColor={'primary.main'}
-                positive={trainingAnalytics?.totalUserAttempts > 0}
-                sx={{ height: '100%', width: 350 }}
-                value={trainingAnalytics?.totalUserAttempts || 0}
-                info={`Total number of users who tried trainings.`}
-              />
-              <DashboardTasksProgress
-                title="Incomplete Trainings"
-                icon={<PendingActions />}
-                sx={{ height: '100%', width: 350 }}
-                value={trainingAnalytics?.incompletionRate || 0}
-              />
-            </Stack>
+          <Box sx={{ mb: 3 }}>
+            <Grid container spacing={2}>
+              {/* Volume Stats */}
+              <Grid item xs={12} sm={6} md={3}>
+                <DashboardDiffCard
+                  title="Total Attempts"
+                  icon={<EventAvailable />}
+                  positive={trainingAnalytics?.totalTrainings > 0}
+                  value={trainingAnalytics?.totalTrainings || 0}
+                  info="Total number of training attempts"
+                />
+              </Grid>
+
+              {/* Completion Stats */}
+              <Grid item xs={12} sm={6} md={3}>
+                <DashboardDiffCard
+                  title="Trainings Completed"
+                  icon={<CheckCircle />}
+                  positive={trainingAnalytics?.totalTrainings - trainingAnalytics?.pendingTrainings > 0}
+                  value={trainingAnalytics?.totalTrainings - trainingAnalytics?.pendingTrainings || 0}
+                  info={`${Number(100 - trainingAnalytics?.incompletionRate || 0).toFixed(2)}% completion rate`}
+                />
+              </Grid>
+
+              {/* User Stats */}
+              <Grid item xs={12} sm={6} md={3}>
+                <DashboardDiffCard
+                  title="Unique Users"
+                  icon={<People />}
+                  iconColor="primary.main"
+                  positive={trainingAnalytics?.uniqueUsers > 0}
+                  value={trainingAnalytics?.uniqueUsers || 0}
+                  info="Number of unique participants"
+                />
+              </Grid>
+            </Grid>
           </Box>
 
           <TrainingsTable
             fetchingData={fetchingData}
             items={data}
-            count={data.length}
+            count={totalTrainings}
             exportBtnClicked={exportBtnClicked}
             exportBtnFalse={exportBtnFalse}
-            updateAnalytic={updateAnalytic}
             handleRefresh={handleRefresh}
+            onUrlParamsChange={getTrainings}
           />
         </Stack>
       </Container>

@@ -28,6 +28,7 @@ import { convertTimeToDescription, convertUnixToLocalTime, getTrainingAnalytics 
 import ConfirmationDialog from '../../components/ConfirmationDialog';
 import { useAuth } from '../../hooks/useAuth';
 import CustomGrid from '../../components/grid/CustomGrid';
+import { useSharedData } from '../../hooks/useSharedData';
 
 const statusMap = {
   ongoing: 'warning',
@@ -58,7 +59,7 @@ export const TrainingsTable = ({
   fetchingData,
   exportBtnClicked,
   exportBtnFalse,
-  updateAnalytic,
+  onUrlParamsChange,
   handleRefresh,
 }) => {
   const exportBtnRef = useRef(null);
@@ -67,6 +68,7 @@ export const TrainingsTable = ({
   const [openExportOptions, setOpenExportOptions] = useState(false);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
   const [rowSelection, setRowSelection] = useState({});
+  const { departments, modules, domains } = useSharedData();
 
   const analyticsHiddenBtnRef = useRef(null);
 
@@ -105,6 +107,7 @@ export const TrainingsTable = ({
   const columns = useMemo(() => {
     const baseColumns = [
       {
+        accessorKey: 'userId.departmentId.name',
         accessorFn: (row) =>
           `${row.userId?.departmentId?.name}${row.userId?.departmentId?.archived ? '-Deprecated' : ''}`,
         filterFn: (row, _columnId, filterValue) => {
@@ -116,16 +119,24 @@ export const TrainingsTable = ({
         },
         header: `${data?.labels?.department?.singular || 'Department'}`,
         filterVariant: 'multi-select',
+        filterSelectOptions: departments?.map((department) => ({ text: department?.name, value: department?._id })),
         size: 100,
         Cell: ({ cell, column, row }) =>
           row.original?.userId?.departmentId?.archived ? (
-            <SeverityPill color={'error'} tooltipTitle={'Deprecated'}>
-              {' '}
-              <Delete sx={{ fontSize: 15, mr: 0.5 }} /> {row.original?.userId?.departmentId?.name}
-            </SeverityPill>
+            <Typography sx={{ color: 'darkred' }}>
+              {`${row?.original?.userId?.departmentId?.name} - Deprecated` || '-'}
+            </Typography>
           ) : (
             <Typography>{row?.original?.userId?.departmentId?.name || '-'}</Typography>
           ),
+      },
+      {
+        accessorKey: 'userId.domainId.name', // simple recommended way to define a column
+        header: `${data?.labels?.domain?.singular || 'Domain'}`,
+        filterVariant: 'multi-select',
+        filterSelectOptions: domains?.map((domain) => ({ text: domain?.name, value: domain?._id })),
+        size: 100,
+        Cell: ({ cell, column, row }) => <Typography>{row?.original?.userId?.domainId?.name || '-'}</Typography>,
       },
       {
         accessorFn: (row) => `${row.moduleId?.name}${row.moduleId?.archived ? '-Deprecated' : ''}`,
@@ -138,13 +149,11 @@ export const TrainingsTable = ({
         },
         header: `${data?.labels?.module?.singular || 'Module'}`,
         filterVariant: 'multi-select',
+        filterSelectOptions: modules?.map((module) => ({ text: module?.name, value: module?._id })),
         size: 100,
         Cell: ({ cell, column, row }) =>
           row?.original?.moduleId?.archived ? (
-            <SeverityPill color={'error'} tooltipTitle={'Deprecated'}>
-              {' '}
-              <Delete sx={{ fontSize: 15 }} /> {row.original.moduleId.name}
-            </SeverityPill>
+            <Typography sx={{ color: 'darkred' }}>{`${row?.original?.moduleId?.name} - Deprecated` || '-'}</Typography>
           ) : (
             <Typography>{row?.original?.moduleId?.name || '-'}</Typography>
           ),
@@ -201,13 +210,13 @@ export const TrainingsTable = ({
       {
         accessorKey: 'duration', // simple recommended way to define a column
         header: 'Duration',
-        filterVariant: 'multi-select',
         Cell: ({ cell, column, row }) => {
           const endTime = row?.original?.endTime ? row?.original?.endTime : undefined;
           const startTime = row?.original?.startTime;
           const duration = endTime ? endTime - startTime : undefined;
           return <Typography>{duration > 0 ? convertTimeToDescription(duration) : '-'}</Typography>;
         },
+        enableColumnFilter: false,
       },
       {
         accessorKey: 'status', // simple recommended way to define a column
@@ -217,14 +226,11 @@ export const TrainingsTable = ({
           return <SeverityPill color={statusMap[status]}>{status}</SeverityPill>;
         },
         filterVariant: 'multi-select',
+        filterSelectOptions: Object.keys(statusMap).map((status) => ({
+          text: status.toUpperCase(),
+          value: status.toLowerCase(),
+        })),
       },
-      // {
-      //   accessorKey: 'userId.domainId.name', // simple recommended way to define a column
-      //   header: `${data?.labels?.domain?.singular || 'Domain'}`,
-      //   filterVariant: 'multi-select',
-      //   size: 100,
-      //   Cell: ({ cell, column, row }) => <Typography>{row?.original?.userId?.domainId?.name || '-'}</Typography>,
-      // },
     ];
 
     // Conditionally add the userId.username column if userId is present
@@ -233,7 +239,6 @@ export const TrainingsTable = ({
         {
           accessorKey: 'userId.name',
           header: `Name`,
-          filterVariant: 'multi-select',
           size: 100,
           Cell: ({ cell, column, row }) => <Typography>{row?.original?.userId?.name || '-'}</Typography>,
         },
@@ -254,20 +259,20 @@ export const TrainingsTable = ({
 
   const convertRowDatas = (rows) =>
     rows.map((row) => {
-      const startTime = convertUnixToLocalTime(row?.original?.startTime);
-      const endTime = row?.original?.endTime ? convertUnixToLocalTime(row?.original?.endTime) : 'Pending';
-      const duration = row?.original?.endTime ? row?.original?.endTime - row?.original?.startTime : undefined;
-      const values = row.original;
-      return [
-        values?.userId?.name || '-',
-        values?.userId?.username || '-',
-        values?.moduleId?.name || '-',
-        values?.userId?.domainId?.name || '-',
-        values?.userId?.departmentId?.name || '-',
-        `${startTime} - ${endTime}`,
-        duration > 0 ? convertTimeToDescription(duration) : '-',
-        values?.status || '-',
-      ];
+      const startTime = convertUnixToLocalTime(row?.startTime);
+      const endTime = row?.endTime ? convertUnixToLocalTime(row?.endTime) : 'Pending';
+      const duration = row?.endTime ? row?.endTime - row?.startTime : undefined;
+      const values = row;
+      return {
+        name: values?.userId?.name || '-',
+        username: values?.userId?.username || '-',
+        moduleName: values?.moduleId?.name || '-',
+        domainName: values?.userId?.domainId?.name || '-',
+        departmentName: values?.userId?.departmentId?.name || '-',
+        session: `${startTime} - ${endTime}`,
+        duration: duration > 0 ? convertTimeToDescription(duration) : '-',
+        status: values?.status || '-',
+      };
     });
 
   const handleExportRows = (rows, type) => {
@@ -389,11 +394,11 @@ export const TrainingsTable = ({
         hasDeleteAccess={hasDeleteAccess}
         handleExportRows={handleExportRows}
         exportBtnRef={exportBtnRef}
-        updateAnalytics={updateAnalytics}
         enableRowClick
         enableFacetedValues
-        enableAnalyticsHiddenButton
-        analyticsHiddenBtnRef={analyticsHiddenBtnRef}
+        rowCount={count}
+        onUrlParamsChange={onUrlParamsChange}
+        tableSource="trainings"
       />
       {/* View export options */}
       <CustomDialog
@@ -405,7 +410,7 @@ export const TrainingsTable = ({
         title={<Typography variant="h5">Export Options</Typography>}
       >
         <ExportOptions
-          headers={columns.map((column) => column.header)}
+          source={'trainings'}
           exportRow={exportRow}
           closeExportOptions={() => setOpenExportOptions(false)}
         />

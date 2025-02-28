@@ -65,6 +65,7 @@ export function getItems(labels) {
       title: labels?.evaluation?.plural || 'Evaluations',
       path: '/evaluations',
       doNotRenderForUser: [],
+      disabled: data?.features?.evaluation?.state === 'off',
       icon: (
         <SvgIcon fontSize="small">
           <Poll />
@@ -75,6 +76,7 @@ export function getItems(labels) {
       title: labels?.training?.plural || 'Trainings',
       path: '/trainings',
       doNotRenderForUser: [],
+      disabled: data?.features?.evaluation?.state === 'off',
       icon: (
         <SvgIcon fontSize="small">
           <FitnessCenterIcon />

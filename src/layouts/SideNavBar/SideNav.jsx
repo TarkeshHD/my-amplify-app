@@ -139,7 +139,7 @@ export const SideNav = (props) => {
             }}
           >
             {items.map((item) => {
-              if (item?.doNotRenderForUser?.includes(user.role)) {
+              if (item?.doNotRenderForUser?.includes(user.role) || item?.disabled) {
                 return false;
               }
               const active = item.path ? pathname === item.path : false;

@@ -4,6 +4,8 @@ import { Box, Button, Container, Stack, SvgIcon, Typography } from '@mui/materia
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'react-toastify';
+import { isEmpty } from 'lodash';
+
 import CustomDialog from '../components/CustomDialog';
 import DepartmentForm from '../components/departments/DepartmentForm';
 import { useAuth } from '../hooks/useAuth';
@@ -11,6 +13,7 @@ import { useConfig } from '../hooks/useConfig';
 import { DepartmentsTable } from '../sections/departments/DepartmentsTable';
 import axios from '../utils/axios';
 import ImportDepartmentDataForm from '../components/departments/ImportDepartmentDataForm';
+import { useSharedData } from '../hooks/useSharedData';
 
 const Page = () => {
   const [openDepartmentForm, setOpenDepartmentForm] = useState(false);
@@ -18,16 +21,26 @@ const Page = () => {
 
   const [fetchingData, setFetchingData] = useState(false);
   const [data, setData] = useState([]);
-  const [domains, setDomains] = useState([]);
+  const [totalDepartments, setTotalDepartments] = useState(0);
+  const { domains } = useSharedData();
 
   const config = useConfig();
   const { data: configData } = config;
 
-  const getDepartments = async () => {
+  const getDepartments = async (params) => {
     try {
       setFetchingData(true);
-      const response = await axios.get('/department/all');
-      setData(response?.data?.details);
+      const storedSizes = JSON.parse(localStorage.getItem('tablePageSize')) || {};
+      const storedPageSize = storedSizes?.departments || 10;
+      const queryParams = {
+        page: params?.pageIndex ?? 1,
+        limit: params?.pageSize ?? storedPageSize,
+        sort: !isEmpty(params?.sorting) ? JSON.stringify(params?.sorting) : JSON.stringify({ createdAt: -1 }),
+        filters: JSON.stringify(params?.filters),
+      };
+      const response = await axios.get('/department/all', { params: queryParams });
+      setData(response?.data?.departments?.docs);
+      setTotalDepartments(response?.data?.departments?.totalDocs);
     } catch (error) {
       toast.error(
         error.message || `Failed to fetch ${data?.labels?.department?.plural?.toLowerCase() || 'departments'}`,
@@ -38,20 +51,6 @@ const Page = () => {
     }
   };
 
-  const getDomains = async () => {
-    try {
-      const response = await axios.get('/domain/all');
-
-      setDomains(response?.data?.details);
-    } catch (error) {
-      toast.error(error.message || `Failed to fetch ${data?.labels?.user?.plural?.toLowerCase() || 'users'}`);
-      console.log(error);
-    }
-  };
-
-  useEffect(() => {
-    getDomains();
-  }, []);
   useEffect(() => {
     getDepartments();
   }, []);
@@ -119,10 +118,11 @@ const Page = () => {
           </Stack>
 
           <DepartmentsTable
-            count={data.length}
+            count={totalDepartments}
             items={data}
             fetchingData={fetchingData}
             domains={domains}
+            onUrlParamsChange={getDepartments}
             handleRefresh={handleRefresh}
           />
 
@@ -145,7 +145,7 @@ const Page = () => {
             open={openImportDataForm}
             title={<Typography variant="h5">Import Department Data</Typography>}
           >
-            <ImportDepartmentDataForm setOpenImportDataForm={setOpenImportDataForm} />
+            <ImportDepartmentDataForm setOpenImportDataForm={setOpenImportDataForm} domains={domains} />
           </CustomDialog>
         </Stack>
       </Container>

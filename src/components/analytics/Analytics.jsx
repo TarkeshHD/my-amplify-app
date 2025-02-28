@@ -11,7 +11,7 @@ import {
   Devices,
   WorkspacePremium,
 } from '@mui/icons-material';
-import { Alert, Button, Container, Unstable_Grid2 as Grid } from '@mui/material';
+import { Alert, Button, Container, CircularProgress, Unstable_Grid2 as Grid } from '@mui/material';
 
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -71,9 +71,11 @@ const Analytics = () => {
   const [successFormOpen, setSuccessFormOpen] = useState(false);
 
   const [domainName, setDomainName] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
     try {
+      setLoading(true);
       const response = await axios.get('/analytic/all');
 
       const { data } = response;
@@ -170,6 +172,7 @@ const Analytics = () => {
       setTop5FailureMoments(top5FailureMoments);
 
       setTop3Users(data?.details?.top3UsersByModules);
+      setLoading(false);
     } catch (error) {
       toast.error(`Fetch analytics! ${error.message}`);
       console.log(error);
@@ -201,6 +204,14 @@ const Analytics = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
     <Container maxWidth="xl">
       <Box sx={{ justifyContent: 'space-between', display: 'flex', alignItems: 'center' }}>
@@ -219,7 +230,7 @@ const Analytics = () => {
             }
             fileName="autovrse_training_report.pdf"
           >
-            {({ loading }) => (loading ? 'Loading document...' : <Button variant="contained">Generate report</Button>)}
+            {({ loading }) => (loading ? 'Loading...' : <Button variant="contained">Generate report</Button>)}
           </PDFDownloadLink>
         )}
       </Box>
@@ -234,6 +245,7 @@ const Analytics = () => {
         <Grid xs={12} sm={6} lg={3}>
           <DashboardDiffCard
             title={`Total ${data?.labels?.user?.plural || 'Users'}`}
+            toolTip={auth?.user?.role === 'admin' ? 'Total users in your domain' : 'Total users across all domains'}
             icon={<People />}
             difference={lastMonthUserPercentage}
             positive={lastMonthUserPercentage > 0}
@@ -245,6 +257,7 @@ const Analytics = () => {
         <Grid xs={12} sm={6} lg={3}>
           <DashboardDiffCard
             title="Time Spent In VR"
+            toolTip="Total time spent in VR by users where the evaluation was completed"
             icon={<HourglassEmpty />}
             iconColor="secondary.main"
             difference={lastMonthVRSessionPercentage}
@@ -256,6 +269,11 @@ const Analytics = () => {
         <Grid xs={12} sm={6} lg={3}>
           <DashboardDiffCard
             title={`${data?.labels?.user?.plural || 'Users'} Evaluated`}
+            toolTip={
+              auth?.user?.role === 'admin'
+                ? 'Total users evaluated in your domain'
+                : 'Total users evaluated across all domains'
+            }
             icon={<EventAvailable />}
             difference={lastMonthUsersEvaluated}
             positive={lastMonthUsersEvaluated > 0}
@@ -266,6 +284,7 @@ const Analytics = () => {
         <Grid xs={12} sm={6} lg={3}>
           <DashboardTasksProgress
             title="Passed Evaluations"
+            toolTip="Percentage of evaluations passed by users"
             icon={<TrendingUp />}
             iconColor={'success.main'}
             sx={{ height: '100%' }}
@@ -283,11 +302,13 @@ const Analytics = () => {
           <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: '', gap: 2 }}>
             <DashboardTasksProgress
               title={`Incomplete Evaluations`}
+              toolTip={`Percentage of evaluations that were not completed`}
               value={incompletionPercentage}
               icon={<PendingActions />}
             />
             <DashboardDiffCard
               title="Total Evaluation"
+              toolTip="Total number of evaluations done"
               value={evaluationCountValue}
               difference={lastMonthEvaluationCount}
               positive={lastMonthEvaluationCount > 0}
@@ -312,17 +333,20 @@ const Analytics = () => {
           <Grid item xs={12} sm={6} lg={3}>
             <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 2 }}>
               <PremiumFeatureWrapper message="" noLogo hideUpgradeButton>
-                <DashboardDiffCard
-                  title={`Total Number Of Device`}
-                  icon={<Devices />}
-                  iconColor={'primary.main'}
-                  value={deviceCount}
-                  difference={lastMonthDeviceCount}
-                  positive={lastMonthDeviceCount > 0}
-                />
+                {data?.features?.deviceLogin?.state === 'on' && (
+                  <DashboardDiffCard
+                    title={`Total Number Of Device`}
+                    icon={<Devices />}
+                    iconColor={'primary.main'}
+                    value={deviceCount}
+                    difference={lastMonthDeviceCount}
+                    positive={lastMonthDeviceCount > 0}
+                  />
+                )}
 
                 <DashboardDiffCard
                   title={`Total Number Of ${auth?.user?.role === 'admin' ? 'Department' : 'Domain'}`}
+                  toolTip={`Total number of ${auth?.user?.role === 'admin' ? 'department' : 'domain'}`}
                   value={domainCount}
                   icon={<DeviceHub />}
                   difference={0}
@@ -332,26 +356,6 @@ const Analytics = () => {
             </Box>
           </Grid>
         </>
-        {!(isFreeTrialUser && auth?.user?.role !== 'productAdmin') && (
-          <>
-            <Grid item xs={12}>
-              <DashboardBarChart
-                title="Monthly Evaluation Sessions"
-                chartSeries={[
-                  {
-                    name: 'Total Evaluations',
-                    data: monthlyTotalEval,
-                  },
-                  {
-                    name: 'Passed Evaluations',
-                    data: monthlyPassEval,
-                  },
-                ]}
-                sx={{ height: '100%' }}
-              />
-            </Grid>
-          </>
-        )}
         {isFreeTrialUser && auth?.user?.role !== 'productAdmin' && (
           <PremiumFeatureAlert
             message="Elevate Your VR Training Insights - Upgrade to Unlock Advanced Analytics"
