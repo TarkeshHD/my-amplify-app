@@ -49,14 +49,14 @@ export const TopNav = (props) => {
                 <Menu />
               </IconButton>
             )}
-            <Tooltip title="Search">
+            {/* <Tooltip title="Search">
               <IconButton>
                 <Search />
               </IconButton>
-            </Tooltip>
+            </Tooltip> */}
           </Stack>
           <Stack alignItems="center" direction="row" spacing={2}>
-            <Tooltip title="Contacts">
+            {/* <Tooltip title="Contacts">
               <IconButton>
                 <Group />
               </IconButton>
@@ -67,7 +67,7 @@ export const TopNav = (props) => {
                   <Notifications />
                 </Badge>
               </IconButton>
-            </Tooltip>
+            </Tooltip> */}
             <Avatar
               onClick={accountPopover.handleOpen}
               ref={accountPopover.anchorRef}

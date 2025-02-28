@@ -3,6 +3,7 @@ import { Box, Button, Container, DialogActions, IconButton, Stack, SvgIcon, Tool
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'react-toastify';
+import { isEmpty } from 'lodash';
 import CustomDialog from '../components/CustomDialog';
 import { SearchBar } from '../components/SearchBar';
 import DomainForm from '../components/domains/DomainForm';
@@ -16,6 +17,7 @@ import axios from '../utils/axios';
 import { applyPagination } from '../utils/utils';
 import ImportUserDataForm from '../components/users/ImportUserDataForm';
 import ImportDomainDataForm from '../components/domains/ImportDomainDataForm';
+import { useSharedData } from '../hooks/useSharedData';
 
 const Page = () => {
   const [openDomainForm, setOpenDomainForm] = useState(false);
@@ -23,16 +25,26 @@ const Page = () => {
 
   const [fetchingData, setFetchingData] = useState(false);
   const [data, setData] = useState([]);
-  const [flatDomains, setFlatDomains] = useState([]);
+  const [totalDomains, setTotalDomains] = useState(0);
+  const { domains: flatDomains } = useSharedData();
 
   const config = useConfig();
   const { data: configData } = config;
 
-  const getDomainsTree = async () => {
+  const getDomainsTree = async (params) => {
     try {
       setFetchingData(true);
-      const response = await axios.get('/domain/tree');
-      setData(response?.data?.details);
+      const storedSizes = JSON.parse(localStorage.getItem('tablePageSize')) || {};
+      const storedPageSize = storedSizes?.domains || 10;
+      const queryParams = {
+        page: params?.pageIndex ?? 1,
+        limit: params?.pageSize ?? storedPageSize,
+        sort: !isEmpty(params?.sorting) ? JSON.stringify(params?.sorting) : JSON.stringify({ createdAt: -1 }),
+        filters: JSON.stringify(params?.filters),
+      };
+      const response = await axios.get('/domain/tree', { params: queryParams });
+      setData(response?.data?.rootDomains?.docs);
+      setTotalDomains(response?.data?.rootDomains?.totalDocs);
     } catch (error) {
       toast.error(error.message || `Failed to fetch ${data?.labels?.user?.plural?.toLowerCase() || 'users'}`);
       console.log(error);
@@ -41,19 +53,6 @@ const Page = () => {
     }
   };
 
-  const getDomains = async () => {
-    try {
-      const response = await axios.get('/domain/all');
-      setFlatDomains(response?.data?.details);
-    } catch (error) {
-      toast.error(error.message || `Failed to fetch ${data?.labels?.user?.plural?.toLowerCase() || 'users'}`);
-      console.log(error);
-    }
-  };
-
-  useEffect(() => {
-    getDomains();
-  }, []);
   useEffect(() => {
     getDomainsTree();
   }, []);
@@ -121,10 +120,11 @@ const Page = () => {
           </Stack>
 
           <DomainsTable
-            count={data.length}
+            count={totalDomains}
             items={data}
             fetchingData={fetchingData}
             domains={flatDomains}
+            onUrlParamsChange={getDomainsTree}
             handleRefresh={handleRefresh}
           />
           {/* ADD DOMAIN */}

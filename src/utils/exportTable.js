@@ -3,8 +3,10 @@ import { ExportToCsv } from 'export-to-csv';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { toast } from 'react-toastify';
+import _ from 'lodash';
+import moment from 'moment-timezone';
 
-export const handleExportCsv = (headers, datas) => {
+export const handleExportCsv = (source, datas) => {
   try {
     const csvExporter = new ExportToCsv({
       fieldSeparator: ',',
@@ -13,7 +15,8 @@ export const handleExportCsv = (headers, datas) => {
       showLabels: true,
       useBom: true,
       useKeysAsHeaders: false,
-      headers: headers,
+      headers: Object.keys(datas?.[0]).map((key) => _.startCase(key)),
+      filename: `${source}-table-${moment().format('YYYY-MM-DD')}`,
     });
     csvExporter.generateCsv(datas);
     toast.success('Exported as CSV');
@@ -23,18 +26,18 @@ export const handleExportCsv = (headers, datas) => {
   }
 };
 
-export const handleExportExcel = async (headers, datas) => {
+export const handleExportExcel = async (source, datas) => {
   try {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Sheet 1');
 
     // Define the header row
-    const header = headers;
+    const header = Object.keys(datas?.[0]).map((key) => _.startCase(key));
 
     // Add the header row to the worksheet
     worksheet.addRow(header);
     datas.map((data) => {
-      worksheet.addRow(data);
+      worksheet.addRow(Object.values(data));
     });
 
     // Generate a buffer for the Excel file
@@ -43,7 +46,7 @@ export const handleExportExcel = async (headers, datas) => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'generated.xlsx';
+    a.download = `${source}-table-${moment().format('YYYY-MM-DD')}.xlsx`;
     a.click();
     toast.success('Exported as Excel');
   } catch (error) {
@@ -52,18 +55,18 @@ export const handleExportExcel = async (headers, datas) => {
   }
 };
 
-export const handleExportPdf = (headers, datas) => {
+export const handleExportPdf = (source, datas) => {
   try {
     const doc = new jsPDF();
 
     // Define the content of the PDF using jsPDF-AutoTable
     doc.autoTable({
-      head: [headers],
-      body: datas,
+      head: [Object.keys(datas?.[0]).map((key) => _.startCase(key))],
+      body: datas.map((data) => Object.values(data)),
     });
 
     // Save the PDF with a specific file name
-    doc.save('table.pdf');
+    doc.save(`${source}-table-${moment().format('YYYY-MM-DD')}.pdf`);
     toast.success('Exported as PDF');
   } catch (error) {
     console.error('Error exporting PDF:', error);

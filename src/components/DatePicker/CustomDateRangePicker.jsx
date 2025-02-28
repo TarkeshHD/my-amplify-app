@@ -43,7 +43,7 @@ function CustomDateRangePicker({ onChange, column }) {
   const resetFilter = (e) => {
     e.stopPropagation();
     setDateRange({ startDate: null, endDate: null, key: 'selection' });
-    column.setFilterValue([true, true]);
+    column.setFilterValue(undefined);
   };
 
   return (

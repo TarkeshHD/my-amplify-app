@@ -2,12 +2,6 @@
 import { Delete, Edit, Quiz, EditNote, DriveFileRenameOutline, FilterAltOff } from '@mui/icons-material';
 import TimerIcon from '@mui/icons-material/Timer';
 import { Box, Card, MenuItem, Stack, Typography, IconButton, Tooltip } from '@mui/material';
-import {
-  MaterialReactTable,
-  MRT_FullScreenToggleButton as MRTFullScreenToggleButton,
-  MRT_ShowHideColumnsButton as MRTShowHideColumnsButton,
-  MRT_ToggleFiltersButton as MRTToggleFiltersButton,
-} from 'material-react-table';
 import PropTypes from 'prop-types';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { isEmpty } from 'lodash';
@@ -29,6 +23,8 @@ import noImagesAvailable from '../../assets/no_image_available.jpg';
 import ModuleEditJsonForm from '../../components/modules/ModuleEditJsonForm';
 import JsonLifeCycleEvaluationGrid from '../../components/modules/JsonLifeCycleEvaluationGrid';
 import CustomGrid from '../../components/grid/CustomGrid';
+import { useSharedData } from '../../hooks/useSharedData';
+import { useConfig } from '../../hooks/useConfig';
 
 export const ModulesTable = ({
   count = 0,
@@ -39,10 +35,16 @@ export const ModulesTable = ({
   departments = [],
   users = [],
   handleRefresh,
+  onUrlParamsChange,
 }) => {
   const tableRef = useRef(null);
 
   const currentUser = useAuth();
+  const { modules: moduleOptions } = useSharedData();
+
+  const config = useConfig();
+  const { data: configData } = config;
+  const hideThumbnail = configData?.features?.modules?.columns?.thumbnail === 'off';
 
   const columns = useMemo(
     () => [
@@ -53,6 +55,8 @@ export const ModulesTable = ({
       {
         accessorKey: 'thumbnail', // simple recommended way to define a column
         header: 'Thumbnail',
+        enableColumnFilter: false,
+        enableHiding: false,
         Cell: ({ cell, column }) => (
           <Box sx={{}}>
             <img
@@ -70,11 +74,14 @@ export const ModulesTable = ({
       {
         accessorKey: 'name', // simple recommended way to define a column
         header: 'Name',
+        filterVariant: 'multi-select',
+        filterSelectOptions: moduleOptions?.map((module) => ({ text: module?.name, value: module?.name })),
       },
 
       {
         accessorKey: 'description', // simple recommended way to define a column
         header: 'Description',
+        enableColumnFilter: false,
       },
     ],
     [],
@@ -244,6 +251,10 @@ export const ModulesTable = ({
         setShowConfirmationDialog={setShowConfirmationDialog}
         hasDeleteAccess={hasDeleteAccess}
         showExportButton={false}
+        onUrlParamsChange={onUrlParamsChange}
+        rowCount={count}
+        tableState={{ columnVisibility: { thumbnail: !hideThumbnail } }}
+        tableSource="modules"
       />
 
       {/* Questions Form */}
@@ -273,6 +284,8 @@ export const ModulesTable = ({
           isEdit
           moduleAccess={openAssignModules?.moduleAccessId}
           users={users}
+          handleRefresh={handleRefresh}
+          setOpenAssignForm={setOpenAssignModules}
         />
       </CustomDialog>
 

@@ -30,7 +30,7 @@ export default function AdminForm({ isEdit, currentUser, domains = [], handleClo
   const NewUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     username: Yup.string().required('Username is required'),
-    password: Yup.string().required('Password is required'),
+    password: !isEdit ? Yup.string().required('Password is required') : undefined,
     domain: Yup.string()
       .required(`${data?.labels?.domain?.singular || 'Domain'} is required`)
       .notOneOf(['None'], `Select one ${data?.labels?.domain?.singular || 'Domain'}`),

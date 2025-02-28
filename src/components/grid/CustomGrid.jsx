@@ -1,13 +1,14 @@
+import { useState, useEffect, useRef } from 'react';
 import {
   MaterialReactTable,
   MRT_FullScreenToggleButton as MRTFullScreenToggleButton,
   MRT_ShowHideColumnsButton as MRTShowHideColumnsButton,
   MRT_ToggleFiltersButton as MRTToggleFiltersButton,
 } from 'material-react-table';
-import { isEmpty } from 'lodash';
 import { Box, Button, Card, IconButton, Tooltip } from '@mui/material';
 import { Delete, FilterAltOff } from '@mui/icons-material';
-import PropTypes from 'prop-types';
+import { isEmpty } from 'lodash';
+import axios from '../../utils/axios';
 
 const CustomGrid = (props) => {
   const {
@@ -18,12 +19,10 @@ const CustomGrid = (props) => {
     setRowSelection,
     enableColumnOrdering = true,
     rowSelection,
-    rowsPerPageOptions = [5, 10, 15, 20, 25],
-    enableGlobalFilterModes = true,
-    positionGlobalFilter = 'left',
+    rowsPerPageOptions = [5, 10, 20, 30],
+    enableGlobalFilterModes = false,
     fetchingData,
     enableRowActions = true,
-    enableSearch = true,
     handleRowClick,
     enableRowClick = true,
     enableClearFilters = true,
@@ -33,15 +32,56 @@ const CustomGrid = (props) => {
     hasDeleteAccess = false,
     handleExportRows,
     showExportButton = true,
-    updateAnalytics,
     enableFacetedValues = true,
-    enableAnalyticsHiddenButton = false,
-    analyticsHiddenBtnRef,
     exportBtnRef,
     enableExpanding = false,
+    onUrlParamsChange,
+    rowCount,
+    tableSource,
+    tableState,
   } = props;
 
-  const initialState = { pagination: { pageSize: 10 }, showGlobalFilter: true, showColumnFilters: true };
+  const [columnFilters, setColumnFilters] = useState([]);
+  const [sorting, setSorting] = useState([]);
+  const [pagination, setPagination] = useState(() => {
+    const storedSizes = JSON.parse(localStorage.getItem('tablePageSize')) || {};
+    return {
+      pageIndex: 0,
+      pageSize: storedSizes[tableSource] || 10,
+    };
+  });
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    onUrlParamsChange?.({
+      pageIndex: (pagination.pageIndex || 0) + 1,
+      pageSize: pagination.pageSize,
+      sorting: formatSorting(sorting),
+      filters: columnFilters,
+    });
+
+    const storedSizes = JSON.parse(localStorage.getItem('tablePageSize')) || {};
+    localStorage.setItem(
+      'tablePageSize',
+      JSON.stringify({
+        ...storedSizes,
+        [tableSource]: pagination.pageSize,
+      }),
+    );
+  }, [pagination.pageIndex, pagination.pageSize, sorting, columnFilters]);
+
+  const initialState = {
+    pagination: {
+      pageIndex: 1,
+      pageSize: pagination.pageSize,
+    },
+    showColumnFilters: true,
+    ...tableState,
+  };
   const searchProps = {
     placeholder: `Search ${data.length} rows`,
     sx: { minWidth: '300px' },
@@ -49,6 +89,9 @@ const CustomGrid = (props) => {
   };
   const state = {
     isLoading: fetchingData,
+    columnFilters,
+    sorting,
+    pagination,
   };
   if (enableRowSelection) {
     state.rowSelection = rowSelection;
@@ -58,6 +101,15 @@ const CustomGrid = (props) => {
     const columnFilters = table?.getState()?.columnFilters;
     // TODO: Need to handle filter reset and checks only with  table?.getState()?.columnFilters;
     return !columnFilters || columnFilters.every((filter) => filter.value.length === 0);
+  };
+
+  const formatSorting = (value) => {
+    value = value?.[0];
+    if (isEmpty(value)) return {};
+
+    const field = String(value?.id).toLowerCase();
+    const direction = value?.desc ? -1 : 1;
+    return { [field]: direction };
   };
 
   const ClearFilters = ({ table }) => (
@@ -73,10 +125,6 @@ const CustomGrid = (props) => {
     </Tooltip>
   );
 
-  ClearFilters.propTypes = {
-    table: PropTypes.object.isRequired,
-  };
-
   const BulkDelete = () => (
     <Tooltip title="Bulk delete" arrow>
       <IconButton
@@ -88,38 +136,30 @@ const CustomGrid = (props) => {
     </Tooltip>
   );
 
+  const exportData = async (table) => {
+    try {
+      const endPointMap = {
+        users: '/user/all',
+        devices: '/device/all',
+        evaluations: '/evaluation/all',
+        trainings: '/training/',
+      };
+
+      const response = await axios.get(endPointMap[tableSource]);
+      handleExportRows(response?.data?.[tableSource]?.docs);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const ExportButton = ({ table }) => (
     <Button
       ref={exportBtnRef}
       sx={{ display: 'none' }}
       disabled={table?.getPrePaginationRowModel().rows.length === 0}
-      onClick={() => {
-        handleExportRows(table.getPrePaginationRowModel().rows);
-      }}
+      onClick={() => exportData(table.getPrePaginationRowModel().rows)}
     />
   );
-
-  ExportButton.propTypes = {
-    table: PropTypes.object.isRequired,
-  };
-
-  const AnalyticsHiddenButton = ({ table }) => (
-    <Button
-      ref={analyticsHiddenBtnRef}
-      sx={{ display: 'none' }}
-      disabled={table?.getPrePaginationRowModel().rows.length === 0}
-      onClick={() => {
-        updateAnalytics(table.getPrePaginationRowModel().rows);
-      }}
-      variant="contained"
-    >
-      Analytics Hidden Button
-    </Button>
-  );
-
-  AnalyticsHiddenButton.propTypes = {
-    table: PropTypes.object.isRequired,
-  };
 
   return (
     <Card>
@@ -129,7 +169,6 @@ const CustomGrid = (props) => {
             {enableClearFilters && <ClearFilters table={table} />}
             {enableBulkDelete && <BulkDelete table={table} />}
             {showExportButton && <ExportButton table={table} />}
-            {enableAnalyticsHiddenButton && <AnalyticsHiddenButton table={table} />}
             <MRTToggleFiltersButton table={table} />
             <MRTShowHideColumnsButton table={table} />
             <MRTFullScreenToggleButton table={table} />
@@ -154,9 +193,8 @@ const CustomGrid = (props) => {
         muiTablePaginationProps={{
           rowsPerPageOptions,
         }}
+        enableGlobalFilter={false}
         enableGlobalFilterModes={enableGlobalFilterModes}
-        positionGlobalFilter={positionGlobalFilter}
-        muiSearchTextFieldProps={enableSearch ? searchProps : {}}
         enableFacetedValues={enableFacetedValues}
         muiTableBodyRowProps={
           enableRowClick
@@ -168,53 +206,18 @@ const CustomGrid = (props) => {
               })
             : {}
         }
-        renderEmptyRowsFallback={
-          !isEmpty(updateAnalytics)
-            ? () => {
-                updateAnalytics([]);
-              }
-            : undefined
-        }
         enableExpanding={enableExpanding}
         getSubRows={enableExpanding ? (row) => row.nestedDomains : undefined}
+        manualFiltering
+        manualPagination
+        manualSorting
+        onPaginationChange={setPagination}
+        onSortingChange={setSorting}
+        onColumnFiltersChange={setColumnFilters}
+        rowCount={rowCount}
       />
     </Card>
   );
-};
-
-CustomGrid.propTypes = {
-  initialState: PropTypes.object,
-  positionActionsColumn: PropTypes.oneOf(['first', 'last']),
-  columns: PropTypes.arrayOf(PropTypes.object).isRequired,
-  data: PropTypes.arrayOf(PropTypes.object).isRequired,
-  enableRowSelection: PropTypes.bool,
-  setRowSelection: PropTypes.func,
-  enableColumnOrdering: PropTypes.bool,
-  rowSelection: PropTypes.object,
-  rowsPerPageOptions: PropTypes.arrayOf(PropTypes.number),
-  enableGlobalFilterModes: PropTypes.bool,
-  positionGlobalFilter: PropTypes.oneOf(['left', 'right']),
-  fetchingData: PropTypes.bool,
-  enableRowActions: PropTypes.bool,
-  enableSearch: PropTypes.bool,
-  handleRowClick: PropTypes.func,
-  enableRowClick: PropTypes.bool,
-  enableClearFilters: PropTypes.bool,
-  enableBulkDelete: PropTypes.bool,
-  setShowConfirmationDialog: PropTypes.func,
-  rowActionMenuItems: PropTypes.func,
-  hasDeleteAccess: PropTypes.bool,
-  handleExportRows: PropTypes.func,
-  showExportButton: PropTypes.bool,
-  updateAnalytics: PropTypes.func,
-  enableFacetedValues: PropTypes.bool,
-  enableAnalyticsHiddenButton: PropTypes.bool,
-  analyticsHiddenBtnRef: PropTypes.oneOfType([
-    PropTypes.func,
-    PropTypes.shape({ current: PropTypes.instanceOf(Element) }),
-  ]),
-  exportBtnRef: PropTypes.oneOfType([PropTypes.func, PropTypes.shape({ current: PropTypes.instanceOf(Element) })]),
-  enableExpanding: PropTypes.bool,
 };
 
 export default CustomGrid;

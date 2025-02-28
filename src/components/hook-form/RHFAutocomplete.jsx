@@ -16,6 +16,7 @@ export default function RHFAutocomplete({ onChangeCustom = undefined, name, rule
           handleHomeEndKeys
           options={options}
           getOptionLabel={getOptionLabel}
+          disabled={rest.disabled}
           renderInput={(params) => (
             <TextField {...params} {...rest} inputRef={ref} error={invalid} helperText={error?.message} />
           )}

@@ -1,6 +1,7 @@
 import { Add, Download, PeopleAlt, Upload } from '@mui/icons-material';
 import { Alert, Box, Button, Container, Stack, SvgIcon, Tooltip, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
+import { isEmpty } from 'lodash';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'react-toastify';
 import CustomDialog from '../components/CustomDialog';
@@ -10,6 +11,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useConfig } from '../hooks/useConfig';
 import { ModulesTable } from '../sections/modules/ModulesTable';
 import axios from '../utils/axios';
+import { useSharedData } from '../hooks/useSharedData';
 import { PremiumFeatureWrapper } from '../components/premium/PremiumFeatureWrapper';
 
 const Page = () => {
@@ -18,9 +20,9 @@ const Page = () => {
   const [fetchingData, setFetchingData] = useState(false);
   const [data, setData] = useState([]);
   const [selectedRows, setSelectedRows] = useState([]);
-  const [domains, setDomains] = useState([]);
-  const [departments, setDepartments] = useState([]);
+  const { domains, departments } = useSharedData();
   const [users, setUsers] = useState([]);
+  const [totalModules, setTotalModules] = useState(0);
 
   // For Tabs in add modules popup
   const [selectedTabModuleForm, setSelectedTabModuleForm] = useState('one');
@@ -33,17 +35,23 @@ const Page = () => {
   const { data: configData } = config;
   const isGuestUser = configData?.freeTrial && user?.role !== 'productAdmin';
 
-  const getModules = async () => {
+  const getModules = async (params) => {
     if (isGuestUser) return;
     try {
       setFetchingData(true);
-      const response = await axios.get('/module/all');
-      // Sort the array in descending order by the "createdAt" property
-      const sortedData = [...(response.data?.details ?? [])].sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
-      );
+      const storedSizes = JSON.parse(localStorage.getItem('tablePageSize')) || {};
+      const storedPageSize = storedSizes?.modules || 10;
+      const queryParams = {
+        page: params?.pageIndex ?? 1,
+        limit: params?.pageSize ?? storedPageSize,
+        sort: !isEmpty(params?.sorting) ? JSON.stringify(params?.sorting) : JSON.stringify({ createdAt: -1 }),
+        filters: JSON.stringify(params?.filters),
+      };
 
-      setData(sortedData);
+      const response = await axios.get('/module/all', { params: queryParams });
+      // Sort the array in descending order by the "createdAt" property
+      setData(response?.data?.modules?.docs);
+      setTotalModules(response.data?.modules?.totalDocs);
     } catch (error) {
       toast.error(error.message || `Failed to fetch ${data?.labels?.user?.plural?.toLowerCase() || 'users'}`);
       console.log(error);
@@ -52,50 +60,16 @@ const Page = () => {
     }
   };
 
-  const getDomains = async () => {
-    if (isGuestUser) return;
-    try {
-      const response = await axios.get('/domain/all');
-
-      setDomains(response?.data?.details);
-    } catch (error) {
-      toast.error(error.message || `Failed to fetch ${data?.labels?.domain?.plural.toLowerCase() || 'domains'}`);
-      console.log(error);
-    }
-  };
-
-  const getDepartments = async () => {
-    if (isGuestUser) return;
-    try {
-      const response = await axios.get('/department/all');
-
-      setDepartments(response?.data?.details);
-    } catch (error) {
-      toast.error(
-        error.message || `Failed to fetch ${data?.labels?.department?.plural.toLowerCase() || 'departments'}`,
-      );
-      console.log(error);
-    }
-  };
-
   const getUsers = async () => {
     if (isGuestUser) return;
     try {
       const response = await axios.get('/user/all');
-      setUsers(response?.data?.details.users);
+      setUsers(response?.data?.users?.docs);
     } catch (error) {
       toast.error(error.message || `Failed to fetch ${data?.labels?.user?.plural?.toLowerCase() || 'users'}`);
       console.log(error);
     }
   };
-
-  useEffect(() => {
-    getDepartments();
-  }, []);
-
-  useEffect(() => {
-    getDomains();
-  }, []);
 
   useEffect(() => {
     getModules();
@@ -187,11 +161,13 @@ const Page = () => {
               handleRowSelection={handleRowSelection}
               items={data}
               fetchingData={fetchingData}
-              count={data.length}
+              count={totalModules}
               domains={domains}
               departments={departments}
               users={users}
               handleRefresh={handleRefresh}
+              onUrlParamsChange={getModules}
+              setOpenAssignForm={setOpenAssignForm}
             />
 
             {/* MODULE FORM */}
@@ -219,6 +195,8 @@ const Page = () => {
                 domains={domains}
                 departments={departments}
                 users={users}
+                handleRefresh={handleRefresh}
+                setOpenAssignForm={setOpenAssignForm}
               />
             </CustomDialog>
           </Stack>

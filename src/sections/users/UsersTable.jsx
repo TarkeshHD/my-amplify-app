@@ -29,6 +29,7 @@ export const UsersTable = ({
   departments,
   handleRefresh,
   handleRowSelection,
+  onUrlParamsChange,
 }) => {
   console.log('FETCHING DATA', fetchingData);
   const exportBtnRef = useRef(null);
@@ -69,22 +70,23 @@ export const UsersTable = ({
         {
           accessorKey: 'name', // simple recommended way to define a column
           header: 'Name',
-          enableColumnFilter: false,
         },
         {
           accessorKey: 'username', // simple recommended way to define a column
           header: 'Username',
-          enableColumnFilter: false,
         },
         {
           accessorKey: 'role', // simple recommended way to define a column
           header: 'Role',
           filterVariant: 'multi-select',
+          filterSelectOptions: data?.roles.map((role) => ({ text: role, value: role })),
         },
         {
           accessorFn: (row) => row?.domainId?.name || 'NA', // simple recommended way to define a column
           header: `${data?.labels?.domain?.singular || 'Domain'}`,
           filterVariant: 'multi-select',
+          enableSorting: false,
+          filterSelectOptions: domains?.map((domain) => ({ text: domain?.name, value: domain?._id })),
         },
         data?.features?.traineeType?.state === 'on'
           ? {
@@ -99,9 +101,11 @@ export const UsersTable = ({
           accessorFn: (row) => row?.departmentId?.name || 'NA', // simple recommended way to define a column
           header: `${data?.labels?.department?.singular || 'Department'}`,
           filterVariant: 'multi-select',
+          enableSorting: false,
+          filterSelectOptions: departments?.map((department) => ({ text: department?.name, value: department?._id })),
         },
       ].filter((column) => column !== null), // Filter out null columns
-    [],
+    [domains, departments],
   );
 
   // Set below flag as well as use it as 'Row' Object to be passed inside forms
@@ -110,19 +114,19 @@ export const UsersTable = ({
 
   const convertRowDatas = (rows) =>
     rows.map((row) => {
-      const values = row?.original;
-      const convertedValue = [
-        values?.name || 'NA',
-        values?.username || 'NA',
-        values?.role || 'NA',
-        values?.domainId?.name || 'NA',
-      ];
+      const values = row;
+      const convertedValue = {
+        name: values?.name || 'NA',
+        username: values?.username || 'NA',
+        role: values?.role || 'NA',
+        domainName: values?.domainId?.name || 'NA',
+        departmentName: values?.departmentId?.name || 'NA',
+      };
 
       // Add trainee Type values, if it exist
       if (data?.features?.traineeType?.state === 'on') {
-        convertedValue.push(values?.traineeType || 'NA');
+        convertedValue.traineeType = values?.traineeType || 'NA';
       }
-      convertedValue.push(values?.departmentId?.name || 'NA');
       return convertedValue;
     });
 
@@ -232,6 +236,8 @@ export const UsersTable = ({
     <>
       <CustomGrid
         data={items}
+        onUrlParamsChange={onUrlParamsChange}
+        rowCount={count}
         columns={columns}
         rowActionMenuItems={rowActionMenuItems}
         setRowSelection={setRowSelection}
@@ -242,6 +248,7 @@ export const UsersTable = ({
         hasDeleteAccess={hasDeleteAccess}
         handleExportRows={handleExportRows}
         exportBtnRef={exportBtnRef}
+        tableSource="users"
       />
 
       {/* View export options */}
@@ -252,11 +259,7 @@ export const UsersTable = ({
         open={Boolean(openExportOptions)}
         title={<Typography variant="h5">Export Options</Typography>}
       >
-        <ExportOptions
-          headers={columns.map((column) => column.header)}
-          exportRow={exportRow}
-          closeExportOptions={() => setOpenExportOptions(false)}
-        />
+        <ExportOptions source={'users'} exportRow={exportRow} closeExportOptions={() => setOpenExportOptions(false)} />
       </CustomDialog>
 
       {/* Edit Password Form */}

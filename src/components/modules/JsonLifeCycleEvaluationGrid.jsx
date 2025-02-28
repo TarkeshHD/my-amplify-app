@@ -88,7 +88,7 @@ const JsonLifeCycleEvaluationGrid = ({ evalData, showModule = false }) => {
 
   const renderQuestion = (moment) => {
     // Extract the part of the string that starts with "Question" and ends before "Right Options"
-    const questionText = moment?.answers[0]?.object?.split('Right Options:')[0]?.replace('Question:', '')?.trim();
+    const questionText = moment?.answers?.[0]?.object?.split('Right Options:')?.[0]?.replace('Question:', '')?.trim();
 
     return `${moment.momentName}: ${questionText || ''}`;
   };
@@ -148,7 +148,7 @@ const JsonLifeCycleEvaluationGrid = ({ evalData, showModule = false }) => {
 
     // If there is a wrong answer, we extract the "Right Options" from the "onWrong" answer
     const wrongAnswer = onWrongAnswers.length > 0 ? onWrongAnswers[0] : null;
-    const correctOption = wrongAnswer?.object?.split('Right Options:')[1]?.split('Selected Options:')[0]?.trim();
+    const correctOption = wrongAnswer?.object?.split('Right Options:')[1]?.split('Selected Options:')?.[0]?.trim();
 
     return (
       <Box m={4}>

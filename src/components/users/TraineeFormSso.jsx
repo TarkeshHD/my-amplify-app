@@ -11,10 +11,10 @@ import {
 } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { useForm } from 'react-hook-form';
+import { toast } from 'react-toastify';
 import { FormProvider } from '../hook-form';
 import RHFAutocomplete from '../hook-form/RHFAutocomplete';
 import axios from '../../utils/axios';
-import { toast } from 'react-toastify';
 
 const TraineeFormSso = ({ domains, departments }) => {
   const [inviteLink, setInviteLink] = useState('');
@@ -44,7 +44,7 @@ const TraineeFormSso = ({ domains, departments }) => {
   const fetchInviteLinkFromBackend = async (domainId, departmentId) => {
     setIsLoading(true);
     // Replace with actual API call
-    const response = await axios.post('/auth/create-invite-link', { role: 'user', domainId: domainId, departmentId });
+    const response = await axios.post('/auth/create-invite-link', { role: 'user', domainId, departmentId });
 
     // Simulating a fetch call with a timeout
     setTimeout(() => {
@@ -87,7 +87,7 @@ const TraineeFormSso = ({ domains, departments }) => {
         </Typography>
         <RHFAutocomplete
           name="department"
-          options={departments}
+          options={[...departments.filter((dept) => dept?.domainId?._id === selectedDomain)]}
           control={control}
           getOptionLabel={(option) => {
             if (typeof option === 'string') {
@@ -95,6 +95,7 @@ const TraineeFormSso = ({ domains, departments }) => {
             }
             return option?.name || '';
           }}
+          disabled={!selectedDomain}
           onChangeCustom={(value) => {
             setSelectedDepartment(value?._id || '');
           }}

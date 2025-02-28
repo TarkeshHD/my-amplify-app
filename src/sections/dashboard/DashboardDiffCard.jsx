@@ -1,11 +1,11 @@
 import PropTypes from 'prop-types';
 
-import { ArrowDownward, ArrowUpward, CurrencyRupee } from '@mui/icons-material';
-import { Avatar, Card, CardContent, Stack, SvgIcon, Typography } from '@mui/material';
+import { ArrowDownward, ArrowUpward, Info as InfoIcon } from '@mui/icons-material';
+import { Avatar, Card, CardContent, Stack, SvgIcon, Typography, Tooltip } from '@mui/material';
 import React from 'react';
 
 export const DashboardDiffCard = (props) => {
-  const { difference = null, positive, sx, value, title, icon, iconColor, info } = props;
+  const { difference = null, positive, sx, value, title, icon, iconColor, info, toolTip } = props;
 
   let subtextTitle = 'h4';
   if (!icon) {
@@ -16,9 +16,19 @@ export const DashboardDiffCard = (props) => {
       <CardContent>
         <Stack alignItems="flex-start" direction="row" justifyContent="space-between" spacing={3}>
           <Stack spacing={1}>
-            <Typography color="text.secondary" variant="overline">
-              {title}
-            </Typography>
+            <Stack direction="row" spacing={1} alignItems="center">
+              {toolTip ? (
+                <Tooltip title={toolTip} arrow placement="top">
+                  <Typography color="text.secondary" variant="overline" sx={{ cursor: 'help' }}>
+                    {title}
+                  </Typography>
+                </Tooltip>
+              ) : (
+                <Typography color="text.secondary" variant="overline">
+                  {title}
+                </Typography>
+              )}
+            </Stack>
             <Typography variant={subtextTitle}>{value}</Typography>
           </Stack>
 
@@ -36,7 +46,7 @@ export const DashboardDiffCard = (props) => {
             </Avatar>
           )}
         </Stack>
-        {difference !== null && ( // Only render if difference is provided (not null)
+        {difference !== null && (
           <Stack alignItems="center" direction="row" spacing={2} sx={{ mt: 2 }}>
             <Stack alignItems="center" direction="row" spacing={0.5}>
               <SvgIcon color={positive ? 'success' : 'error'} fontSize="small">

@@ -1,39 +1,36 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { LoadingButton } from '@mui/lab';
 import { Checkbox, List, ListItem, ListItemText, MenuItem, TextField } from '@mui/material';
 import { Box, Stack } from '@mui/system';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import _ from 'lodash';
 import axios from '../../utils/axios';
+import { useSharedData } from '../../hooks/useSharedData';
 
 const AssignUsersForm = ({ selectedUsers = [], closeAssignForm }) => {
   const navigate = useNavigate();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [modulesData, setModulesData] = useState([]);
   const [selectedModules, setSelectedModules] = useState([]);
-  const [fetchingData, setFetchingData] = useState(false);
+  const { modules: modulesData } = useSharedData();
 
-  // Fetch modules on load
-  useEffect(() => {
-    const getModules = async () => {
-      try {
-        setFetchingData(true);
-        const response = await axios.get('/module/all');
-        const sortedData = [...(response.data?.details ?? [])].sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
-        );
-        setModulesData(sortedData);
-      } catch (error) {
-        toast.error(error.message || 'Failed to fetch modules');
-        console.error(error);
-      } finally {
-        setFetchingData(false);
-      }
-    };
+  const [searchValue, setSearchValue] = useState('');
+  const [searchedList, setSearchedList] = useState(modulesData);
 
-    getModules();
-  }, []);
+  const handleDebounceSearch = (event) => {
+    const queryList = modulesData.filter((module) =>
+      module.name.toLowerCase().includes(event.target.value.toLowerCase()),
+    );
+    setSearchedList(queryList);
+  };
+
+  const debounceSearch = useCallback(_.debounce(handleDebounceSearch, 250), [modulesData]);
+
+  const handleSearchChange = (event) => {
+    setSearchValue(event.target.value);
+    debounceSearch(event);
+  };
 
   const onSubmit = async () => {
     try {
@@ -43,8 +40,8 @@ const AssignUsersForm = ({ selectedUsers = [], closeAssignForm }) => {
       }
       setIsSubmitting(true);
 
-      const transformUsersToUsersAccess = (users) => {
-        return users.map((user) => ({
+      const transformUsersToUsersAccess = (users) =>
+        users.map((user) => ({
           domainId: user?.domainId?._id || '',
           domainName: user?.domainId?.name || '',
           id: user._id || '',
@@ -53,7 +50,6 @@ const AssignUsersForm = ({ selectedUsers = [], closeAssignForm }) => {
           type: 'user', // Always 'user' as per Joi validation
           username: user.username || '',
         }));
-      };
 
       const usersAccess = transformUsersToUsersAccess(selectedUsers);
       const reqBody = {
@@ -85,11 +81,19 @@ const AssignUsersForm = ({ selectedUsers = [], closeAssignForm }) => {
 
   return (
     <>
-      <Box sx={{ marginTop: 0 }}>
-        {/* Module List */}
+      <Box>
+        <TextField
+          onChange={handleSearchChange}
+          value={searchValue}
+          name="search"
+          label="Search"
+          sx={{ width: '100%', mb: 2 }}
+          placeholder="Search modules"
+        />
+
         <List
           sx={{
-            height: 260,
+            height: '260px',
             overflow: 'auto',
             '&::-webkit-scrollbar': {
               width: '4px',
@@ -105,7 +109,7 @@ const AssignUsersForm = ({ selectedUsers = [], closeAssignForm }) => {
             },
           }}
         >
-          {modulesData.map((module) => (
+          {searchedList.map((module) => (
             <ListItem key={module._id} button onClick={() => handleCheckboxChange(module)}>
               <Checkbox edge="start" checked={selectedModules.includes(module._id)} />
               <ListItemText

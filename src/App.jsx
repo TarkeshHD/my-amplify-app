@@ -3,15 +3,15 @@ import { HelmetProvider } from 'react-helmet-async';
 import { ToastContainer } from 'react-toastify';
 
 import { Auth0Provider } from '@auth0/auth0-react';
+import { MsalProvider } from '@azure/msal-react';
 import { AuthProvider } from './context/JWTContext';
 import Router from './routes/Router';
 
 import './App.css';
 import ConfigThemeWrapper from './components/ConfigThemeWrapper';
 import { ConfigProvider } from './context/ConfigurationContext';
-import { MsalProvider } from '@azure/msal-react';
+import { SharedDataProvider } from './context/SharedDataContext';
 import { msalInstance } from './msalConfig';
-console.log('cheeck');
 
 function App() {
   return (
@@ -28,20 +28,22 @@ function App() {
           >
             <MsalProvider instance={msalInstance}>
               <AuthProvider>
-                <ToastContainer
-                  position="top-right"
-                  autoClose={5000}
-                  hideProgressBar={false}
-                  newestOnTop={false}
-                  closeOnClick
-                  rtl={false}
-                  pauseOnFocusLoss
-                  draggable
-                  pauseOnHover
-                  theme="dark"
-                  style={{ textAlign: 'start' }}
-                />
-                <Router />
+                <SharedDataProvider>
+                  <ToastContainer
+                    position="top-right"
+                    autoClose={5000}
+                    hideProgressBar={false}
+                    newestOnTop={false}
+                    closeOnClick
+                    rtl={false}
+                    pauseOnFocusLoss
+                    draggable
+                    pauseOnHover
+                    theme="dark"
+                    style={{ textAlign: 'start' }}
+                  />
+                  <Router />
+                </SharedDataProvider>
               </AuthProvider>
             </MsalProvider>
           </Auth0Provider>

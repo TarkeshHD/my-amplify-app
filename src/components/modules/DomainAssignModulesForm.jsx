@@ -4,15 +4,23 @@ import { Box, Stack } from '@mui/system';
 import _ from 'lodash';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import { useAuth } from '../../hooks/useAuth';
 import { useConfig } from '../../hooks/useConfig';
 
 import axios from '../../utils/axios';
 
-import { toast } from 'react-toastify';
 import { SeverityPill } from '../SeverityPill';
 
-const DomainAssignModulesForm = ({ isEdit = false, moduleAccess, domains = [], selectedModules = [], users = [] }) => {
+const DomainAssignModulesForm = ({
+  isEdit = false,
+  moduleAccess,
+  domains = [],
+  selectedModules = [],
+  users = [],
+  handleRefresh,
+  setOpenAssignForm,
+}) => {
   const config = useConfig();
   const { data } = config;
   const adminUsers = users.filter((user) => user.role === 'admin');
@@ -79,7 +87,8 @@ const DomainAssignModulesForm = ({ isEdit = false, moduleAccess, domains = [], s
       }
 
       toast.success('Updated Successfully');
-      navigate(0);
+      handleRefresh();
+      setOpenAssignForm(false);
     } catch (error) {
       console.error(error);
       toast.error(error.message || 'Something went wrong!');
@@ -182,16 +191,16 @@ const DomainAssignModulesForm = ({ isEdit = false, moduleAccess, domains = [], s
                   </Box>
                 </ListItem>
               </Box>
-              {checkedItems.some((v) => v.id === item.id) && (
-                <Collapse in={true} timeout="auto" unmountOnExit sx={{ marginLeft: '25px' }}>
+              {checkedItems?.some((v) => v.id === item?.id) && (
+                <Collapse in timeout="auto" unmountOnExit sx={{ marginLeft: '25px' }}>
                   <List component="div" disablePadding>
                     {adminUsers.map(
                       (adminUser) =>
                         // Check if adminUser's domainId matches the current item's domainId
-                        adminUser.domainId._id === item.id && (
+                        adminUser?.domainId?._id === item.id && (
                           <ListItemButton sx={{ pl: 3 }}>
-                            <Checkbox checked={true} disabled={true} />
-                            <ListItem key={adminUser.id}>
+                            <Checkbox checked disabled />
+                            <ListItem key={adminUser?.id}>
                               <Typography
                                 variant="body2"
                                 color="textPrimary"

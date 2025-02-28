@@ -1,9 +1,9 @@
-import { Download, EventAvailable, PendingActions, People, TrendingUp } from '@mui/icons-material';
-import { Box, Button, Container, Stack, SvgIcon, Typography } from '@mui/material';
+import { Download, EventAvailable, PendingActions, People, TrendingUp, CheckCircle } from '@mui/icons-material';
+import { Box, Button, Container, Stack, SvgIcon, Typography, Grid, Divider } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'react-toastify';
-import { isEqual } from 'lodash';
+import { isEqual, isEmpty } from 'lodash';
 import { useConfig } from '../hooks/useConfig';
 import EvaluationsTable from '../sections/evaluations/EvaluationsTable';
 import axios from '../utils/axios';
@@ -18,25 +18,38 @@ const Page = () => {
   const [data, setData] = useState([]);
   const [exportBtnClicked, setExportBtnClicked] = useState(false);
   const [evalautionAnalytics, setEvaluationAnalytics] = useState({
+    totalAttempts: 0,
     totalEvaluations: 0,
+    passedCount: 0,
     passPercentage: 0,
-    totalUserAttempts: 0,
     incompletionRate: 0,
+    uniqueUsers: 0,
   });
+
+  const [totalEvaluations, setTotalEvaluations] = useState(0);
 
   const config = useConfig();
   const { data: configData } = config;
 
-  const getEvaluations = async () => {
+  const getEvaluations = async (params) => {
     try {
       setFetchingData(true);
-      const response = await axios.get('/evaluation/all');
-      // Sort the array in descending order by the "createdAt" property
-      const sortedData = [...(response.data?.details ?? [])].sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
-      );
 
-      setData(sortedData);
+      const storedSizes = JSON.parse(localStorage.getItem('tablePageSize')) || {};
+      const storedPageSize = storedSizes?.evaluations || 10;
+
+      const queryParams = {
+        page: params?.pageIndex ?? 1,
+        limit: params?.pageSize ?? storedPageSize,
+        sort: !isEmpty(params?.sorting) ? JSON.stringify(params?.sorting) : JSON.stringify({ createdAt: -1 }),
+        filters: JSON.stringify(params?.filters),
+      };
+
+      const response = await axios.get('/evaluation/all', { params: queryParams });
+
+      setData(response?.data?.evaluations?.docs);
+      setTotalEvaluations(response.data?.evaluations?.totalDocs);
+      setEvaluationAnalytics(response?.data?.stats);
     } catch (error) {
       toast.error(error.message || `Failed to fetch ${data?.labels?.user?.plural?.toLowerCase() || 'users'}`);
       console.log(error);
@@ -97,93 +110,64 @@ const Page = () => {
                 </Button>
               </Stack>
             </Stack>
-            <Box
-              sx={{
-                width: '100%',
-                overflowX: { xs: 'auto', md: 'visible' },
-                '&::-webkit-scrollbar': { display: 'none' },
-                scrollbarWidth: 'none',
-              }}
-            >
-              <Stack
-                direction="row"
-                spacing={4}
-                sx={{
-                  pb: { xs: 2, md: 0 },
-                  width: { xs: 'max-content', md: '100%' },
-                }}
-              >
-                <DashboardDiffCard
-                  title={`Total Evaluations Done`}
-                  icon={<EventAvailable />}
-                  positive={evalautionAnalytics?.totalEvaluations > 0}
-                  sx={{ height: '100%', width: 350 }}
-                  value={evalautionAnalytics?.totalEvaluations || 0}
-                  info={`Total number of evaluations done.`}
-                />
-                <DashboardTasksProgress
-                  title="Pass Percentage"
-                  icon={<TrendingUp />}
-                  iconColor={'success.main'}
-                  sx={{ height: '100%', width: 350 }}
-                  value={evalautionAnalytics?.passPercentage || 0}
-                />
-                <DashboardDiffCard
-                  title={`Total User Attempts`}
-                  icon={<People />}
-                  iconColor={'primary.main'}
-                  positive={evalautionAnalytics?.totalUserAttempts > 0}
-                  sx={{ height: '100%', width: 350 }}
-                  value={evalautionAnalytics?.totalUserAttempts || 0}
-                  info={`Total number of users who tried evaluations.`}
-                />
-                <DashboardTasksProgress
-                  title="Incomplete Evaluations"
-                  icon={<PendingActions />}
-                  sx={{ height: '100%', width: 350 }}
-                  value={evalautionAnalytics?.incompletionRate || 0}
-                />
-              </Stack>
+            <Box sx={{ mb: 3 }}>
+              <Grid container spacing={2}>
+                {/* Volume Stats */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <DashboardDiffCard
+                    title="Total Attempts"
+                    icon={<EventAvailable />}
+                    positive={evalautionAnalytics?.totalEvaluations > 0}
+                    value={evalautionAnalytics?.totalEvaluations || 0}
+                    info="Total number of evaluation attempts"
+                  />
+                </Grid>
+
+                {/* Completion Stats */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <DashboardDiffCard
+                    title="Evaluations Completed"
+                    icon={<CheckCircle />}
+                    positive={evalautionAnalytics?.totalEvaluations - evalautionAnalytics?.pendingEvaluations > 0}
+                    value={evalautionAnalytics?.totalEvaluations - evalautionAnalytics?.pendingEvaluations || 0}
+                    info={`${Number(100 - evalautionAnalytics?.incompletionRate || 0).toFixed(2)}% completion rate`}
+                  />
+                </Grid>
+
+                {/* Pass Rate Stats */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <DashboardDiffCard
+                    title="Pass Rate"
+                    icon={<TrendingUp />}
+                    iconColor="success.main"
+                    positive={evalautionAnalytics?.passPercentage > 75}
+                    value={`${evalautionAnalytics?.passPercentage?.toFixed(2) || 0}%`}
+                    info="Pass rate of completed evaluations"
+                    secondaryInfo={`${evalautionAnalytics?.passedCount || 0} passed`}
+                  />
+                </Grid>
+
+                {/* User Stats */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <DashboardDiffCard
+                    title="Unique Users"
+                    icon={<People />}
+                    iconColor="primary.main"
+                    positive={evalautionAnalytics?.uniqueUsers > 0}
+                    value={evalautionAnalytics?.uniqueUsers || 0}
+                    info="Number of unique participants"
+                  />
+                </Grid>
+              </Grid>
             </Box>
-            {/* <Box
-            sx={{
-              width: '100%',
-              overflowX: { xs: 'auto', md: 'visible' },
-              '&::-webkit-scrollbar': { display: 'none' },
-              scrollbarWidth: 'none',
-            }}
-          >
-            <Stack
-              direction="row"
-              spacing={2} // Adjust this for the gap between the charts
-              sx={{
-                pb: { xs: 4, md: 2 },
-                width: '100%',
-              }}
-            >
-              <Box sx={{ flex: 1 }}> */}{' '}
-            {/* Ensures the first chart takes up half the width */}
-            {/* <LineChart categories={departments} chartData={chartData} title="User Engagement by Department" />
-              </Box>
-              <Box sx={{ flex: 1 }}> */}{' '}
-            {/* Ensures the second chart takes up the other half */}
-            {/* <DashboardBarChart
-                  chartSeries={chartDataBar}
-                  title="Department-wise User Completion Data"
-                  categories={departments}
-                />
-                ;
-              </Box>
-            </Stack>
-          </Box> */}
             <EvaluationsTable
               fetchingData={fetchingData}
               items={data}
-              count={data.length}
+              count={totalEvaluations}
               exportBtnClicked={exportBtnClicked}
               exportBtnFalse={exportBtnFalse}
-              updateAnalytic={updateAnalytic}
               handleRefresh={handleRefresh}
+              onUrlParamsChange={getEvaluations}
             />
           </Stack>
         </PremiumFeatureWrapper>

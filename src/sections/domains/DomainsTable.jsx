@@ -23,7 +23,14 @@ import ConfirmationDialog from '../../components/ConfirmationDialog';
 import { useAuth } from '../../hooks/useAuth';
 import CustomGrid from '../../components/grid/CustomGrid';
 
-export const DomainsTable = ({ count = 0, items = [], fetchingData, domains = { domains }, handleRefresh }) => {
+export const DomainsTable = ({
+  count = 0,
+  items = [],
+  fetchingData,
+  domains = { domains },
+  onUrlParamsChange,
+  handleRefresh,
+}) => {
   const navigate = useNavigate();
   const [editFormDomains, setEditFormDomains] = useState(null);
   const columns = useMemo(
@@ -125,6 +132,9 @@ export const DomainsTable = ({ count = 0, items = [], fetchingData, domains = { 
         hasDeleteAccess={hasDeleteAccess}
         showExportButton={false}
         enableExpanding
+        rowCount={count}
+        onUrlParamsChange={onUrlParamsChange}
+        tableSource="domains"
       />
 
       {/* Edit Password Form */}
