@@ -75,7 +75,9 @@ export const ModulesTable = ({
         accessorKey: 'name', // simple recommended way to define a column
         header: 'Name',
         filterVariant: 'multi-select',
-        filterSelectOptions: moduleOptions?.map((module) => ({ text: module?.name, value: module?.name })),
+        filterSelectOptions: moduleOptions
+          .filter((module) => !module?.archived)
+          ?.map((module) => ({ text: module?.name, value: module?.name })),
       },
 
       {
