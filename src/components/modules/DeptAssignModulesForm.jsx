@@ -1,25 +1,25 @@
-import InfoHover from '../InfoHover';
-
 import { LoadingButton } from '@mui/lab';
 import { Checkbox, List, ListItem, ListItemText, TextField } from '@mui/material';
 import { Box, Stack } from '@mui/system';
 import _ from 'lodash';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+
+import InfoHover from '../InfoHover';
 import { useAuth } from '../../hooks/useAuth';
 import { useConfig } from '../../hooks/useConfig';
-
 import axios from '../../utils/axios';
 
-import { toast } from 'react-toastify';
 import { SeverityPill } from '../SeverityPill';
 
-const DeptUserAssignModulesForm = ({
+const DeptAssignModulesForm = ({
   isEdit = false,
   moduleAccess,
   departments = [],
   selectedModules = [],
-  users = [],
+  handleRefresh,
+  setOpenAssignForm,
 }) => {
   const config = useConfig();
   const { data } = config;
@@ -35,7 +35,7 @@ const DeptUserAssignModulesForm = ({
   const [checkedItems, setCheckedItems] = useState([]);
 
   useEffect(() => {
-    // Generate render list out of domains and departments
+    // Generate render list out of departments
     const list = [];
 
     departments.map((department) =>
@@ -48,35 +48,13 @@ const DeptUserAssignModulesForm = ({
       }),
     );
 
-    users.map((user) => {
-      if (user?.role !== 'user') {
-        return;
-      }
-      list.push({
-        role: user?.role,
-        type: 'user',
-        name: user.name,
-        id: user?._id?.toString(),
-        domainId: user?.domainId?._id,
-        domainName: user?.domainId?.name,
-        username: user?.username,
-      });
-    });
-
     setItemList(list);
     setSearchedList(list);
     let checkedList = [];
     if (isEdit) {
-      checkedList = list.filter((v) => {
-        if (v.type === 'department') {
-          return moduleAccess?.departments?.some((domainId) => domainId === v.id);
-        } else {
-          return moduleAccess?.users?.some((userId) => userId === v.id);
-        }
-      });
+      checkedList = list.filter((v) => moduleAccess?.departments?.some((domainId) => domainId === v.id));
 
       // Set checked list
-
       setCheckedItems(checkedList);
     }
   }, []);
@@ -84,29 +62,25 @@ const DeptUserAssignModulesForm = ({
   const onSubmit = async () => {
     try {
       setIsSubmitting(true);
-      // Seperate Domain Access and Departemnt Access
-      const domainsAccess = [];
+      // Separate Department Access
       const departmentsAccess = checkedItems.filter((v) => v.type === 'department');
-      const usersAccess = checkedItems.filter(
-        (v) => v.type === 'user' || v.type === 'admin' || v.type === 'superAdmin',
-      );
 
       const reqObj = {
         modules: selectedModules,
         departmentsAccess,
-        usersAccess,
       };
 
       if (isEdit) {
         delete reqObj.modules;
-        const response = await axios.post(`/module/assign/update/special/${selectedModules[0]}`, reqObj);
+        await axios.post(`/module/assign/update/special/${selectedModules[0]}`, reqObj);
       } else {
         delete reqObj.isSpecialAccess && delete reqObj.isDomainAccess;
-        const response = await axios.post('/module/assign', reqObj);
+        await axios.post('/module/assign', reqObj);
       }
 
       toast.success('Updated Successfully');
-      // navigate(0);
+      handleRefresh();
+      setOpenAssignForm(false);
     } catch (error) {
       console.error(error);
       toast.error(error.message || 'Something went wrong!');
@@ -145,10 +119,6 @@ const DeptUserAssignModulesForm = ({
       <Box
         sx={{
           marginTop: 3,
-          // display: 'grid',
-          // columnGap: 2,
-          // rowGap: 3,
-          // gridTemplateColumns: { xs: 'repeat(1, 1fr)' }, // Add sm: 'repeat(2, 1fr)'  for two Fields in line
         }}
       >
         <TextField
@@ -186,22 +156,8 @@ const DeptUserAssignModulesForm = ({
               <Box display={'flex'} justifyContent={'space-between'} alignItems={'center'} width={'100%'}>
                 <>
                   <ListItemText primary={item.name} secondary={item.domainName} />
-                  {item.type === 'department' ? (
-                    <>
-                      <SeverityPill color={'error'}>{data?.labels?.department?.singular || 'department'}</SeverityPill>
-                      <InfoHover
-                        title={users
-                          .filter((user) => user?.departmentId?._id == item?.id)
-                          .map((value) => value.name)
-                          .join(', ')}
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <SeverityPill color={'success'}>{data?.labels?.user?.singular || 'User'}</SeverityPill>
-                      <InfoHover title="" disabled={true} />
-                    </>
-                  )}
+                  <SeverityPill color={'error'}>{data?.labels?.department?.singular || 'department'}</SeverityPill>
+                  <InfoHover title="" />
                 </>
               </Box>
             </ListItem>
@@ -217,4 +173,4 @@ const DeptUserAssignModulesForm = ({
   );
 };
 
-export default DeptUserAssignModulesForm;
+export default DeptAssignModulesForm;
