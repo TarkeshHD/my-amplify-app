@@ -1,0 +1,32 @@
+name: Deploy to AWS Amplify
+
+on:
+  push:
+    branches:
+      - main  # Change this if your deployment branch is different
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18 # Adjust Node.js version as needed
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build # Ensure this matches your build script in package.json
+
+      - name: Deploy to AWS Amplify
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.AWS_AMPLIFY_ACCESS_TOKEN }}" \
+            "https://amplify.us-east-1.amazonaws.com/apps/${{ secrets.AWS_AMPLIFY_APP_ID }}/branches/main/deployments" 
