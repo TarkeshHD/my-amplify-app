@@ -1,9 +1,7 @@
 name: Deploy to AWS Amplify
 
 on:
-  push:
-    branches:
-      - main  # Change this if your deployment branch is different
+  workflow_dispatch:  # Allows manual trigger
 
 jobs:
   deploy:
@@ -30,3 +28,4 @@ jobs:
           curl -X POST \
             -H "Authorization: Bearer ${{ secrets.AWS_AMPLIFY_ACCESS_TOKEN }}" \
             "https://amplify.us-east-1.amazonaws.com/apps/${{ secrets.AWS_AMPLIFY_APP_ID }}/branches/main/deployments" 
+        
