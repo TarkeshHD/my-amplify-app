@@ -51,7 +51,7 @@ const Page = () => {
       };
 
       const response = await axios.get('/training/', { params: queryParams });
-
+ console.log("response", response?.data)
       setData(response?.data?.trainings.docs);
       setTotalTrainings(response?.data?.trainings.totalDocs);
       setTrainingAnalytics(response?.data?.stats);

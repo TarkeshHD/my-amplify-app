@@ -40,7 +40,7 @@ const Page = () => {
 
       const queryParams = {
         page: params?.pageIndex ?? 1,
-        limit: params?.pageSize ?? storedPageSize,
+        limit: params?.pageSize ?? storedPageSize, 
         sort: !isEmpty(params?.sorting) ? JSON.stringify(params?.sorting) : JSON.stringify({ createdAt: -1 }),
         filters: JSON.stringify(params?.filters),
       };

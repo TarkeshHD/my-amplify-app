@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import { debounce } from 'lodash';
-import { Delete, Edit } from '@mui/icons-material';
+import { Delete, Edit, GroupRounded, PersonRounded } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import CustomDialog from '../../components/CustomDialog';
@@ -84,7 +84,8 @@ const EvaluationsTable = React.memo(
 
     const { userIdParam } = useParams();
     const { domains, departments, modules } = useSharedData();
-
+    console.log(modules,'jjjjjjjjjjjjjjj')
+ 
     const config = useConfig();
     const { data } = config;
 
@@ -111,6 +112,7 @@ const EvaluationsTable = React.memo(
         {
           accessorFn: (row) => `${row.moduleId?.name}${row.moduleId?.archived ? '-Deprecated' : ''}`,
           filterFn: (row, _columnId, filterValue) => {
+         console.log('jjjjjjjjddddddddddddddddddddddddddddddddddd')
             const moduleName = row.original?.moduleId?.name;
             const archivedSuffix = row.original?.moduleId?.archived ? '-Deprecated' : '';
             const fullModuleName = `${moduleName}${archivedSuffix}`;
@@ -133,7 +135,70 @@ const EvaluationsTable = React.memo(
               <Typography>{row?.original?.moduleId?.name || '-'}</Typography>
             ),
         },
-
+        {
+          accessorFn: (row) => (row.isMultiplayer ? 'Multiplayer' : 'Single Player'),
+          filterFn: (row, _columnId, filterValue) => {
+            const mode = row.original?.isMultiplayer ? 'Multiplayer' : 'Single Player';
+            if (!filterValue || filterValue.length === 0) return true;
+            return filterValue.includes(mode);
+          },          
+          header: `Player Mode`,
+          filterVariant: 'multi-select',
+          filterSelectOptions: [
+            { text: 'Single Player', value: 'Single Player' },
+            { text: 'Multiplayer', value: 'Multiplayer' },
+          ],
+          size: 120,
+          Cell: ({ row }) => {
+            const mode = row.original?.isMultiplayer ? 'Multiplayer' : 'Single Player';
+            const isDeprecated = row?.original?.moduleId?.archived;
+            
+            // Custom approach without using SeverityPill's color prop
+            return (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {row.original?.isMultiplayer ? (
+                  <GroupRounded 
+                    fontSize="small" 
+                    sx={{ 
+                      color: isDeprecated ? '#f44336' : '#7b1fa2',
+                      fontSize: '0.875rem'
+                    }} 
+                  />
+                ) : (
+                  <PersonRounded 
+                    fontSize="small" 
+                    sx={{ 
+                      color: isDeprecated ? '#f44336' : '#1976d2',
+                      fontSize: '0.875rem'
+                    }} 
+                  />
+                )}
+                
+                {isDeprecated ? (
+                  <Typography sx={{ color: '#f44336', fontSize: '0.75rem', fontWeight: 500 }}>
+                    {`${mode} - Deprecated`}
+                  </Typography>
+                ) : (
+                  <Box 
+                    component="span"
+                    sx={{
+                      backgroundColor: row.original?.isMultiplayer ? 'rgba(123, 31, 162, 0.1)' : 'rgba(25, 118, 210, 0.1)',
+                      color: row.original?.isMultiplayer ? '#7b1fa2' : '#1976d2',
+                      borderRadius: '16px',
+                      padding: '4px 10px',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      display: 'inline-flex',
+                      alignItems: 'center'
+                    }}
+                  >
+                    {mode}
+                  </Box>
+                )}
+              </Box>
+            );
+          },
+        },
         {
           size: 250,
           accessorFn: (row) => {
@@ -186,6 +251,7 @@ const EvaluationsTable = React.memo(
           header: 'Duration',
           enableColumnFilter: false,
           Cell: ({ cell, column, row }) => {
+            console.log(row.original,'ddddddddddddddd')
             const endTime = row?.original?.endTime ? row?.original?.endTime : undefined;
             const startTime = row?.original?.startTime;
             const duration = endTime ? endTime - startTime : undefined;
@@ -371,6 +437,7 @@ const EvaluationsTable = React.memo(
         responseObj.session = session;
         responseObj.username = row?.original?.userId?.name;
         responseObj.score = row?.original?.score;
+        responseObj.isMultiplayer = row?.original?.isMultiplayer;
 
         const { answers } = responseObj;
         if (responseObj.mode === 'mcq') {

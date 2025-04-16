@@ -11,7 +11,7 @@ import PropTypes from 'prop-types';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import { debounce, isEmpty } from 'lodash';
-import { Delete, FileDownload, FilterAltOff } from '@mui/icons-material';
+import { Delete, FileDownload, FilterAltOff, GroupRounded, PersonRounded } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Stack } from '@mui/system';
 
@@ -159,6 +159,68 @@ export const TrainingsTable = ({
           ),
       },
       {
+        accessorFn: (row) => (row.isMultiplayer ? 'Multiplayer' : 'Single Player'),
+        filterFn: (row, _columnId, filterValue) => {
+          const mode = row.original?.isMultiplayer ? 'Multiplayer' : 'Single Player';
+          if (!filterValue || filterValue.length === 0) return true;
+          return filterValue.includes(mode);
+        },
+        header: 'Player Mode',
+        filterVariant: 'multi-select',
+        filterSelectOptions: [
+          { text: 'Single Player', value: 'Single Player' },
+          { text: 'Multiplayer', value: 'Multiplayer' },
+        ],
+        size: 120,
+        Cell: ({ row }) => {
+          const isMultiplayer = row.original?.isMultiplayer;
+          const mode = isMultiplayer ? 'Multiplayer' : 'Single Player';
+          const isDeprecated = row.original?.moduleId?.archived;
+          const IconComponent = isMultiplayer ? GroupRounded : PersonRounded;
+        
+          return (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <IconComponent
+                fontSize="small"
+                sx={{
+                  color: isDeprecated ? '#f44336' : isMultiplayer ? '#2e7d32' : '#0288d1',
+                  fontSize: '0.875rem',
+                }}
+              />
+              {isDeprecated ? (
+                <Typography
+                  sx={{
+                    color: '#f44336',
+                    fontSize: '0.75rem',
+                    fontWeight: 500,
+                  }}
+                >
+                  {`${mode} - Deprecated`}
+                </Typography>
+              ) : (
+                <Box 
+                  component="span"
+                  sx={{
+                    backgroundColor: isMultiplayer ? 'rgba(46, 125, 50, 0.1)' : 'rgba(2, 136, 209, 0.1)',
+                    color: isMultiplayer ? '#2e7d32' : '#0288d1',
+                    borderRadius: '16px',
+                    padding: '4px 10px',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    display: 'inline-flex',
+                    alignItems: 'center'
+                  }}
+                >
+                  {mode}
+                </Box>
+              )}
+            </Box>
+          );
+        },
+      }
+      ,
+      
+      {
         size: 250,
         accessorFn: (row) => {
           const endTime = row?.endTime ? row?.endTime : undefined;
@@ -293,6 +355,8 @@ export const TrainingsTable = ({
       const responseObj = {
         trainingDumpJson: doc?.trainingDumpJson,
       };
+
+      console.log('row orginal', row?.original);
       const startTime = convertUnixToLocalTime(row?.original?.startTime);
       const endTime = row?.original?.endTime ? convertUnixToLocalTime(row?.original?.endTime) : 'Pending';
       const session = `${startTime} - ${endTime}`;
@@ -302,8 +366,12 @@ export const TrainingsTable = ({
       responseObj.status = status;
       responseObj.session = session;
       responseObj.username = row?.original?.userId?.name;
+responseObj.participants=row?.original?.participants
+responseObj.completedParticipants=row?.original?.completedParticipants
+responseObj.participants=row?.original?.participants
 
       responseObj.trainingType = row?.original?.trainingType;
+      responseObj.isMultiplayer = row?.original?.isMultiplayer;
 
       const { answers } = responseObj;
       if (row?.original?.trainingType === 'jsonLifeCycle') {
@@ -311,15 +379,19 @@ export const TrainingsTable = ({
           ...responseObj.trainingDumpJson,
           chapters: responseObj.trainingDumpJson.chapters?.map((chapter) => ({
             ...chapter,
-            moments: chapter.moments.map((moment) =>
-              // CHECK Answers is not an array in this but in evaluation JSON Lifcycle case we are doing something else!??
+            moments: chapter.moments.map((moment) => {
+              // Find corresponding events for this chapter/moment from the new structure
+              const correspondingAnswer = row?.original?.answers?.jsonLifeCycleBased?.find(
+                (answer) => answer.chapterIndex === chapter.chapterIndex && answer.momentIndex === moment.momentIndex,
+              );
 
-              ({
+              return {
                 ...moment,
                 totalTimeTaken: moment?.endTime ? moment.endTime - moment.startTime : undefined,
-                answers: moment?.answers?.events || [],
-              }),
-            ),
+                // Use events from the new location
+                answers: correspondingAnswer?.events || [],
+              };
+            }),
           })),
         };
       }

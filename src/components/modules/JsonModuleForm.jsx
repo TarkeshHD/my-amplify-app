@@ -8,7 +8,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm } from 'react-hook-form';
 // @mui
 import { LoadingButton } from '@mui/lab';
-import { Box, CircularProgress, Grid, Stack, Typography } from '@mui/material';
+import { Box, CircularProgress, FormControl, FormLabel, Grid, Stack, Typography } from '@mui/material';
 
 import { useConfig } from '../../hooks/useConfig';
 import axios from '../../utils/axios';
@@ -30,20 +30,20 @@ export const JsonModuleForm = ({ isEdit, currentModule }) => {
     trainingJson: Yup.mixed(),
     SOP: Yup.mixed(),
     evaluationType: Yup.string().required('Evaluation Type is required'),
+    gameMode: Yup.string().required('Game Mode is required'),
   });
-
   const defaultValues = useMemo(
     () => ({
       name: currentModule?.name || '',
       description: currentModule?.description || '',
       index: currentModule?.index || '',
       evaluationType: 'jsonLifeCycle',
-      thumbnail: currentModule?.thumbnail, // Need to figure out prefilling when doing Edit Part
-      SOP: currentModule?.SOP, // Need to figure out prefilling when doing Edit Part
-      evaluationJson: currentModule?.evaluationJson, // Need to figure out prefilling when doing Edit Part
-      trainingJson: currentModule?.trainingJson, // Need to figure out prefilling when doing Edit Part
+      gameMode: currentModule?.gameMode || 'singleplayer',
+      thumbnail: currentModule?.thumbnail,
+      SOP: currentModule?.SOP,
+      evaluationJson: currentModule?.evaluationJson,
+      trainingJson: currentModule?.trainingJson,
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [currentModule],
   );
 
@@ -128,6 +128,25 @@ export const JsonModuleForm = ({ isEdit, currentModule }) => {
 
         <Grid item xs={12}>
           <RHFTextField rows={5} multiline name="description" label="Description" />
+        </Grid>
+        <Grid item xs={12}>
+          <FormControl component="fieldset">
+            <FormLabel component="legend">Module Mode</FormLabel>
+            <RHFRadioGroup
+              name="gameMode"
+              options={[
+                { label: 'Single Player', value: 'singleplayer' },
+                { label: 'Multi Player', value: 'multiplayer' },
+                { label: 'Hybrid (Both Modes)', value: 'hybridplayer' },
+              ]}
+              sx={{
+                '& .MuiFormControlLabel-root': { mr: 4 },
+              }}
+            />
+          </FormControl>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+            Select the game mode for this module. Hybrid mode supports both single and multiplayer functionality.
+          </Typography>
         </Grid>
         <Grid item xs={12} lg={6}>
           <Box>
