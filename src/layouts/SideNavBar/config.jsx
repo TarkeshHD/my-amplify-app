@@ -76,7 +76,7 @@ export function getItems(labels) {
       title: labels?.training?.plural || 'Trainings',
       path: '/trainings',
       doNotRenderForUser: [],
-      disabled: data?.features?.evaluation?.state === 'off',
+      disabled: data?.features?.training?.state === 'off',
       icon: (
         <SvgIcon fontSize="small">
           <FitnessCenterIcon />

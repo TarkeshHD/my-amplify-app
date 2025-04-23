@@ -32,10 +32,6 @@ const statusMap = {
   Pending: 'warning',
   Pass: 'success',
   Fail: 'error',
-  ongoing: 'warning',
-  completed: 'success',
-  passed: 'success',
-  failed: 'error',
 };
 
 const FAKE_DATA = [
