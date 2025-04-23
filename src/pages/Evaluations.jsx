@@ -1,17 +1,14 @@
-import { Download, EventAvailable, PendingActions, People, TrendingUp, CheckCircle } from '@mui/icons-material';
-import { Box, Button, Container, Stack, SvgIcon, Typography, Grid, Divider } from '@mui/material';
+import { CheckCircle, Download, EventAvailable, People, TrendingUp } from '@mui/icons-material';
+import { Box, Button, CircularProgress, Container, Grid, Stack, SvgIcon, Typography } from '@mui/material';
+import { isEmpty, isEqual } from 'lodash';
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'react-toastify';
-import { isEqual, isEmpty } from 'lodash';
+import { PremiumFeatureWrapper } from '../components/premium/PremiumFeatureWrapper';
 import { useConfig } from '../hooks/useConfig';
+import { DashboardDiffCard } from '../sections/dashboard/DashboardDiffCard';
 import EvaluationsTable from '../sections/evaluations/EvaluationsTable';
 import axios from '../utils/axios';
-import { DashboardDiffCard } from '../sections/dashboard/DashboardDiffCard';
-import { DashboardTasksProgress } from '../sections/dashboard/DashboardTasksProgress';
-import { LineChart } from '../sections/dashboard/DashboardLineChart';
-import { DashboardBarChart } from '../sections/dashboard/DashboardBarChart';
-import { PremiumFeatureWrapper } from '../components/premium/PremiumFeatureWrapper';
 
 const Page = () => {
   const [fetchingData, setFetchingData] = useState(false);
@@ -27,6 +24,7 @@ const Page = () => {
   });
 
   const [totalEvaluations, setTotalEvaluations] = useState(0);
+  const [isExporting, setIsExporting] = useState(false);
 
   const config = useConfig();
   const { data: configData } = config;
@@ -40,7 +38,7 @@ const Page = () => {
 
       const queryParams = {
         page: params?.pageIndex ?? 1,
-        limit: params?.pageSize ?? storedPageSize, 
+        limit: params?.pageSize ?? storedPageSize,
         sort: !isEmpty(params?.sorting) ? JSON.stringify(params?.sorting) : JSON.stringify({ createdAt: -1 }),
         filters: JSON.stringify(params?.filters),
       };
@@ -60,6 +58,7 @@ const Page = () => {
 
   const exportBtnFalse = () => {
     setExportBtnClicked(false);
+    setIsExporting(false);
   };
 
   useEffect(() => {
@@ -98,15 +97,21 @@ const Page = () => {
                 <Button
                   onClick={() => {
                     setExportBtnClicked(true);
+                    setIsExporting(true);
                   }}
                   variant="outlined"
                   startIcon={
-                    <SvgIcon fontSize="small">
-                      <Download />
-                    </SvgIcon>
+                    isExporting ? (
+                      <CircularProgress size={20} />
+                    ) : (
+                      <SvgIcon fontSize="small">
+                        <Download />
+                      </SvgIcon>
+                    )
                   }
+                  disabled={isExporting}
                 >
-                  Export
+                  {isExporting ? 'Exporting...' : 'Export'}
                 </Button>
               </Stack>
             </Stack>

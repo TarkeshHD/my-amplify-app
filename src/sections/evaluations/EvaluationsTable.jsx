@@ -87,7 +87,6 @@ const EvaluationsTable = React.memo(
     useEffect(() => {
       if (exportBtnClicked) {
         exportBtnRef.current.click();
-        exportBtnFalse();
       }
     }, [exportBtnClicked]);
 
@@ -553,6 +552,7 @@ const EvaluationsTable = React.memo(
           hasDeleteAccess={hasDeleteAccess}
           handleExportRows={handleExportRows}
           exportBtnRef={exportBtnRef}
+          exportBtnFalse={exportBtnFalse}
           enableRowClick
           enableFacetedValues
           enableAnalyticsHiddenButton

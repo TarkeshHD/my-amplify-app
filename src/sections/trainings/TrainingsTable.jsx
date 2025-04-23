@@ -1,34 +1,25 @@
-import { Box, Button, Card, MenuItem, Typography, IconButton, Tooltip, Skeleton } from '@mui/material';
-import {
-  MRT_FullScreenToggleButton as MRTFullScreenToggleButton,
-  MRT_ShowHideColumnsButton as MRTShowHideColumnsButton,
-  MRT_ToggleDensePaddingButton as MRTToggleDensePaddingButton,
-  MRT_ToggleFiltersButton as MRTToggleFiltersButton,
-  MaterialReactTable,
-} from 'material-react-table';
-import moment from 'moment-timezone';
+import { Delete, GroupRounded, PersonRounded } from '@mui/icons-material';
+import { Box, MenuItem, Skeleton, Typography } from '@mui/material';
+import { Stack } from '@mui/system';
+import { debounce } from 'lodash';
 import PropTypes from 'prop-types';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { toast } from 'react-toastify';
-import { debounce, isEmpty } from 'lodash';
-import { Delete, FileDownload, FilterAltOff, GroupRounded, PersonRounded } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Stack } from '@mui/system';
+import { toast } from 'react-toastify';
 
 import CustomDialog from '../../components/CustomDialog';
-import axios from '../../utils/axios';
 import CustomDateRangePicker from '../../components/DatePicker/CustomDateRangePicker';
 import { SeverityPill } from '../../components/SeverityPill';
 import ExportOptions from '../../components/export/ExportOptions';
+import axios from '../../utils/axios';
 
-import { useConfig } from '../../hooks/useConfig';
-import JsonLifeCycleEvaluationGrid from '../../components/modules/JsonLifeCycleEvaluationGrid';
-import JsonLifeCycleTrainingGrid from '../../components/modules/JsonLifeCycleTrainingGrid';
-import { convertTimeToDescription, convertUnixToLocalTime, getTrainingAnalytics } from '../../utils/utils';
 import ConfirmationDialog from '../../components/ConfirmationDialog';
-import { useAuth } from '../../hooks/useAuth';
 import CustomGrid from '../../components/grid/CustomGrid';
+import JsonLifeCycleTrainingGrid from '../../components/modules/JsonLifeCycleTrainingGrid';
+import { useAuth } from '../../hooks/useAuth';
+import { useConfig } from '../../hooks/useConfig';
 import { useSharedData } from '../../hooks/useSharedData';
+import { convertTimeToDescription, convertUnixToLocalTime, getTrainingAnalytics } from '../../utils/utils';
 
 const statusMap = {
   ongoing: 'warning',
@@ -84,7 +75,6 @@ export const TrainingsTable = ({
   useEffect(() => {
     if (exportBtnClicked) {
       exportBtnRef.current.click();
-      exportBtnFalse();
     }
   }, [exportBtnClicked]);
 
@@ -177,7 +167,7 @@ export const TrainingsTable = ({
           const mode = isMultiplayer ? 'Multiplayer' : 'Single Player';
           const isDeprecated = row.original?.moduleId?.archived;
           const IconComponent = isMultiplayer ? GroupRounded : PersonRounded;
-        
+
           return (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <IconComponent
@@ -198,7 +188,7 @@ export const TrainingsTable = ({
                   {`${mode} - Deprecated`}
                 </Typography>
               ) : (
-                <Box 
+                <Box
                   component="span"
                   sx={{
                     backgroundColor: isMultiplayer ? 'rgba(46, 125, 50, 0.1)' : 'rgba(2, 136, 209, 0.1)',
@@ -219,7 +209,7 @@ export const TrainingsTable = ({
         },
       }
       ,
-      
+
       {
         size: 250,
         accessorFn: (row) => {
@@ -366,9 +356,9 @@ export const TrainingsTable = ({
       responseObj.status = status;
       responseObj.session = session;
       responseObj.username = row?.original?.userId?.name;
-responseObj.participants=row?.original?.participants
-responseObj.completedParticipants=row?.original?.completedParticipants
-responseObj.participants=row?.original?.participants
+      responseObj.participants = row?.original?.participants
+      responseObj.completedParticipants = row?.original?.completedParticipants
+      responseObj.participants = row?.original?.participants
 
       responseObj.trainingType = row?.original?.trainingType;
       responseObj.isMultiplayer = row?.original?.isMultiplayer;
@@ -471,6 +461,7 @@ responseObj.participants=row?.original?.participants
         rowCount={count}
         onUrlParamsChange={onUrlParamsChange}
         tableSource="trainings"
+        exportBtnFalse={exportBtnFalse}
       />
       {/* View export options */}
       <CustomDialog

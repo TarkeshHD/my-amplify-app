@@ -1,13 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
+import { Delete, FilterAltOff } from '@mui/icons-material';
+import { Box, Button, Card, IconButton, Tooltip } from '@mui/material';
+import { isEmpty } from 'lodash';
 import {
   MaterialReactTable,
   MRT_FullScreenToggleButton as MRTFullScreenToggleButton,
   MRT_ShowHideColumnsButton as MRTShowHideColumnsButton,
   MRT_ToggleFiltersButton as MRTToggleFiltersButton,
 } from 'material-react-table';
-import { Box, Button, Card, IconButton, Tooltip } from '@mui/material';
-import { Delete, FilterAltOff } from '@mui/icons-material';
-import { isEmpty } from 'lodash';
+import { useEffect, useRef, useState } from 'react';
 import axios from '../../utils/axios';
 
 const CustomGrid = (props) => {
@@ -39,6 +39,7 @@ const CustomGrid = (props) => {
     rowCount,
     tableSource,
     tableState,
+    exportBtnFalse
   } = props;
 
   const [columnFilters, setColumnFilters] = useState([]);
@@ -147,6 +148,7 @@ const CustomGrid = (props) => {
 
       const response = await axios.get(endPointMap[tableSource]);
       handleExportRows(response?.data?.[tableSource]?.docs);
+      exportBtnFalse();
     } catch (error) {
       console.log(error);
     }
@@ -199,11 +201,11 @@ const CustomGrid = (props) => {
         muiTableBodyRowProps={
           enableRowClick
             ? ({ row }) => ({
-                onClick: () => {
-                  handleRowClick(row);
-                },
-                sx: { cursor: 'pointer' },
-              })
+              onClick: () => {
+                handleRowClick(row);
+              },
+              sx: { cursor: 'pointer' },
+            })
             : {}
         }
         enableExpanding={enableExpanding}
