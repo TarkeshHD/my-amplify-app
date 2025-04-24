@@ -234,7 +234,7 @@ const Analytics = ({ updateAnalyticsData }) => {
   }
 
   return (
-    <Container maxWidth="xl">
+    <Box sx={{ px: 2 }}>
       <Grid container spacing={2}>
         {domainName && (
           <Grid item lg={12} xs={12}>
@@ -321,11 +321,10 @@ const Analytics = ({ updateAnalyticsData }) => {
           <Grid item sx={12} sm={9}>
             <PremiumFeatureWrapper message="" noLogo hideUpgradeButton>
               <DashboardPieChart
-                title={`${
-                  auth?.user?.role === 'admin'
-                    ? data?.labels?.department?.singular || 'Department'
-                    : data?.labels?.domain?.singular || 'Domain'
-                } ${data?.labels?.user?.plural || 'Users'}`}
+                title={`${auth?.user?.role === 'admin'
+                  ? data?.labels?.department?.singular || 'Department'
+                  : data?.labels?.domain?.singular || 'Domain'
+                  } ${data?.labels?.user?.plural || 'Users'}`}
                 chartSeries={domainOrDeptVal[0]}
                 labels={domainOrDeptVal[1]}
               />
@@ -365,7 +364,7 @@ const Analytics = ({ updateAnalyticsData }) => {
         )}
       </Grid>
       <UpgradeModel isModalOpen={successFormOpen} setModalOpen={setSuccessFormOpen} />
-    </Container>
+    </Box>
   );
 };
 
