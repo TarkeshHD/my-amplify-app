@@ -31,9 +31,9 @@ const ModuleAnalytics = () => {
   const [sessionType, setSessionType] = useState('evaluation');
   const [columnFilters, setColumnFilters] = useState([]);
   const { modules } = useSharedData();
-  console.log('modules', modules);
-  const [selectedModule, setSelectedModule] = useState(modules?.[0] || { id: 'NA', name: 'NA' });
-  console.log('selected modules', selectedModule);
+  const showAllModuleOptions = configData?.features?.analytics?.module?.allModulesOption?.state === 'on';
+  const defaultModule = showAllModuleOptions ? { id: 'all', name: 'All Modules' } : modules?.[0];
+  const [selectedModule, setSelectedModule] = useState(defaultModule);
 
   const getSessionTypes = useMemo(() => {
     const types = [];
@@ -308,6 +308,7 @@ const ModuleAnalytics = () => {
                       }
                     }}
                   >
+                    {showAllModuleOptions && <MenuItem value="all">All Modules</MenuItem>}
                     {modules.map((module) => (
                       <MenuItem key={module.name} value={module._id}>
                         {module.name}

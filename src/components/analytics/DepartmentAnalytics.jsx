@@ -311,18 +311,18 @@ const DepartmentAnalytics = () => {
               }}
             >
               <Box sx={{ display: 'flex', gap: 2, flex: 1 }}>
-              {getSessionTypes.length > 1 && (
-                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                {getSessionTypes.length > 1 && (
+                  <FormControl size="small" sx={{ minWidth: 200 }}>
                     <InputLabel>Session Type</InputLabel>
                     <Select value={sessionType} label="Session Type" onChange={(e) => setSessionType(e.target.value)}>
                       {getSessionTypes.map((type) => (
-                      <MenuItem key={type.value} value={type.value}>
-                        {type.label}
-                      </MenuItem>
+                        <MenuItem key={type.value} value={type.value}>
+                          {type.label}
+                        </MenuItem>
                       ))}
                     </Select>
-                    </FormControl>
-                  )}
+                  </FormControl>
+                )}
                 <FormControl size="small" sx={{ minWidth: 200 }}>
                   <InputLabel>Domain Name</InputLabel>
                   <Select
@@ -415,7 +415,7 @@ const DepartmentAnalytics = () => {
               info={`${selectedDepartment?.name || 'Department'} - ${sessionType} sessions completed`}
             />
             <DashboardDiffCard
-              title="Completion percentage"
+              title="Session Completion percentage"
               value={getStats?.departmentSessionsCompletedPercentage}
               icon={<HourglassFull />}
               iconColor={'orange'}
