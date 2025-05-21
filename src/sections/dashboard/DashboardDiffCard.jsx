@@ -13,60 +13,53 @@ export const DashboardDiffCard = (props) => {
   }
   return (
     <Card sx={sx}>
-      <CardContent>
-        <Stack alignItems="flex-start" direction="row" justifyContent="space-between" spacing={3}>
-          <Stack spacing={1}>
-            <Stack direction="row" spacing={1} alignItems="center">
-              {toolTip ? (
-                <Tooltip title={toolTip} arrow placement="top">
-                  <Typography color="text.secondary" variant="overline" sx={{ cursor: 'help' }}>
-                    {title}
-                  </Typography>
-                </Tooltip>
-              ) : (
+      <Tooltip title={toolTip} arrow placement="top">
+        <CardContent>
+          <Stack alignItems="flex-start" direction="row" justifyContent="space-between" spacing={3}>
+            <Stack spacing={1}>
+              <Stack direction="row" spacing={1} alignItems="center">
                 <Typography color="text.secondary" variant="overline">
                   {title}
                 </Typography>
-              )}
+              </Stack>
+              <Typography variant={subtextTitle}>{value}</Typography>
             </Stack>
-            <Typography variant={subtextTitle}>{value}</Typography>
+            {icon && (
+              <Avatar
+                sx={{
+                  backgroundColor: iconColor,
+                  top: 8,
+                  right: 8,
+                  height: 48,
+                  width: 48,
+                }}
+              >
+                {icon}
+              </Avatar>
+            )}
           </Stack>
-
-          {icon && (
-            <Avatar
-              sx={{
-                backgroundColor: iconColor,
-                top: 8,
-                right: 8,
-                height: 48,
-                width: 48,
-              }}
-            >
-              {icon}
-            </Avatar>
-          )}
-        </Stack>
-        {difference !== null && (
-          <Stack alignItems="center" direction="row" spacing={2} sx={{ mt: 2 }}>
-            <Stack alignItems="center" direction="row" spacing={0.5}>
-              <SvgIcon color={positive ? 'success' : 'error'} fontSize="small">
-                {positive ? <ArrowUpward /> : <ArrowDownward />}
-              </SvgIcon>
-              <Typography color={positive ? 'success.main' : 'error.main'} variant="body2">
-                {difference}%
+          {difference !== null && (
+            <Stack alignItems="center" direction="row" spacing={2} sx={{ mt: 2 }}>
+              <Stack alignItems="center" direction="row" spacing={0.5}>
+                <SvgIcon color={positive ? 'success' : 'error'} fontSize="small">
+                  {positive ? <ArrowUpward /> : <ArrowDownward />}
+                </SvgIcon>
+                <Typography color={positive ? 'success.main' : 'error.main'} variant="body2">
+                  {difference}%
+                </Typography>
+              </Stack>
+              <Typography color="text.secondary" variant="caption">
+                Since last month
               </Typography>
             </Stack>
+          )}
+          {info && (
             <Typography color="text.secondary" variant="caption">
-              Since last month
+              {info}
             </Typography>
-          </Stack>
-        )}
-        {info && (
-          <Typography color="text.secondary" variant="caption">
-            {info}
-          </Typography>
-        )}
-      </CardContent>
+          )}
+        </CardContent>
+      </Tooltip>
     </Card>
   );
 };

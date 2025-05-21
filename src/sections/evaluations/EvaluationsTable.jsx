@@ -1,18 +1,25 @@
+import { Delete, Edit, GroupRounded, PersonRounded } from '@mui/icons-material';
 import { Box, MenuItem, Skeleton, Stack, Typography } from '@mui/material';
+import { debounce } from 'lodash';
 import PropTypes from 'prop-types';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { toast } from 'react-toastify';
-import { debounce } from 'lodash';
-import { Delete, Edit } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
+import ConfirmationDialog from '../../components/ConfirmationDialog';
 import CustomDialog from '../../components/CustomDialog';
 import CustomDateRangePicker from '../../components/DatePicker/CustomDateRangePicker';
 import { SeverityPill } from '../../components/SeverityPill';
 import ExportOptions from '../../components/export/ExportOptions';
+import CustomGrid from '../../components/grid/CustomGrid';
+import JsonLifeCycleEvaluationGrid from '../../components/modules/JsonLifeCycleEvaluationGrid';
+import JsonLifeCycleTrainingGrid from '../../components/modules/JsonLifeCycleTrainingGrid';
+import QuestionsActionGrid from '../../components/modules/QuestionActionGrid';
 import QuestionsGrid from '../../components/modules/QuestionsGrid';
 import TimeGrid from '../../components/modules/TimeGrid';
+import { useAuth } from '../../hooks/useAuth';
 import { useConfig } from '../../hooks/useConfig';
+import { useSharedData } from '../../hooks/useSharedData';
 import axios from '../../utils/axios';
 import {
   capitalizeFirstLetter,
@@ -20,22 +27,11 @@ import {
   convertUnixToLocalTime,
   getEvaluationAnalytics,
 } from '../../utils/utils';
-import QuestionsActionGrid from '../../components/modules/QuestionActionGrid';
-import JsonLifeCycleEvaluationGrid from '../../components/modules/JsonLifeCycleEvaluationGrid';
-import JsonLifeCycleTrainingGrid from '../../components/modules/JsonLifeCycleTrainingGrid';
-import ConfirmationDialog from '../../components/ConfirmationDialog';
-import { useAuth } from '../../hooks/useAuth';
-import CustomGrid from '../../components/grid/CustomGrid';
-import { useSharedData } from '../../hooks/useSharedData';
 
 const statusMap = {
   Pending: 'warning',
   Pass: 'success',
   Fail: 'error',
-  ongoing: 'warning',
-  completed: 'success',
-  passed: 'success',
-  failed: 'error',
 };
 
 const FAKE_DATA = [
@@ -91,7 +87,6 @@ const EvaluationsTable = React.memo(
     useEffect(() => {
       if (exportBtnClicked) {
         exportBtnRef.current.click();
-        exportBtnFalse();
       }
     }, [exportBtnClicked]);
 
@@ -133,7 +128,70 @@ const EvaluationsTable = React.memo(
               <Typography>{row?.original?.moduleId?.name || '-'}</Typography>
             ),
         },
+        {
+          accessorFn: (row) => (row.isMultiplayer ? 'Multiplayer' : 'Single Player'),
+          filterFn: (row, _columnId, filterValue) => {
+            const mode = row.original?.isMultiplayer ? 'Multiplayer' : 'Single Player';
+            if (!filterValue || filterValue.length === 0) return true;
+            return filterValue.includes(mode);
+          },
+          header: `Player Mode`,
+          filterVariant: 'multi-select',
+          filterSelectOptions: [
+            { text: 'Single Player', value: 'Single Player' },
+            { text: 'Multiplayer', value: 'Multiplayer' },
+          ],
+          size: 120,
+          Cell: ({ row }) => {
+            const mode = row.original?.isMultiplayer ? 'Multiplayer' : 'Single Player';
+            const isDeprecated = row?.original?.moduleId?.archived;
 
+            // Custom approach without using SeverityPill's color prop
+            return (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {row.original?.isMultiplayer ? (
+                  <GroupRounded
+                    fontSize="small"
+                    sx={{
+                      color: isDeprecated ? '#f44336' : '#7b1fa2',
+                      fontSize: '0.875rem'
+                    }}
+                  />
+                ) : (
+                  <PersonRounded
+                    fontSize="small"
+                    sx={{
+                      color: isDeprecated ? '#f44336' : '#1976d2',
+                      fontSize: '0.875rem'
+                    }}
+                  />
+                )}
+
+                {isDeprecated ? (
+                  <Typography sx={{ color: '#f44336', fontSize: '0.75rem', fontWeight: 500 }}>
+                    {`${mode} - Deprecated`}
+                  </Typography>
+                ) : (
+                  <Box
+                    component="span"
+                    sx={{
+                      backgroundColor: row.original?.isMultiplayer ? 'rgba(123, 31, 162, 0.1)' : 'rgba(25, 118, 210, 0.1)',
+                      color: row.original?.isMultiplayer ? '#7b1fa2' : '#1976d2',
+                      borderRadius: '16px',
+                      padding: '4px 10px',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      display: 'inline-flex',
+                      alignItems: 'center'
+                    }}
+                  >
+                    {mode}
+                  </Box>
+                )}
+              </Box>
+            );
+          },
+        },
         {
           size: 250,
           accessorFn: (row) => {
@@ -321,7 +379,7 @@ const EvaluationsTable = React.memo(
           username: values?.userId?.username || '-',
           moduleName: values?.moduleId?.name || '-',
           domainName: values?.userId?.domainId?.name || '-',
-          departmentName: values?.departmentId?.name || '-',
+          departmentName: values?.userId?.departmentId?.name || '-',
           session: `${startTime} - ${endTime}`,
           duration: duration > 0 ? convertTimeToDescription(duration) : '-',
           score: values?.score || '-',
@@ -371,6 +429,7 @@ const EvaluationsTable = React.memo(
         responseObj.session = session;
         responseObj.username = row?.original?.userId?.name;
         responseObj.score = row?.original?.score;
+        responseObj.isMultiplayer = row?.original?.isMultiplayer;
 
         const { answers } = responseObj;
         if (responseObj.mode === 'mcq') {
@@ -411,13 +470,13 @@ const EvaluationsTable = React.memo(
             chapters: responseObj.trainingDumpJson.chapters?.map((chapter) => ({
               ...chapter,
               moments: chapter.moments.map((moment) =>
-                // CHECK Answers is not an array in this but in evaluation JSON Lifcycle case we are doing something else!??
+              // CHECK Answers is not an array in this but in evaluation JSON Lifcycle case we are doing something else!??
 
-                ({
-                  ...moment,
-                  totalTimeTaken: moment?.endTime ? moment.endTime - moment.startTime : undefined,
-                  answers: moment?.answers?.events || [],
-                }),
+              ({
+                ...moment,
+                totalTimeTaken: moment?.endTime ? moment.endTime - moment.startTime : undefined,
+                answers: moment?.answers?.events || [],
+              }),
               ),
             })),
           };
@@ -493,6 +552,7 @@ const EvaluationsTable = React.memo(
           hasDeleteAccess={hasDeleteAccess}
           handleExportRows={handleExportRows}
           exportBtnRef={exportBtnRef}
+          exportBtnFalse={exportBtnFalse}
           enableRowClick
           enableFacetedValues
           enableAnalyticsHiddenButton

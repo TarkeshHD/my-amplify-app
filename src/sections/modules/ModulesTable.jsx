@@ -135,8 +135,25 @@ export const ModulesTable = ({
     }
   };
 
-  const handleRowClick = (row) => {
-    setOpenEvalutationData(row.original);
+  const handleRowClick = async (row) => {
+    if (row?.original?.evaluationType === "jsonLifeCycle") {
+
+      if (row?.original?.evaluation.length > 0) {
+        setOpenEvalutationData(row.original);
+      } else {
+        try {
+          const response = await axios.get(`/module/trainingValues/${row?.id}`);
+          row.original.evaluation = [response?.data?.trainingData]
+          setOpenEvalutationData(row.original);
+        } catch (error) {
+          toast.error('Associated Data Not Found');
+          setOpenEvalutationData(false);
+        }
+      }
+    } else {
+      setOpenEvalutationData(row.original);
+    }
+    console.log(row, 'llllllllllllllllllllllllllllllllll');
   };
 
   const rowActionMenuItems = ({ row, closeMenu, table }) => [
@@ -355,14 +372,16 @@ export const ModulesTable = ({
             return <QuestionsActionGrid evaluation={openEvaluationData?.evaluation} />;
           }
           if (openEvaluationData?.evaluationType === 'jsonLifeCycle') {
+            console.log(openEvaluationData,'kkkkkkkkkkkkkkkkkkkksssssssss')
             return (
               <JsonLifeCycleEvaluationGrid
                 evalData={{
                   evaluationDump: {
                     ...openEvaluationData.evaluation[0],
+                    fromModule:true
                   },
                 }}
-                showModule
+                showModule:true
               />
             );
           }

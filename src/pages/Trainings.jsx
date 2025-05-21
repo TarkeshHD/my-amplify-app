@@ -1,26 +1,22 @@
-import { Add, CloseRounded, CheckCircle, Download, EventAvailable, PendingActions, People } from '@mui/icons-material';
+import { CheckCircle, Download, EventAvailable, People } from '@mui/icons-material';
 import {
   Box,
   Button,
+  CircularProgress,
   Container,
-  DialogActions,
   Grid,
-  IconButton,
   Stack,
   SvgIcon,
-  Tooltip,
-  Typography,
+  Typography
 } from '@mui/material';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { isEmpty, isEqual } from 'lodash';
+import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'react-toastify';
-import { isEqual, isEmpty } from 'lodash';
 import { useConfig } from '../hooks/useConfig';
-import axios from '../utils/axios';
-import { TrainingsTable } from '../sections/trainings/TrainingsTable';
-import { DashboardTasksProgress } from '../sections/dashboard/DashboardTasksProgress';
 import { DashboardDiffCard } from '../sections/dashboard/DashboardDiffCard';
-import { PremiumFeatureWrapper } from '../components/premium/PremiumFeatureWrapper';
+import { TrainingsTable } from '../sections/trainings/TrainingsTable';
+import axios from '../utils/axios';
 
 const Page = () => {
   const [fetchingData, setFetchingData] = useState(false);
@@ -37,6 +33,8 @@ const Page = () => {
     incompletionRate: 0,
     pendingTrainings: 0,
   });
+  const [isExporting, setIsExporting] = useState(false);
+
 
   const getTrainings = async (params) => {
     try {
@@ -51,7 +49,7 @@ const Page = () => {
       };
 
       const response = await axios.get('/training/', { params: queryParams });
-
+      console.log("response", response?.data)
       setData(response?.data?.trainings.docs);
       setTotalTrainings(response?.data?.trainings.totalDocs);
       setTrainingAnalytics(response?.data?.stats);
@@ -65,6 +63,7 @@ const Page = () => {
 
   const exportBtnFalse = () => {
     setExportBtnClicked(false);
+    setIsExporting(false);
   };
 
   useEffect(() => {
@@ -102,15 +101,21 @@ const Page = () => {
               <Button
                 onClick={() => {
                   setExportBtnClicked(true);
+                  setIsExporting(true);
                 }}
                 variant="outlined"
                 startIcon={
-                  <SvgIcon fontSize="small">
-                    <Download />
-                  </SvgIcon>
+                  isExporting ? (
+                    <CircularProgress size={20} />
+                  ) : (
+                    <SvgIcon fontSize="small">
+                      <Download />
+                    </SvgIcon>
+                  )
                 }
+                disabled={isExporting}
               >
-                Export
+                {isExporting ? 'Exporting...' : 'Export'}
               </Button>
             </Stack>
           </Stack>

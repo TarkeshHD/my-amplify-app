@@ -38,7 +38,7 @@ import { PremiumFeatureAlert } from '../premium/PremiumFeatureAlert';
 
 const now = new Date();
 
-const Analytics = () => {
+const Analytics = ({ updateAnalyticsData }) => {
   const config = useConfig();
   const { data } = config;
   const isFreeTrialUser = data?.freeTrial;
@@ -183,6 +183,27 @@ const Analytics = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    if (!loading) {
+      updateAnalyticsData({
+        totalUsers,
+        totalVRSessionInMilliseconds,
+        incompletionPercentage,
+        passPercentage,
+        top5FailureMoments,
+        deviceCount,
+      });
+    }
+  }, [
+    loading,
+    totalUsers,
+    totalVRSessionInMilliseconds,
+    incompletionPercentage,
+    passPercentage,
+    top5FailureMoments,
+    deviceCount,
+  ]);
+
   console.log('role', auth?.user?.role);
 
   const onClickUpgrade = async () => {
@@ -213,27 +234,7 @@ const Analytics = () => {
   }
 
   return (
-    <Container maxWidth="xl">
-      <Box sx={{ justifyContent: 'space-between', display: 'flex', alignItems: 'center' }}>
-        <h1>Analytics</h1>
-        {!isFreeTrialUser && (
-          <PDFDownloadLink
-            document={
-              <ReportPDF
-                totalUsers={totalUsers}
-                totalVRSessionInMilliseconds={totalVRSessionInMilliseconds}
-                incompletionPercentage={incompletionPercentage}
-                passPercentage={passPercentage}
-                moments={top5FailureMoments.slice(0, 2)}
-                deviceCount={deviceCount}
-              />
-            }
-            fileName="autovrse_training_report.pdf"
-          >
-            {({ loading }) => (loading ? 'Loading...' : <Button variant="contained">Generate report</Button>)}
-          </PDFDownloadLink>
-        )}
-      </Box>
+    <Box sx={{ px: 2 }}>
       <Grid container spacing={2}>
         {domainName && (
           <Grid item lg={12} xs={12}>
@@ -320,11 +321,10 @@ const Analytics = () => {
           <Grid item sx={12} sm={9}>
             <PremiumFeatureWrapper message="" noLogo hideUpgradeButton>
               <DashboardPieChart
-                title={`${
-                  auth?.user?.role === 'admin'
-                    ? data?.labels?.department?.singular || 'Department'
-                    : data?.labels?.domain?.singular || 'Domain'
-                } ${data?.labels?.user?.plural || 'Users'}`}
+                title={`${auth?.user?.role === 'admin'
+                  ? data?.labels?.department?.singular || 'Department'
+                  : data?.labels?.domain?.singular || 'Domain'
+                  } ${data?.labels?.user?.plural || 'Users'}`}
                 chartSeries={domainOrDeptVal[0]}
                 labels={domainOrDeptVal[1]}
               />
@@ -364,7 +364,7 @@ const Analytics = () => {
         )}
       </Grid>
       <UpgradeModel isModalOpen={successFormOpen} setModalOpen={setSuccessFormOpen} />
-    </Container>
+    </Box>
   );
 };
 
