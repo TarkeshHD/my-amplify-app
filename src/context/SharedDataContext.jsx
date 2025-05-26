@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import axios from '../utils/axios';
 import { setSession } from '../utils/jwt';
 import { useAuth } from '../hooks/useAuth';
-import { toast } from 'react-toastify';
 
 const SharedDataContext = React.createContext();
 
