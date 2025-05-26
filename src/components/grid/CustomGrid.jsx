@@ -153,11 +153,6 @@ const CustomGrid = (props) => {
 
       const sortingParam = formatSorting(sorting);
 
-      console.log('//////////////');
-      console.log(filters, sortingParam);
-      console.log(tableSource);
-      console.log(endPointMap[tableSource]);
-
       const response = await axios.get(endPointMap[tableSource], {
         params: {
           filters: JSON.stringify(filters),
