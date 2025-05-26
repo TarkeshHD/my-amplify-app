@@ -1,13 +1,13 @@
-import { Delete, FilterAltOff } from '@mui/icons-material';
-import { Box, Button, Card, IconButton, Tooltip } from '@mui/material';
-import { isEmpty } from 'lodash';
+import { useState, useEffect, useRef } from 'react';
 import {
   MaterialReactTable,
   MRT_FullScreenToggleButton as MRTFullScreenToggleButton,
   MRT_ShowHideColumnsButton as MRTShowHideColumnsButton,
   MRT_ToggleFiltersButton as MRTToggleFiltersButton,
 } from 'material-react-table';
-import { useEffect, useRef, useState } from 'react';
+import { Box, Button, Card, IconButton, Tooltip } from '@mui/material';
+import { Delete, FilterAltOff } from '@mui/icons-material';
+import { isEmpty } from 'lodash';
 import axios from '../../utils/axios';
 
 const CustomGrid = (props) => {
@@ -39,7 +39,7 @@ const CustomGrid = (props) => {
     rowCount,
     tableSource,
     tableState,
-    exportBtnFalse
+    exportBtnFalse,
   } = props;
 
   const [columnFilters, setColumnFilters] = useState([]);
@@ -146,7 +146,28 @@ const CustomGrid = (props) => {
         trainings: '/training/',
       };
 
-      const response = await axios.get(endPointMap[tableSource]);
+      const filters = columnFilters?.map((filter) => ({
+        id: filter.id,
+        value: filter.value,
+      }));
+
+      const sortingParam = formatSorting(sorting);
+
+      console.log('//////////////');
+      console.log(filters, sortingParam);
+      console.log(tableSource);
+      console.log(endPointMap[tableSource]);
+
+      const response = await axios.get(endPointMap[tableSource], {
+        params: {
+          filters: JSON.stringify(filters),
+          sort: JSON.stringify(sortingParam),
+          // Optional: add pagination if you want to limit export size
+          // page: pagination.pageIndex + 1,
+          // limit: pagination.pageSize,
+        },
+      });
+
       handleExportRows(response?.data?.[tableSource]?.docs);
       exportBtnFalse();
     } catch (error) {
@@ -201,11 +222,11 @@ const CustomGrid = (props) => {
         muiTableBodyRowProps={
           enableRowClick
             ? ({ row }) => ({
-              onClick: () => {
-                handleRowClick(row);
-              },
-              sx: { cursor: 'pointer' },
-            })
+                onClick: () => {
+                  handleRowClick(row);
+                },
+                sx: { cursor: 'pointer' },
+              })
             : {}
         }
         enableExpanding={enableExpanding}
