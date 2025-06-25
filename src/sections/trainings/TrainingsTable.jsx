@@ -19,7 +19,12 @@ import JsonLifeCycleTrainingGrid from '../../components/modules/JsonLifeCycleTra
 import { useAuth } from '../../hooks/useAuth';
 import { useConfig } from '../../hooks/useConfig';
 import { useSharedData } from '../../hooks/useSharedData';
-import { convertTimeToDescription, convertUnixToLocalTime, getTrainingAnalytics } from '../../utils/utils';
+import {
+  convertTimeToDescription,
+  convertUnixToLocalTime,
+  getTrainingAnalytics,
+  formatSorting,
+} from '../../utils/utils';
 
 const statusMap = {
   ongoing: 'warning',
@@ -59,7 +64,7 @@ export const TrainingsTable = ({
   const [openExportOptions, setOpenExportOptions] = useState(false);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
   const [rowSelection, setRowSelection] = useState({});
-  const { departments, modules, domains } = useSharedData();
+  const { departments, modules, domains, loading: sharedDataLoading } = useSharedData();
 
   const analyticsHiddenBtnRef = useRef(null);
 
@@ -71,6 +76,24 @@ export const TrainingsTable = ({
 
   const config = useConfig();
   const { data } = config;
+
+  const [tableInstance, setTableInstance] = useState(null);
+
+  // If shared data is still loading, show loading state
+  if (sharedDataLoading) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Skeleton
+          variant="rounded"
+          height={400}
+          sx={{
+            bgcolor: 'background.neutral',
+            borderRadius: 2,
+          }}
+        />
+      </Box>
+    );
+  }
 
   useEffect(() => {
     if (exportBtnClicked) {
@@ -111,6 +134,7 @@ export const TrainingsTable = ({
         filterVariant: 'multi-select',
         filterSelectOptions: departments?.map((department) => ({ text: department?.name, value: department?._id })),
         size: 100,
+        enableSorting: false,
         Cell: ({ cell, column, row }) =>
           row.original?.userId?.departmentId?.archived ? (
             <Typography sx={{ color: 'darkred' }}>
@@ -124,6 +148,7 @@ export const TrainingsTable = ({
         accessorKey: 'userId.domainId.name', // simple recommended way to define a column
         header: `${data?.labels?.domain?.singular || 'Domain'}`,
         filterVariant: 'multi-select',
+        enableSorting: false,
         filterSelectOptions: domains?.map((domain) => ({ text: domain?.name, value: domain?._id })),
         size: 100,
         Cell: ({ cell, column, row }) => <Typography>{row?.original?.userId?.domainId?.name || '-'}</Typography>,
@@ -137,6 +162,7 @@ export const TrainingsTable = ({
           if (!filterValue || filterValue.length === 0) return true;
           return filterValue.includes(fullModuleName);
         },
+        enableSorting: false,
         header: `${data?.labels?.module?.singular || 'Module'}`,
         filterVariant: 'multi-select',
         filterSelectOptions: modules?.map((module) => ({ text: module?.name, value: module?._id })),
@@ -161,6 +187,7 @@ export const TrainingsTable = ({
           { text: 'Single Player', value: 'Single Player' },
           { text: 'Multiplayer', value: 'Multiplayer' },
         ],
+        enableSorting: false,
         size: 120,
         Cell: ({ row }) => {
           const isMultiplayer = row.original?.isMultiplayer;
@@ -198,7 +225,7 @@ export const TrainingsTable = ({
                     fontSize: '0.75rem',
                     fontWeight: 600,
                     display: 'inline-flex',
-                    alignItems: 'center'
+                    alignItems: 'center',
                   }}
                 >
                   {mode}
@@ -207,9 +234,7 @@ export const TrainingsTable = ({
             </Box>
           );
         },
-      }
-      ,
-
+      },
       {
         size: 250,
         accessorFn: (row) => {
@@ -218,6 +243,7 @@ export const TrainingsTable = ({
           return [row?.startTime, endTime];
         },
         header: 'Session Time',
+        enableSorting: false,
         filterFn: (row, id, filterValue) => {
           const [startTime, endTime] = row.getValue(id);
           const [startFilterValue, endFilterValue] = filterValue;
@@ -269,6 +295,7 @@ export const TrainingsTable = ({
           return <Typography>{duration > 0 ? convertTimeToDescription(duration) : '-'}</Typography>;
         },
         enableColumnFilter: false,
+        enableSorting: false,
       },
       {
         accessorKey: 'status', // simple recommended way to define a column
@@ -356,9 +383,9 @@ export const TrainingsTable = ({
       responseObj.status = status;
       responseObj.session = session;
       responseObj.username = row?.original?.userId?.name;
-      responseObj.participants = row?.original?.participants
-      responseObj.completedParticipants = row?.original?.completedParticipants
-      responseObj.participants = row?.original?.participants
+      responseObj.participants = row?.original?.participants;
+      responseObj.completedParticipants = row?.original?.completedParticipants;
+      responseObj.participants = row?.original?.participants;
 
       responseObj.trainingType = row?.original?.trainingType;
       responseObj.isMultiplayer = row?.original?.isMultiplayer;
@@ -400,20 +427,33 @@ export const TrainingsTable = ({
       await axios.post(`/archive/bulkArchive`, { type: 'training', data: Object.keys(rowSelection) });
       toast.success('Trainings deleted successfully');
       setRowSelection({});
-      handleRefresh();
+      // Get current table state and pass it to handleRefresh
+      const tableState = {
+        pageIndex: 1, // Reset to first page after deletion
+        pageSize: JSON.parse(localStorage.getItem('tablePageSize'))?.trainings || 10,
+        sorting: formatSorting(tableInstance?.getState()?.sorting), // Use formatSorting utility
+        filters: tableInstance?.getState()?.columnFilters || [], // Get current filters
+      };
+      handleRefresh(tableState);
     } catch (error) {
       console.log(error);
       toast.error(error.message || 'Failed to delete trainings');
     }
   };
+
   const onDeleteRow = async (row) => {
     try {
       const id = row.id || row._id;
       await axios.post(`/training/archive/${id}`);
       toast.success('Training deleted successfully');
-      setTimeout(() => {
-        navigate(0);
-      }, 700);
+      // Get current table state and pass it to handleRefresh
+      const tableState = {
+        pageIndex: 1, // Reset to first page after deletion
+        pageSize: JSON.parse(localStorage.getItem('tablePageSize'))?.trainings || 10,
+        sorting: formatSorting(tableInstance?.getState()?.sorting), // Use formatSorting utility
+        filters: tableInstance?.getState()?.columnFilters || [], // Get current filters
+      };
+      handleRefresh(tableState);
     } catch (error) {
       console.log(error);
       toast.error(error.message || 'Failed to delete training');
@@ -462,6 +502,7 @@ export const TrainingsTable = ({
         onUrlParamsChange={onUrlParamsChange}
         tableSource="trainings"
         exportBtnFalse={exportBtnFalse}
+        onTableInstanceChange={setTableInstance}
       />
       {/* View export options */}
       <CustomDialog

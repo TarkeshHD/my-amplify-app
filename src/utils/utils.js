@@ -145,40 +145,43 @@ export const removeFromHistory = () => {
 };
 
 export const convertTimeToDescription = (time, minify = false) => {
-  let formattedDuration = '';
-
   if (time === 0) return '0 seconds';
 
   const duration = moment.duration(time, 'seconds');
 
-  const hours = duration.hours();
-  const minutes = duration.minutes();
-  const seconds = duration.seconds();
+  const totalSeconds = Math.floor(duration.asSeconds());
+  const totalMinutes = Math.floor(duration.asMinutes());
+  const totalHours = Math.floor(duration.asHours());
 
-  // If minify is true, return the minified version of the duration
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  let formattedDuration = '';
+
   if (hours > 0) {
     if (minify) {
-      return (formattedDuration += `${hours}h`);
+      return `${hours}h${minutes > 0 ? ` ${minutes}m` : ''}`;
     }
     formattedDuration += `${hours} hour${hours > 1 ? 's' : ''}`;
-    if (minutes > 0 || seconds > 0) {
-      if (minify) {
-        return (formattedDuration += ` ${minutes}m`);
-      }
+    if (minutes > 0) {
       formattedDuration += ` ${minutes} minute${minutes > 1 ? 's' : ''}`;
     }
     if (seconds > 0) {
-      if (minify) {
-        return ` ${seconds}s`;
-      }
       formattedDuration += ` ${seconds} second${seconds > 1 ? 's' : ''}`;
     }
   } else if (minutes > 0) {
+    if (minify) {
+      return `${minutes}m${seconds > 0 ? ` ${seconds}s` : ''}`;
+    }
     formattedDuration += `${minutes} minute${minutes > 1 ? 's' : ''}`;
     if (seconds > 0) {
       formattedDuration += ` ${seconds} second${seconds > 1 ? 's' : ''}`;
     }
   } else {
+    if (minify) {
+      return `${seconds}s`;
+    }
     formattedDuration += `${seconds} second${seconds > 1 ? 's' : ''}`;
   }
 
@@ -342,3 +345,15 @@ export const getTrainingAnalytics = (values) => {
  */
 
 export const millisecondsToHours = (ms) => moment.duration(ms).asHours().toFixed(2);
+
+export const formatSorting = (sorting) => {
+  if (!sorting || sorting.length === 0) return {};
+
+  const value = sorting[0];
+  if (!value) return {};
+
+  const field = String(value?.id);
+  const formattedField = field.charAt(0).match(/[A-Z]/) ? field.toLowerCase() : field;
+  const direction = value?.desc ? -1 : 1;
+  return { [formattedField]: direction };
+};

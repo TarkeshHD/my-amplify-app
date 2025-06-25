@@ -40,6 +40,7 @@ const CustomGrid = (props) => {
     tableSource,
     tableState,
     exportBtnFalse,
+    onTableInstanceChange,
   } = props;
 
   const [columnFilters, setColumnFilters] = useState([]);
@@ -52,6 +53,7 @@ const CustomGrid = (props) => {
     };
   });
   const isFirstRender = useRef(true);
+  const tableRef = useRef(null);
 
   useEffect(() => {
     if (isFirstRender.current) {
@@ -74,6 +76,12 @@ const CustomGrid = (props) => {
       }),
     );
   }, [pagination.pageIndex, pagination.pageSize, sorting, columnFilters]);
+
+  useEffect(() => {
+    if (tableRef.current && onTableInstanceChange) {
+      onTableInstanceChange(tableRef.current);
+    }
+  }, [onTableInstanceChange]);
 
   const initialState = {
     pagination: {
@@ -108,9 +116,10 @@ const CustomGrid = (props) => {
     value = value?.[0];
     if (isEmpty(value)) return {};
 
-    const field = String(value?.id).toLowerCase();
+    const field = String(value?.id);
+    const formattedField = field.charAt(0).match(/[A-Z]/) ? field.toLowerCase() : field;
     const direction = value?.desc ? -1 : 1;
-    return { [field]: direction };
+    return { [formattedField]: direction };
   };
 
   const ClearFilters = ({ table }) => (
@@ -153,6 +162,11 @@ const CustomGrid = (props) => {
 
       const sortingParam = formatSorting(sorting);
 
+      console.log('//////////////');
+      console.log(filters, sortingParam);
+      console.log(tableSource);
+      console.log(endPointMap[tableSource]);
+
       const response = await axios.get(endPointMap[tableSource], {
         params: {
           filters: JSON.stringify(filters),
@@ -182,16 +196,19 @@ const CustomGrid = (props) => {
   return (
     <Card>
       <MaterialReactTable
-        renderToolbarInternalActions={({ table }) => (
-          <Box sx={{ display: 'flex', p: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            {enableClearFilters && <ClearFilters table={table} />}
-            {enableBulkDelete && <BulkDelete table={table} />}
-            {showExportButton && <ExportButton table={table} />}
-            <MRTToggleFiltersButton table={table} />
-            <MRTShowHideColumnsButton table={table} />
-            <MRTFullScreenToggleButton table={table} />
-          </Box>
-        )}
+        renderToolbarInternalActions={({ table }) => {
+          tableRef.current = table;
+          return (
+            <Box sx={{ display: 'flex', p: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              {enableClearFilters && <ClearFilters table={table} />}
+              {enableBulkDelete && <BulkDelete table={table} />}
+              {showExportButton && <ExportButton table={table} />}
+              <MRTToggleFiltersButton table={table} />
+              <MRTShowHideColumnsButton table={table} />
+              <MRTFullScreenToggleButton table={table} />
+            </Box>
+          );
+        }}
         renderRowActionMenuItems={rowActionMenuItems}
         enableRowActions={enableRowActions}
         displayColumnDefOptions={{
