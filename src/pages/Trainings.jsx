@@ -1,19 +1,11 @@
 import { CheckCircle, Download, EventAvailable, People } from '@mui/icons-material';
-import {
-  Box,
-  Button,
-  CircularProgress,
-  Container,
-  Grid,
-  Stack,
-  SvgIcon,
-  Typography
-} from '@mui/material';
+import { Box, Button, CircularProgress, Container, Grid, Stack, SvgIcon, Typography, Skeleton } from '@mui/material';
 import { isEmpty, isEqual } from 'lodash';
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'react-toastify';
 import { useConfig } from '../hooks/useConfig';
+import { useSharedData } from '../hooks/useSharedData';
 import { DashboardDiffCard } from '../sections/dashboard/DashboardDiffCard';
 import { TrainingsTable } from '../sections/trainings/TrainingsTable';
 import axios from '../utils/axios';
@@ -26,6 +18,7 @@ const Page = () => {
 
   const config = useConfig();
   const { data: configData } = config;
+  const { loading: sharedDataLoading } = useSharedData();
 
   const [trainingAnalytics, setTrainingAnalytics] = useState({
     totalTrainings: 0,
@@ -34,7 +27,6 @@ const Page = () => {
     pendingTrainings: 0,
   });
   const [isExporting, setIsExporting] = useState(false);
-
 
   const getTrainings = async (params) => {
     try {
@@ -49,7 +41,7 @@ const Page = () => {
       };
 
       const response = await axios.get('/training/', { params: queryParams });
-      console.log("response", response?.data)
+      console.log('response', response?.data);
       setData(response?.data?.trainings.docs);
       setTotalTrainings(response?.data?.trainings.totalDocs);
       setTrainingAnalytics(response?.data?.stats);
@@ -81,8 +73,8 @@ const Page = () => {
     });
   };
 
-  const handleRefresh = () => {
-    getTrainings();
+  const handleRefresh = (tableState) => {
+    getTrainings(tableState);
   };
 
   return (
@@ -92,82 +84,117 @@ const Page = () => {
       </Helmet>
 
       <Container maxWidth="xl">
-        <Stack spacing={3}>
-          <Stack direction="row" justifyContent="space-between" spacing={4}>
-            <Stack spacing={1}>
-              <Typography variant="h4">{configData?.labels?.training?.singular || 'Training'}</Typography>
-            </Stack>
-            <Stack alignItems="center" direction="row" spacing={1}>
-              <Button
-                onClick={() => {
-                  setExportBtnClicked(true);
-                  setIsExporting(true);
+        {sharedDataLoading ? (
+          <Box sx={{ p: 3 }}>
+            <Stack spacing={3}>
+              <Stack direction="row" justifyContent="space-between" spacing={4}>
+                <Skeleton variant="text" width={200} height={40} />
+                <Skeleton variant="rectangular" width={100} height={36} />
+              </Stack>
+              <Box sx={{ mb: 3 }}>
+                <Grid container spacing={2}>
+                  {[1, 2, 3].map((item) => (
+                    <Grid item xs={12} sm={6} md={3} key={item}>
+                      <Skeleton
+                        variant="rounded"
+                        height={140}
+                        sx={{
+                          bgcolor: 'background.neutral',
+                          borderRadius: 2,
+                        }}
+                      />
+                    </Grid>
+                  ))}
+                </Grid>
+              </Box>
+              <Skeleton
+                variant="rounded"
+                height={400}
+                sx={{
+                  bgcolor: 'background.neutral',
+                  borderRadius: 2,
                 }}
-                variant="outlined"
-                startIcon={
-                  isExporting ? (
-                    <CircularProgress size={20} />
-                  ) : (
-                    <SvgIcon fontSize="small">
-                      <Download />
-                    </SvgIcon>
-                  )
-                }
-                disabled={isExporting}
-              >
-                {isExporting ? 'Exporting...' : 'Export'}
-              </Button>
+              />
             </Stack>
-          </Stack>
-
-          <Box sx={{ mb: 3 }}>
-            <Grid container spacing={2}>
-              {/* Volume Stats */}
-              <Grid item xs={12} sm={6} md={3}>
-                <DashboardDiffCard
-                  title="Total Attempts"
-                  icon={<EventAvailable />}
-                  positive={trainingAnalytics?.totalTrainings > 0}
-                  value={trainingAnalytics?.totalTrainings || 0}
-                  info="Total number of training attempts"
-                />
-              </Grid>
-
-              {/* Completion Stats */}
-              <Grid item xs={12} sm={6} md={3}>
-                <DashboardDiffCard
-                  title="Trainings Completed"
-                  icon={<CheckCircle />}
-                  positive={trainingAnalytics?.totalTrainings - trainingAnalytics?.pendingTrainings > 0}
-                  value={trainingAnalytics?.totalTrainings - trainingAnalytics?.pendingTrainings || 0}
-                  info={`${Number(100 - trainingAnalytics?.incompletionRate || 0).toFixed(2)}% completion rate`}
-                />
-              </Grid>
-
-              {/* User Stats */}
-              <Grid item xs={12} sm={6} md={3}>
-                <DashboardDiffCard
-                  title="Unique Users"
-                  icon={<People />}
-                  iconColor="primary.main"
-                  positive={trainingAnalytics?.uniqueUsers > 0}
-                  value={trainingAnalytics?.uniqueUsers || 0}
-                  info="Number of unique participants"
-                />
-              </Grid>
-            </Grid>
           </Box>
+        ) : (
+          <Stack spacing={3}>
+            <Stack direction="row" justifyContent="space-between" spacing={4}>
+              <Stack spacing={1}>
+                <Typography variant="h4">{configData?.labels?.training?.singular || 'Training'}</Typography>
+              </Stack>
+              <Stack alignItems="center" direction="row" spacing={1}>
+                <Button
+                  onClick={() => {
+                    setExportBtnClicked(true);
+                    setIsExporting(true);
+                  }}
+                  variant="outlined"
+                  startIcon={
+                    isExporting ? (
+                      <CircularProgress size={20} />
+                    ) : (
+                      <SvgIcon fontSize="small">
+                        <Download />
+                      </SvgIcon>
+                    )
+                  }
+                  disabled={isExporting}
+                >
+                  {isExporting ? 'Exporting...' : 'Export'}
+                </Button>
+              </Stack>
+            </Stack>
 
-          <TrainingsTable
-            fetchingData={fetchingData}
-            items={data}
-            count={totalTrainings}
-            exportBtnClicked={exportBtnClicked}
-            exportBtnFalse={exportBtnFalse}
-            handleRefresh={handleRefresh}
-            onUrlParamsChange={getTrainings}
-          />
-        </Stack>
+            <Box sx={{ mb: 3 }}>
+              <Grid container spacing={2}>
+                {/* Volume Stats */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <DashboardDiffCard
+                    title="Total Attempts"
+                    icon={<EventAvailable />}
+                    positive={trainingAnalytics?.totalTrainings > 0}
+                    value={trainingAnalytics?.totalTrainings || 0}
+                    info="Total number of training attempts"
+                  />
+                </Grid>
+
+                {/* Completion Stats */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <DashboardDiffCard
+                    title="Trainings Completed"
+                    icon={<CheckCircle />}
+                    positive={trainingAnalytics?.totalTrainings - trainingAnalytics?.pendingTrainings > 0}
+                    value={trainingAnalytics?.totalTrainings - trainingAnalytics?.pendingTrainings || 0}
+                    info={`${Number(100 - trainingAnalytics?.incompletionRate || 0).toFixed(2)}% completion rate`}
+                  />
+                </Grid>
+
+                {/* User Stats */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <DashboardDiffCard
+                    title="Unique Users"
+                    icon={<People />}
+                    iconColor="primary.main"
+                    positive={trainingAnalytics?.uniqueUsers > 0}
+                    value={trainingAnalytics?.uniqueUsers || 0}
+                    info="Number of unique participants"
+                  />
+                </Grid>
+              </Grid>
+            </Box>
+
+            <TrainingsTable
+              fetchingData={fetchingData}
+              items={data}
+              count={totalTrainings}
+              exportBtnClicked={exportBtnClicked}
+              exportBtnFalse={exportBtnFalse}
+              handleRefresh={handleRefresh}
+              onUrlParamsChange={getTrainings}
+            />
+          </Stack>
+        )}
       </Container>
     </>
   );

@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import { Delete, Edit, Quiz, EditNote, DriveFileRenameOutline, FilterAltOff } from '@mui/icons-material';
 import TimerIcon from '@mui/icons-material/Timer';
-import { Box, Card, MenuItem, Stack, Typography, IconButton, Tooltip } from '@mui/material';
+import { Box, Card, MenuItem, Stack, Typography, IconButton, Tooltip, Skeleton } from '@mui/material';
 import PropTypes from 'prop-types';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { isEmpty } from 'lodash';
@@ -13,7 +13,7 @@ import AssignModulesForm from '../../components/modules/AssignModulesForm';
 import ModuleQuestionForm from '../../components/modules/ModuleQuestionsForm';
 import ModuleTimeForm from '../../components/modules/ModuleTimeForm';
 import QuestionsGrid from '../../components/modules/QuestionsGrid';
-import { getFile } from '../../utils/utils';
+import { getFile, formatSorting } from '../../utils/utils';
 import axios from '../../utils/axios';
 import ModuleQuestionActionForm from '../../components/modules/ModuleQuestionActionForm';
 import QuestionsActionGrid from '../../components/modules/QuestionActionGrid';
@@ -40,14 +40,35 @@ export const ModulesTable = ({
   const tableRef = useRef(null);
 
   const currentUser = useAuth();
-  const { modules: moduleOptions } = useSharedData();
+  const { modules: moduleOptions, loading: sharedDataLoading } = useSharedData();
 
   const config = useConfig();
   const { data: configData } = config;
   const hideThumbnail = configData?.features?.modules?.columns?.thumbnail === 'off';
+  const studioConnect = configData?.features?.studioConnect?.state === 'on';
+
+  // If shared data is still loading, show loading state
+  if (sharedDataLoading) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Skeleton
+          variant="rounded"
+          height={400}
+          sx={{
+            bgcolor: 'background.neutral',
+            borderRadius: 2,
+          }}
+        />
+      </Box>
+    );
+  }
 
   const columns = useMemo(
     () => [
+      {
+        accessorKey: 'id', // simple recommended way to define a column
+        header: 'ID',
+      },
       {
         accessorKey: 'index', // simple recommended way to define a column
         header: 'Index',
@@ -57,6 +78,7 @@ export const ModulesTable = ({
         header: 'Thumbnail',
         enableColumnFilter: false,
         enableHiding: false,
+        enableSorting: false,
         Cell: ({ cell, column }) => (
           <Box sx={{}}>
             <img
@@ -100,19 +122,27 @@ export const ModulesTable = ({
   const [openQuestionActionForm, setOpenQuestionActionForm] = useState(null);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
   const [openEditFileForm, setOpenEditFileForm] = useState(null);
+  const [tableInstance, setTableInstance] = useState(null);
 
   const auth = useAuth();
   const hasDeleteAccess = auth?.permissions?.includes('delete_module');
 
   const onDeleteRow = async (row) => {
-    const id = row.id || row._id;
     try {
+      const id = row.id || row._id;
       await axios.post(`/module/archive/${id}`);
       toast.success('Module deleted successfully');
-      handleRefresh();
+      // Get current table state and pass it to handleRefresh
+      const tableState = {
+        pageIndex: 1, // Reset to first page after deletion
+        pageSize: JSON.parse(localStorage.getItem('tablePageSize'))?.modules || 10,
+        sorting: formatSorting(tableInstance?.getState()?.sorting), // Use formatSorting utility
+        filters: tableInstance?.getState()?.columnFilters || [], // Get current filters
+      };
+      handleRefresh(tableState);
     } catch (error) {
       console.log(error);
-      toast.error(error.message || 'Failed to delete evaluation');
+      toast.error(error.message || 'Failed to delete module');
     }
   };
 
@@ -128,7 +158,14 @@ export const ModulesTable = ({
       await axios.post(`/archive/bulkArchive`, { type: 'module', data: Object.keys(rowSelection) });
       toast.success('Modules deleted successfully');
       setRowSelection({});
-      handleRefresh();
+      // Get current table state and pass it to handleRefresh
+      const tableState = {
+        pageIndex: 1, // Reset to first page after deletion
+        pageSize: JSON.parse(localStorage.getItem('tablePageSize'))?.modules || 10,
+        sorting: formatSorting(tableInstance?.getState()?.sorting), // Use formatSorting utility
+        filters: tableInstance?.getState()?.columnFilters || [], // Get current filters
+      };
+      handleRefresh(tableState);
     } catch (error) {
       console.log(error);
       toast.error(error.message || 'Failed to delete modules');
@@ -136,14 +173,13 @@ export const ModulesTable = ({
   };
 
   const handleRowClick = async (row) => {
-    if (row?.original?.evaluationType === "jsonLifeCycle") {
-
+    if (row?.original?.evaluationType === 'jsonLifeCycle') {
       if (row?.original?.evaluation.length > 0) {
         setOpenEvalutationData(row.original);
       } else {
         try {
           const response = await axios.get(`/module/trainingValues/${row?.id}`);
-          row.original.evaluation = [response?.data?.trainingData]
+          row.original.evaluation = [response?.data?.trainingData];
           setOpenEvalutationData(row.original);
         } catch (error) {
           toast.error('Associated Data Not Found');
@@ -157,20 +193,22 @@ export const ModulesTable = ({
   };
 
   const rowActionMenuItems = ({ row, closeMenu, table }) => [
-    <MenuItem
-      key={0}
-      onClick={() => {
-        onDeleteRow(row.original);
-        closeMenu();
-      }}
-      sx={{ color: 'error.main' }}
-    >
-      <Stack spacing={2} direction={'row'}>
-        <Delete />
-        <Typography>Delete</Typography>
-      </Stack>
-    </MenuItem>,
-    currentUser?.user?.role === 'productAdmin' && (
+    !studioConnect && (
+      <MenuItem
+        key={0}
+        onClick={() => {
+          onDeleteRow(row.original);
+          closeMenu();
+        }}
+        sx={{ color: 'error.main' }}
+      >
+        <Stack spacing={2} direction={'row'}>
+          <Delete />
+          <Typography>Delete</Typography>
+        </Stack>
+      </MenuItem>
+    ),
+    currentUser?.user?.role === 'productAdmin' && !studioConnect && (
       <>
         {(() => {
           if (row.original.evaluationType === 'question') {
@@ -274,6 +312,7 @@ export const ModulesTable = ({
         rowCount={count}
         tableState={{ columnVisibility: { thumbnail: !hideThumbnail } }}
         tableSource="modules"
+        onTableInstanceChange={setTableInstance}
       />
 
       {/* Questions Form */}
@@ -372,13 +411,12 @@ export const ModulesTable = ({
             return <QuestionsActionGrid evaluation={openEvaluationData?.evaluation} />;
           }
           if (openEvaluationData?.evaluationType === 'jsonLifeCycle') {
-            console.log(openEvaluationData,'kkkkkkkkkkkkkkkkkkkksssssssss')
             return (
               <JsonLifeCycleEvaluationGrid
                 evalData={{
                   evaluationDump: {
                     ...openEvaluationData.evaluation[0],
-                    fromModule:true
+                    fromModule: true,
                   },
                 }}
                 showModule:true

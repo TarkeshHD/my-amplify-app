@@ -69,8 +69,8 @@ const Page = () => {
     }
   };
 
-  const handleRefresh = () => {
-    getUsers();
+  const handleRefresh = (tableState) => {
+    getUsers(tableState);
   };
 
   useEffect(() => {

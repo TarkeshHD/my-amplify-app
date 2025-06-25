@@ -10,7 +10,7 @@ import CustomDialog from '../../components/CustomDialog';
 import ExportOptions from '../../components/export/ExportOptions';
 import EditPasswordForm from '../../components/users/EditPasswordForm';
 import { useConfig } from '../../hooks/useConfig';
-import { addToHistory } from '../../utils/utils';
+import { addToHistory, formatSorting } from '../../utils/utils';
 import axios from '../../utils/axios';
 import { useAuth } from '../../hooks/useAuth';
 import TraineeForm from '../../components/users/TraineeForm';
@@ -43,6 +43,8 @@ export const UsersTable = ({
   const { data } = config;
 
   const navigate = useNavigate();
+
+  const [tableInstance, setTableInstance] = useState(null);
 
   useEffect(() => {
     if (exportBtnClicked) {
@@ -140,7 +142,14 @@ export const UsersTable = ({
       // Delete row
       const response = await axios.delete(`/user/archive/${row?.original?.id}`);
       toast.success('User deleted successfully');
-      handleRefresh();
+      // Get current table state and pass it to handleRefresh
+      const tableState = {
+        pageIndex: 1, // Reset to first page after deletion
+        pageSize: JSON.parse(localStorage.getItem('tablePageSize'))?.users || 10,
+        sorting: formatSorting(tableInstance?.getState()?.sorting), // Use formatSorting utility
+        filters: tableInstance?.getState()?.columnFilters || [], // Get current filters
+      };
+      handleRefresh(tableState);
     } catch (error) {
       console.log(error);
       toast.error(error.message || 'Failed to delete user');
@@ -169,7 +178,14 @@ export const UsersTable = ({
       await axios.post(`/archive/bulkArchive`, { type: 'user', data: Object.keys(rowSelection) });
       toast.success('Users deleted successfully');
       setRowSelection({});
-      handleRefresh();
+      // Get current table state and pass it to handleRefresh
+      const tableState = {
+        pageIndex: 1, // Reset to first page after deletion
+        pageSize: JSON.parse(localStorage.getItem('tablePageSize'))?.users || 10,
+        sorting: formatSorting(tableInstance?.getState()?.sorting), // Use formatSorting utility
+        filters: tableInstance?.getState()?.columnFilters || [], // Get current filters
+      };
+      handleRefresh(tableState);
     } catch (error) {
       setShowConfirmationDialog(false);
       console.log(error);
@@ -236,8 +252,6 @@ export const UsersTable = ({
     <>
       <CustomGrid
         data={items}
-        onUrlParamsChange={onUrlParamsChange}
-        rowCount={count}
         columns={columns}
         rowActionMenuItems={rowActionMenuItems}
         setRowSelection={setRowSelection}
@@ -248,7 +262,13 @@ export const UsersTable = ({
         hasDeleteAccess={hasDeleteAccess}
         handleExportRows={handleExportRows}
         exportBtnRef={exportBtnRef}
+        enableRowClick
+        enableFacetedValues
+        rowCount={count}
+        onUrlParamsChange={onUrlParamsChange}
         tableSource="users"
+        exportBtnFalse={exportBtnFalse}
+        onTableInstanceChange={setTableInstance}
       />
 
       {/* View export options */}

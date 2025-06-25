@@ -1,6 +1,6 @@
 import { Delete, Edit, GroupRounded, PersonRounded } from '@mui/icons-material';
 import { Box, MenuItem, Skeleton, Stack, Typography } from '@mui/material';
-import { debounce } from 'lodash';
+import { debounce, isEmpty } from 'lodash';
 import PropTypes from 'prop-types';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -72,6 +72,7 @@ const EvaluationsTable = React.memo(
     const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
     const [rowSelection, setRowSelection] = useState({});
     const analyticsHiddenBtnRef = useRef(null);
+    const [tableInstance, setTableInstance] = useState(null);
 
     const auth = useAuth();
     const hasDeleteAccess = auth?.permissions?.includes('delete_evaluation');
@@ -79,10 +80,25 @@ const EvaluationsTable = React.memo(
     const navigate = useNavigate();
 
     const { userIdParam } = useParams();
-    const { domains, departments, modules } = useSharedData();
+    const { domains, departments, modules, loading: sharedDataLoading } = useSharedData();
 
     const config = useConfig();
     const { data } = config;
+
+    if (sharedDataLoading) {
+      return (
+        <Box sx={{ p: 3 }}>
+          <Skeleton
+            variant="rounded"
+            height={400}
+            sx={{
+              bgcolor: 'background.neutral',
+              borderRadius: 2,
+            }}
+          />
+        </Box>
+      );
+    }
 
     useEffect(() => {
       if (exportBtnClicked) {
@@ -135,6 +151,7 @@ const EvaluationsTable = React.memo(
             if (!filterValue || filterValue.length === 0) return true;
             return filterValue.includes(mode);
           },
+          enableSorting: false,
           header: `Player Mode`,
           filterVariant: 'multi-select',
           filterSelectOptions: [
@@ -154,7 +171,7 @@ const EvaluationsTable = React.memo(
                     fontSize="small"
                     sx={{
                       color: isDeprecated ? '#f44336' : '#7b1fa2',
-                      fontSize: '0.875rem'
+                      fontSize: '0.875rem',
                     }}
                   />
                 ) : (
@@ -162,7 +179,7 @@ const EvaluationsTable = React.memo(
                     fontSize="small"
                     sx={{
                       color: isDeprecated ? '#f44336' : '#1976d2',
-                      fontSize: '0.875rem'
+                      fontSize: '0.875rem',
                     }}
                   />
                 )}
@@ -175,14 +192,16 @@ const EvaluationsTable = React.memo(
                   <Box
                     component="span"
                     sx={{
-                      backgroundColor: row.original?.isMultiplayer ? 'rgba(123, 31, 162, 0.1)' : 'rgba(25, 118, 210, 0.1)',
+                      backgroundColor: row.original?.isMultiplayer
+                        ? 'rgba(123, 31, 162, 0.1)'
+                        : 'rgba(25, 118, 210, 0.1)',
                       color: row.original?.isMultiplayer ? '#7b1fa2' : '#1976d2',
                       borderRadius: '16px',
                       padding: '4px 10px',
                       fontSize: '0.75rem',
                       fontWeight: 600,
                       display: 'inline-flex',
-                      alignItems: 'center'
+                      alignItems: 'center',
                     }}
                   >
                     {mode}
@@ -202,32 +221,19 @@ const EvaluationsTable = React.memo(
           filterFn: (row, id, filterValue) => {
             const [startTime, endTime] = row.getValue(id);
             const [startFilterValue, endFilterValue] = filterValue;
+
             // When there is no filtered Date
             if (startFilterValue === true && endFilterValue === true) {
               return true;
             }
 
-            if (startFilterValue < startTime && startTime < endFilterValue) {
-              if (endTime === undefined) {
-                // Start time is between, but end time is pending
-                return true;
-              }
-
-              if (startFilterValue < endTime && endTime < endFilterValue) {
-                // Both start time and end time are between
-                return true;
-              }
+            if (endFilterValue === null) {
+              return startTime >= startFilterValue;
             }
 
-            if (endTime !== undefined && startFilterValue < endTime && endTime < endFilterValue) {
-              // End time is between
-              return true;
-            }
-
-            // Neither start time nor end time are between
-            return false;
+            return startTime >= startFilterValue && (!endTime || endTime <= endFilterValue);
           },
-          sortingFn: 'datetime',
+          enableSorting: false,
           Cell: ({ cell, column, row }) => {
             const startTime = convertUnixToLocalTime(row?.original?.startTime);
             const endTime = row?.original?.endTime ? convertUnixToLocalTime(row?.original?.endTime) : 'Pending';
@@ -243,6 +249,7 @@ const EvaluationsTable = React.memo(
           accessorKey: 'duration', // simple recommended way to define a column
           header: 'Duration',
           enableColumnFilter: false,
+          enableSorting: false,
           Cell: ({ cell, column, row }) => {
             const endTime = row?.original?.endTime ? row?.original?.endTime : undefined;
             const startTime = row?.original?.startTime;
@@ -336,7 +343,6 @@ const EvaluationsTable = React.memo(
             accessorKey: 'userId.name',
             header: `Name`,
             size: 100,
-            enableSorting: false,
             Cell: ({ cell, column, row }) => <Typography>{row?.original?.userId?.name || '-'}</Typography>,
           },
           {
@@ -398,7 +404,25 @@ const EvaluationsTable = React.memo(
         await axios.post(`/archive/bulkArchive`, { type: 'evaluation', data: Object.keys(rowSelection) });
         toast.success('Evaluations deleted successfully');
         setRowSelection({});
-        handleRefresh();
+        // Get current table state from CustomGrid and pass it to handleRefresh
+
+        const formatSorting = (value) => {
+          value = value?.[0];
+          if (isEmpty(value)) return {};
+
+          const field = String(value?.id);
+          const formattedField = field.charAt(0).match(/[A-Z]/) ? field.toLowerCase() : field;
+          const direction = value?.desc ? -1 : 1;
+          return { [formattedField]: direction };
+        };
+
+        const tableState = {
+          pageIndex: 1, // Reset to first page after deletion
+          pageSize: JSON.parse(localStorage.getItem('tablePageSize'))?.evaluations || 10,
+          sorting: formatSorting(tableInstance?.getState()?.sorting) || {}, // Get current sorting
+          filters: tableInstance?.getState()?.columnFilters || [], // Get current filters
+        };
+        handleRefresh(tableState);
       } catch (error) {
         console.log(error);
         toast.error(error.message || 'Failed to delete evaluations');
@@ -470,13 +494,13 @@ const EvaluationsTable = React.memo(
             chapters: responseObj.trainingDumpJson.chapters?.map((chapter) => ({
               ...chapter,
               moments: chapter.moments.map((moment) =>
-              // CHECK Answers is not an array in this but in evaluation JSON Lifcycle case we are doing something else!??
+                // CHECK Answers is not an array in this but in evaluation JSON Lifcycle case we are doing something else!??
 
-              ({
-                ...moment,
-                totalTimeTaken: moment?.endTime ? moment.endTime - moment.startTime : undefined,
-                answers: moment?.answers?.events || [],
-              }),
+                ({
+                  ...moment,
+                  totalTimeTaken: moment?.endTime ? moment.endTime - moment.startTime : undefined,
+                  answers: moment?.answers?.events || [],
+                }),
               ),
             })),
           };
@@ -497,7 +521,14 @@ const EvaluationsTable = React.memo(
         const id = row.id || row._id;
         await axios.post(`/evaluation/archive/${id}`);
         toast.success('Evaluation deleted successfully');
-        handleRefresh();
+        // Get current table state from CustomGrid and pass it to handleRefresh
+        const tableState = {
+          pageIndex: 1, // Reset to first page after deletion
+          pageSize: JSON.parse(localStorage.getItem('tablePageSize'))?.evaluations || 10,
+          sorting: tableInstance?.getState()?.sorting || [], // Get current sorting
+          filters: tableInstance?.getState()?.columnFilters || [], // Get current filters
+        };
+        handleRefresh(tableState);
       } catch (error) {
         console.log(error);
         toast.error(error.message || 'Failed to delete evaluation');
@@ -514,7 +545,6 @@ const EvaluationsTable = React.memo(
         key={0}
         onClick={() => {
           onDeleteRow(row.original);
-          // onDeleteRow();
           closeMenu();
         }}
         sx={{ color: 'error.main' }}
@@ -560,6 +590,7 @@ const EvaluationsTable = React.memo(
           onUrlParamsChange={onUrlParamsChange}
           rowCount={count}
           tableSource="evaluations"
+          onTableInstanceChange={setTableInstance}
         />
 
         {/* View export options */}

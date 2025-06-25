@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from '../utils/axios';
 import { setSession } from '../utils/jwt';
 import { useAuth } from '../hooks/useAuth';
+import { toast } from 'react-toastify';
 
 const SharedDataContext = React.createContext();
 
@@ -10,9 +11,14 @@ const SharedDataProvider = ({ children }) => {
   const [domains, setDomains] = useState([]);
   const [modules, setModules] = useState([]);
   const [departments, setDepartments] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetchAllData = async () => {
+    if (!isAuthenticated) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setSession(localStorage.getItem('accessToken'));
     try {
@@ -21,21 +27,22 @@ const SharedDataProvider = ({ children }) => {
         axios.get('/module/all', { params: { archived: true } }),
         axios.get('/department/all'),
       ]);
-      setDomains(domainsResponse?.data?.details);
-      setModules(modulesResponse?.data?.modules?.docs);
-      setDepartments(departmentsResponse?.data?.departments?.docs);
+      setDomains(domainsResponse?.data?.details || []);
+      setModules(modulesResponse?.data?.modules?.docs || []);
+      setDepartments(departmentsResponse?.data?.departments?.docs || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Failed to fetch data');
+      setDomains([]);
+      setModules([]);
+      setDepartments([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchAllData();
-    }
+    fetchAllData();
   }, [isAuthenticated]);
 
   const contextValue = {
