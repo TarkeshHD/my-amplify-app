@@ -1,28 +1,19 @@
-name: Deploy to AWS Amplify Github Action
+name: Create and Deploy Amplify App
 
 on:
   push:
     branches: [ main ]
 
 jobs:
-  deploy:
+  create-deploy-amplify:
     runs-on: ubuntu-latest
 
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+
     steps:
-      - name: Checkout code
+      - name: Checkout source code
         uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build application
-        run: npm run build
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -31,10 +22,41 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Install Amplify CLI
-        run: npm install -g @aws-amplify/cli
-
-      - name: Deploy to Amplify
+      - name: Install AWS CLI
         run: |
-          amplify pull --appId ${{ secrets.AMPLIFY_APP_ID }} --envName dev --yes
-          amplify publish --yes
+          sudo apt update
+          sudo apt install -y unzip curl
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install
+
+      - name: Create Amplify App
+        id: create_app
+        run: |
+          AMPLIFY_APP_NAME="my-amplify-app"
+          echo "Creating Amplify app: $AMPLIFY_APP_NAME"
+          APP_ID=$(aws amplify create-app \
+            --name $AMPLIFY_APP_NAME \
+            --repository "https://github.com/${{ github.repository }}" \
+            --oauth-token ${{ secrets.GITHUB_TOKEN }} \
+            --output json | jq -r '.app.appId')
+          echo "AMPLIFY_APP_ID=$APP_ID" >> $GITHUB_ENV
+          echo "::set-output name=app_id::$APP_ID"
+
+      - name: Create Amplify Branch
+        run: |
+          aws amplify create-branch \
+            --app-id ${{ steps.create_app.outputs.app_id }} \
+            --branch-name main
+
+      - name: Trigger Deployment
+        run: |
+          aws amplify start-job \
+            --app-id ${{ steps.create_app.outputs.app_id }} \
+            --branch-name main \
+            --job-type RELEASE
+
+      - name: Output App URL
+        run: |
+          URL=$(aws amplify get-app --app-id ${{ steps.create_app.outputs.app_id }} --query 'app.defaultDomain' --output text)
+          echo "🚀 App deployed at: https://main.${URL}"
