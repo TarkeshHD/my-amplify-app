@@ -40,15 +40,18 @@ jobs:
             --output json | jq -r '.app.appId')
           echo "AMPLIFY_APP_ID=$APP_ID" >> $GITHUB_ENV
           echo "app_id=$APP_ID" >> "$GITHUB_OUTPUT"
+          outputs:
+          app_id: ${{ steps.create_app.outputs.app_id }}
 
       - name: Debug App ID
         run: 'echo "App ID is: ${{ steps.create_app.outputs.app_id }}"'
 
       - name: Create Amplify Branch
         run: |
-          aws amplify create-branch \
-            --app-id ${{ steps.create_app.outputs.app_id }} \
-            --branch-name main
+         aws amplify create-branch \
+         --app-id $AMPLIFY_APP_ID \
+         --branch-name main
+
 
       - name: Trigger Deployment
         run: |
