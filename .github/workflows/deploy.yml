@@ -36,10 +36,11 @@ jobs:
           APP_ID=$(aws amplify create-app \
             --name $AMPLIFY_APP_NAME \
             --repository "https://github.com/${{ github.repository }}" \
-            --oauth-token ${{ secrets.GITHUB_TOKEN }} \
+            --oauth-token ${{ secrets.AMPLIFY_GITHUB_TOKEN }} \
             --output json | jq -r '.app.appId')
-          echo "AMPLIFY_APP_ID=$APP_ID" >> $GITHUB_ENV
-          echo "app_id=$APP_ID" >> "$GITHUB_OUTPUT"
+           echo "AMPLIFY_APP_ID=$APP_ID" >> $GITHUB_ENV
+           echo "app_id=$APP_ID" >> "$GITHUB_OUTPUT"
+
           outputs:
           app_id: ${{ steps.create_app.outputs.app_id }}
 
