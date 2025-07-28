@@ -47,7 +47,7 @@ jobs:
           echo "app_id=$APP_ID" >> "$GITHUB_OUTPUT"
 
       - name: Debug App ID
-        run: echo "App ID is: ${{ steps.create_app.outputs.app_id }}"
+        run: 'echo "App ID is: ${{ steps.create_app.outputs.app_id }}"'
 
       - name: Create Amplify Branch
         run: |
