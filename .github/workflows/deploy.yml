@@ -1,4 +1,4 @@
-name: Create and Deploy Amplify App
+name: Create and Deploy Amplify Giithub Action
 
 on:
   push:
@@ -24,6 +24,14 @@ jobs:
 
       - name: Install jq
         run: sudo apt-get install -y jq
+
+      - name: Install AWS CLI
+        run: |
+          sudo apt update
+          sudo apt install -y unzip curl
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install
 
       - name: Create Amplify App
         id: create_app
@@ -56,5 +64,7 @@ jobs:
 
       - name: Output App URL
         run: |
-          URL=$(aws amplify get-app --app-id ${{ steps.create_app.outputs.app_id }} --query 'app.defaultDomain' --output text)
-          echo "🚀 App deployed at: https://main.${URL}"
+          URL=$(aws amplify get-app \
+            --app-id ${{ steps.create_app.outputs.app_id }} \
+            --query 'app.defaultDomain' --output text)
+          echo "\u2728 Deployed at: https://main.$URL"
