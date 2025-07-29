@@ -1,4 +1,4 @@
-name: Deploy to AWS Amplify GitHUb
+name: Deploy to AWS Amplify
 
 on:
   push:
