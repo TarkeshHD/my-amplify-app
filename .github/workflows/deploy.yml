@@ -1,4 +1,4 @@
-name: Deploy to Amplify
+name: Deploy to Amplify GitHub
 
 on:
   push:
@@ -34,15 +34,14 @@ jobs:
         with:
           node-version: 18
 
-      - name: Sync package-lock.json
+      # Force cache bust by committing a timestamp file
+      - name: Force Cache Bust
         run: |
-          echo "Syncing package-lock.json with package.json..."
-          rm -f package-lock.json
-          npm install --package-lock-only
+          echo $(date +%s) > cache-bust.txt
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
-          git add package-lock.json
-          git commit -m "chore: sync package-lock.json [skip ci]" || echo "No changes to commit"
+          git add cache-bust.txt
+          git commit -m "chore: cache bust [skip ci]" || echo "No changes"
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main
 
       - name: Create or Get Amplify App
@@ -107,15 +106,6 @@ jobs:
             --app-id $AMPLIFY_APP_ID \
             --domain-name $AMPLIFY_DOMAIN_NAME \
             --sub-domain-settings '[{"prefix":"main","branchName":"main"}]'
-
-      - name: Clear Amplify Cache
-        run: |
-          echo "Clearing Amplify cache..."
-          aws amplify start-job \
-            --app-id $AMPLIFY_APP_ID \
-            --branch-name main \
-            --job-type RELEASE \
-            --job-parameters '{"clean": true}'
 
       - name: Trigger Deployment
         run: |
