@@ -1,4 +1,4 @@
-name: Create and Deploy Amplify App Github
+name: Create and Deploy Amplify App
 
 on:
   push:
@@ -36,12 +36,13 @@ jobs:
           APP_ID=$(aws amplify create-app \
             --name "$AMPLIFY_APP_NAME" \
             --repository "https://github.com/${{ github.repository }}" \
-            --oauth-token ${{ secrets.GITHUB_TOKEN }} \
+            --oauth-token ${{ github.token }} \
             --output json | jq -r '.app.appId')
           echo "AMPLIFY_APP_ID=$APP_ID" >> $GITHUB_ENV
 
       - name: Debug App ID
         run: echo "App ID is: $AMPLIFY_APP_ID"
+
 
       - name: Create Amplify Branch
         run: |
@@ -75,4 +76,3 @@ jobs:
             --app-id $AMPLIFY_APP_ID \
             --query 'app.defaultDomain' --output text)
           echo "✨ Deployed at: https://main.$URL"
-
