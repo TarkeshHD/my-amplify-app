@@ -34,7 +34,6 @@ jobs:
         with:
           node-version: 18
 
-      # Force cache bust by committing a timestamp file
       - name: Force Cache Bust
         run: |
           echo $(date +%s) > cache-bust.txt
@@ -61,14 +60,6 @@ jobs:
           fi
           echo "AMPLIFY_APP_ID=$APP_ID" >> $GITHUB_ENV
           echo "App ID: $APP_ID"
-
-      - name: Cleanup Manual Branches
-        run: |
-          BRANCHES=$(aws amplify list-branches --app-id $AMPLIFY_APP_ID --query "branches[].branchName" --output text || echo "")
-          for BRANCH in $BRANCHES; do
-            echo "Deleting manual branch: $BRANCH"
-            aws amplify delete-branch --app-id $AMPLIFY_APP_ID --branch-name $BRANCH
-          done
 
       - name: Connect GitHub Repository
         run: |
@@ -110,10 +101,24 @@ jobs:
           AMPLIFY_DOMAIN_NAME: ${{ secrets.AMPLIFY_DOMAIN_NAME }}
         run: |
           echo "Adding custom domain: $AMPLIFY_DOMAIN_NAME"
-          aws amplify associate-domain \
+          EXISTING_DOMAIN=$(aws amplify list-domain-associations \
             --app-id $AMPLIFY_APP_ID \
-            --domain-name $AMPLIFY_DOMAIN_NAME \
-            --sub-domain-settings '[{"prefix":"main","branchName":"main"}]'
+            --query "domainAssociations[?domainName=='$AMPLIFY_DOMAIN_NAME'].domainName" \
+            --output text || echo "")
+          
+          if [ -n "$EXISTING_DOMAIN" ]; then
+            echo "Domain already associated: $EXISTING_DOMAIN"
+            aws amplify update-domain-association \
+              --app-id $AMPLIFY_APP_ID \
+              --domain-name $AMPLIFY_DOMAIN_NAME \
+              --sub-domain-settings '[{"prefix":"main","branchName":"main"}]'
+          else
+            echo "Creating new domain association..."
+            aws amplify create-domain-association \
+              --app-id $AMPLIFY_APP_ID \
+              --domain-name $AMPLIFY_DOMAIN_NAME \
+              --sub-domain-settings '[{"prefix":"main","branchName":"main"}]'
+          fi
 
       - name: Trigger Deployment
         run: |
