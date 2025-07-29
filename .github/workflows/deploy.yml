@@ -122,13 +122,26 @@ jobs:
               --sub-domain-settings '[{"prefix":"main","branchName":"main"}]'
           fi
 
-      - name: Trigger Deployment
+      - name: Trigger Deployment (Safe)
         run: |
+          echo "Checking for running jobs..."
+          RUNNING=$(aws amplify list-jobs \
+            --app-id $AMPLIFY_APP_ID \
+            --branch-name main \
+            --query "jobSummaries[?status=='PENDING' || status=='RUNNING'].jobId" \
+            --output text || echo "")
+
+          if [ -n "$RUNNING" ]; then
+            echo "⚠️  A job is already running or pending. Skipping new deployment."
+            exit 0
+          fi
+
           echo "Starting deployment..."
           aws amplify start-job \
             --app-id $AMPLIFY_APP_ID \
             --branch-name main \
             --job-type RELEASE
+
 
       - name: Output Amplify URL
         run: |
