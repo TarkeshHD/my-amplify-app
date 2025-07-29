@@ -39,10 +39,7 @@ jobs:
             --oauth-token ${{ secrets.GITHUB_TOKEN }} \
             --output json | jq -r '.app.appId')
           echo "AMPLIFY_APP_ID=$APP_ID" >> $GITHUB_ENV
-          echo "::set-output name=app_id::$APP_ID"
-
-
-          
+          echo "app_id=$APP_ID" >> $GITHUB_OUTPUT
 
       - name: Debug App ID
         run: echo "App ID is: ${{ steps.create_app.outputs.app_id }}"
