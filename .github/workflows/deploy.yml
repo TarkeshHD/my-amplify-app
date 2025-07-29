@@ -41,8 +41,10 @@ jobs:
           git config --global user.name "GitHub Actions"
           git add cache-bust.txt
           git commit -m "chore: cache bust [skip ci]" || echo "No changes"
-          git pull --rebase https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} main
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main
+          git fetch origin main
+          git reset --soft origin/main
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main --force
+
 
       - name: Create or Get Amplify App
         id: create_app
