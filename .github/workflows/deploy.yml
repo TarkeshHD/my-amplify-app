@@ -79,14 +79,14 @@ jobs:
             --oauth-token "${{ secrets.PERSONAL_ACCESS_TOKEN }}" \
             --platform "WEB"
 
-      - name: Create or Update Branch
+      - name: Create or Update Branch Safely
         run: |
-          EXISTING_BRANCH=$(aws amplify list-branches \
-            --app-id $AMPLIFY_APP_ID \
-            --query "branches[?branchName=='main'].branchName" \
-            --output text || echo "")
-          if [ -n "$EXISTING_BRANCH" ]; then
-            echo "Branch 'main' already exists"
+          echo "Checking for existing branches..."
+          ALL_BRANCHES=$(aws amplify list-branches --app-id $AMPLIFY_APP_ID --query "branches[].branchName" --output text || echo "")
+          echo "Existing branches: $ALL_BRANCHES"
+
+          if echo "$ALL_BRANCHES" | grep -qw "main"; then
+            echo "Branch 'main' already exists. Skipping creation."
           else
             echo "Creating branch 'main'..."
             aws amplify create-branch \
