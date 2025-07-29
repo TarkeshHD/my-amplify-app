@@ -45,7 +45,6 @@ jobs:
           git pull --rebase https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} main
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main
 
-
       - name: Create or Get Amplify App
         id: create_app
         run: |
@@ -80,14 +79,21 @@ jobs:
             --oauth-token "${{ secrets.PERSONAL_ACCESS_TOKEN }}" \
             --platform "WEB"
 
-      - name: Create or Update Branch Safely
+      - name: Ensure Main Branch Exists
         run: |
-          echo "Checking for existing branches..."
+          echo "Checking existing branches..."
           ALL_BRANCHES=$(aws amplify list-branches --app-id $AMPLIFY_APP_ID --query "branches[].branchName" --output text || echo "")
-          echo "Existing branches: $ALL_BRANCHES"
+          DISPLAY_NAMES=$(aws amplify list-branches --app-id $AMPLIFY_APP_ID --query "branches[].displayName" --output text || echo "")
 
-          if echo "$ALL_BRANCHES" | grep -qw "main"; then
-            echo "Branch 'main' already exists. Skipping creation."
+          echo "Branch names: $ALL_BRANCHES"
+          echo "Display names: $DISPLAY_NAMES"
+
+          if echo "$ALL_BRANCHES" | grep -qw "main" || echo "$DISPLAY_NAMES" | grep -qw "main"; then
+            echo "Branch 'main' already exists. Updating settings..."
+            aws amplify update-branch \
+              --app-id $AMPLIFY_APP_ID \
+              --branch-name main \
+              --enable-auto-build || echo "Warning: Update skipped"
           else
             echo "Creating branch 'main'..."
             aws amplify create-branch \
