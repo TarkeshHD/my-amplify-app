@@ -32,37 +32,80 @@ jobs:
         id: create_app
         run: |
           echo "Creating Amplify app: $AMPLIFY_APP_NAME"
-          APP_ID=$(aws amplify create-app \
-            --name "$AMPLIFY_APP_NAME" \
-            --repository "https://github.com/${{ github.repository }}" \
-            --oauth-token ${{ secrets.GITHUB_TOKEN }} \
-            --output json | jq -r '.app.appId')
+          
+          # Check if app already exists
+          EXISTING_APP=$(aws amplify list-apps --query "apps[?name=='$AMPLIFY_APP_NAME'].appId" --output text || echo "")
+          
+          if [ -n "$EXISTING_APP" ] && [ "$EXISTING_APP" != "None" ]; then
+            echo "App already exists with ID: $EXISTING_APP"
+            APP_ID="$EXISTING_APP"
+          else
+            echo "Creating new Amplify app..."
+            APP_ID=$(aws amplify create-app \
+              --name "$AMPLIFY_APP_NAME" \
+              --repository "https://github.com/${{ github.repository }}" \
+              --oauth-token ${{ secrets.GITHUB_TOKEN }} \
+              --output json | jq -r '.app.appId')
+          fi
+          
+          if [ -z "$APP_ID" ] || [ "$APP_ID" = "null" ]; then
+            echo "Error: Failed to get App ID"
+            exit 1
+          fi
+          
           echo "AMPLIFY_APP_ID=$APP_ID" >> $GITHUB_ENV
-      
-      - name: Debug App ID
-        run: echo "App ID is:$AMPLIFY_APP_ID"
+          echo "App ID: $APP_ID"
       
       - name: Create Amplify Branch
         run: |
-          aws amplify create-branch \
-            --app-id $AMPLIFY_APP_ID \
-            --branch-name main
+          if [ -z "$AMPLIFY_APP_ID" ]; then
+            echo "Error: AMPLIFY_APP_ID is not set"
+            exit 1
+          fi
+          
+          # Check if branch already exists
+          EXISTING_BRANCH=$(aws amplify list-branches --app-id $AMPLIFY_APP_ID --query "branches[?branchName=='main'].branchName" --output text || echo "")
+          
+          if [ -n "$EXISTING_BRANCH" ] && [ "$EXISTING_BRANCH" != "None" ]; then
+            echo "Branch 'main' already exists"
+          else
+            echo "Creating branch 'main'..."
+            aws amplify create-branch \
+              --app-id $AMPLIFY_APP_ID \
+              --branch-name main
+          fi
       
       - name: Set Amplify Environment Variables
         run: |
+          if [ -z "$AMPLIFY_APP_ID" ]; then
+            echo "Error: AMPLIFY_APP_ID is not set"
+            exit 1
+          fi
           aws amplify update-app \
             --app-id $AMPLIFY_APP_ID \
             --environment-variables "KEY1=value1,KEY2=value2"
       
       - name: Connect Custom Domain
         run: |
-          aws amplify associate-domain \
-            --app-id $AMPLIFY_APP_ID \
-            --domain-name ${{ secrets.AMPLIFY_DOMAIN_NAME }} \
-            --sub-domain-settings '[{"prefix":"main","branchName":"main"}]'
+          if [ -z "$AMPLIFY_APP_ID" ]; then
+            echo "Error: AMPLIFY_APP_ID is not set"
+            exit 1
+          fi
+          if [ -n "${{ secrets.AMPLIFY_DOMAIN_NAME }}" ]; then
+            aws amplify associate-domain \
+              --app-id $AMPLIFY_APP_ID \
+              --domain-name ${{ secrets.AMPLIFY_DOMAIN_NAME }} \
+              --sub-domain-settings '[{"prefix":"main","branchName":"main"}]'
+          else
+            echo "No custom domain configured, skipping..."
+          fi
       
       - name: Trigger Deployment
         run: |
+          if [ -z "$AMPLIFY_APP_ID" ]; then
+            echo "Error: AMPLIFY_APP_ID is not set"
+            exit 1
+          fi
           aws amplify start-job \
             --app-id $AMPLIFY_APP_ID \
             --branch-name main \
@@ -70,6 +113,10 @@ jobs:
       
       - name: Output App URL
         run: |
+          if [ -z "$AMPLIFY_APP_ID" ]; then
+            echo "Error: AMPLIFY_APP_ID is not set"
+            exit 1
+          fi
           URL=$(aws amplify get-app \
             --app-id $AMPLIFY_APP_ID \
             --query 'app.defaultDomain' --output text)
