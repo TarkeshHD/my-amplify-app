@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       AWS_REGION: ${{ secrets.AWS_REGION }}
-      AMPLIFY_APP_NAME: ${{ secrets.AMPLIFY_APP_NAME || format('{0}-amplify-app', github.event.repository.name) }}
+      AMPLIFY_APP_NAME: ${{ secrets.AMPLIFY_APP_NAME }}
     
     steps:
       - name: Checkout source code
@@ -28,16 +28,6 @@ jobs:
       - name: Check AWS CLI version
         run: aws --version
       
-      - name: Validate Environment Variables
-        run: |
-          if [ -z "$AMPLIFY_APP_NAME" ]; then
-            echo "Error: AMPLIFY_APP_NAME secret is not set or is empty"
-            echo "Please set AMPLIFY_APP_NAME in your repository secrets"
-            exit 1
-          fi
-          echo "✓ AMPLIFY_APP_NAME: $AMPLIFY_APP_NAME"
-          echo "✓ AWS_REGION: $AWS_REGION"
-      
       - name: Create Amplify App
         id: create_app
         run: |
@@ -50,17 +40,20 @@ jobs:
             echo "App already exists with ID: $EXISTING_APP"
             APP_ID="$EXISTING_APP"
           else
-            echo "Creating new Amplify app..."
+            echo "Creating new Amplify app without repository connection..."
+            # Create app without repository to avoid permission issues
             APP_ID=$(aws amplify create-app \
               --name "$AMPLIFY_APP_NAME" \
-              --repository "https://github.com/${{ github.repository }}" \
-              --oauth-token ${{ secrets.GITHUB_TOKEN }} \
               --output json | jq -r '.app.appId')
-          fi
-          
-          if [ -z "$APP_ID" ] || [ "$APP_ID" = "null" ]; then
-            echo "Error: Failed to get App ID"
-            exit 1
+            
+            if [ -z "$APP_ID" ] || [ "$APP_ID" = "null" ]; then
+              echo "Error: Failed to create Amplify app"
+              exit 1
+            fi
+            
+            echo "⚠️  App created successfully with ID: $APP_ID"
+            echo "⚠️  You need to manually connect your GitHub repository in the AWS Amplify console"
+            echo "⚠️  Repository: https://github.com/${{ github.repository }}"
           fi
           
           echo "AMPLIFY_APP_ID=$APP_ID" >> $GITHUB_ENV
