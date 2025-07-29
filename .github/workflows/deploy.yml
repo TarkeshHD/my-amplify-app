@@ -1,4 +1,4 @@
-name: Create and Deploy Amplify App
+name: Create and Deploy Amplify App Github
 
 on:
   push:
@@ -10,6 +10,7 @@ jobs:
 
     env:
       AWS_REGION: ${{ secrets.AWS_REGION }}
+      AMPLIFY_APP_NAME: ${{ secrets.AMPLIFY_APP_NAME }}
 
     steps:
       - name: Checkout source code
@@ -31,25 +32,36 @@ jobs:
       - name: Create Amplify App
         id: create_app
         run: |
-          AMPLIFY_APP_NAME="my-amplify-app"
           echo "Creating Amplify app: $AMPLIFY_APP_NAME"
           APP_ID=$(aws amplify create-app \
-            --name $AMPLIFY_APP_NAME \
+            --name "$AMPLIFY_APP_NAME" \
             --repository "https://github.com/${{ github.repository }}" \
-            --oauth-token ${{ secrets.AMPLIFY_GITHUB_TOKEN }} \
+            --oauth-token ${{ secrets.GITHUB_TOKEN }} \
             --output json | jq -r '.app.appId')
-           echo "AMPLIFY_APP_ID=$APP_ID" >> $GITHUB_ENV
-           echo "app_id=$APP_ID" >> "$GITHUB_OUTPUT"
+          echo "AMPLIFY_APP_ID=$APP_ID" >> $GITHUB_ENV
+          echo "app_id=$APP_ID" >> "$GITHUB_OUTPUT"
 
       - name: Debug App ID
-        run: 'echo "App ID is: ${{ steps.create_app.outputs.app_id }}"'
+        run: echo "App ID is: ${{ steps.create_app.outputs.app_id }}"
 
       - name: Create Amplify Branch
         run: |
-         aws amplify create-branch \
-         --app-id $AMPLIFY_APP_ID \
-         --branch-name main
+          aws amplify create-branch \
+            --app-id ${{ steps.create_app.outputs.app_id }} \
+            --branch-name main
 
+      - name: Set Amplify Environment Variables
+        run: |
+          aws amplify update-app \
+            --app-id ${{ steps.create_app.outputs.app_id }} \
+            --environment-variables "KEY1=value1,KEY2=value2"
+
+      - name: Connect Custom Domain
+        run: |
+          aws amplify associate-domain \
+            --app-id ${{ steps.create_app.outputs.app_id }} \
+            --domain-name ${{ secrets.AMPLIFY_DOMAIN_NAME }} \
+            --sub-domain-settings '[{"prefix":"main","branchName":"main"}]'
 
       - name: Trigger Deployment
         run: |
