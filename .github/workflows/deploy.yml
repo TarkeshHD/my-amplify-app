@@ -34,15 +34,15 @@ jobs:
         with:
           node-version: 18
 
-      - name: Sync package-lock.json
+      - name: Auto-fix package-lock.json
         run: |
-          echo "Syncing package-lock.json with package.json..."
+          echo "Auto-fixing package-lock.json..."
           rm -f package-lock.json
-          npm install --package-lock-only
+          npm install
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
           git add package-lock.json
-          git commit -m "chore: sync package-lock.json [skip ci]" || echo "No changes to commit"
+          git commit -m "chore: auto-fix lockfile [skip ci]" || echo "No changes"
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main
 
       - name: Create or Get Amplify App
