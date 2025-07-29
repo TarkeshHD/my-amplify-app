@@ -101,7 +101,7 @@ jobs:
               --enable-auto-build
           fi
 
-      - name: Add or Update Custom Domain with Verification Wait
+      - name: Add or Update Custom Domain with Skip Logic
         if: env.AMPLIFY_DOMAIN_NAME != ''
         run: |
           echo "Managing custom domain: $AMPLIFY_DOMAIN_NAME"
@@ -116,7 +116,10 @@ jobs:
             --output text || echo "")
 
           if [ -n "$EXISTING_DOMAIN" ]; then
-            if [[ "$STATUS" == *"PENDING_VERIFICATION"* ]]; then
+            if [[ "$STATUS" == *"AVAILABLE"* ]]; then
+              echo "✅ Domain already associated and verified. Skipping update."
+              exit 0
+            elif [[ "$STATUS" == *"PENDING_VERIFICATION"* ]]; then
               echo "⚠️ Domain is pending verification. Checking every 30s..."
               for i in {1..20}; do
                 STATUS=$(aws amplify list-domain-associations \
@@ -136,7 +139,7 @@ jobs:
               done
               echo "⏳ Domain still not verified. Skipping update."
             else
-              echo "Domain already associated and verified. Updating..."
+              echo "Updating domain association..."
               aws amplify update-domain-association \
                 --app-id $AMPLIFY_APP_ID \
                 --domain-name $AMPLIFY_DOMAIN_NAME \
