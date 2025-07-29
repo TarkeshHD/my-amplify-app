@@ -46,6 +46,15 @@ jobs:
           echo "AMPLIFY_APP_ID=$APP_ID" >> $GITHUB_ENV
           echo "App ID: $APP_ID"
 
+      - name: Delete manual branches before connecting repo
+        run: |
+          BRANCHES=$(aws amplify list-branches --app-id $AMPLIFY_APP_ID --query "branches[].branchName" --output text)
+          for BRANCH in $BRANCHES; do
+            echo "Deleting branch: $BRANCH"
+            aws amplify delete-branch --app-id $AMPLIFY_APP_ID --branch-name $BRANCH
+          done
+
+
       - name: Connect GitHub Repository
         run: |
           if [ -z "$AMPLIFY_APP_ID" ]; then
