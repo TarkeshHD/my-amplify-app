@@ -67,7 +67,7 @@ jobs:
           fi
           
           # Check if branch already exists
-          EXISTING_BRANCH=$(aws amplify list-branches --app-id $AMPLIFY_APP_ID --query "branches[?branchName=='main'].branchName" --output text || echo "")
+          EXISTING_BRANCH=$(aws amplify list-branches --app-id $AMPLIFY_APP_ID --query "branches[?branchName=='main'].branchName" --output text 2>/dev/null || echo "")
           
           if [ -n "$EXISTING_BRANCH" ] && [ "$EXISTING_BRANCH" != "None" ]; then
             echo "Branch 'main' already exists"
@@ -75,7 +75,40 @@ jobs:
             echo "Creating branch 'main'..."
             aws amplify create-branch \
               --app-id $AMPLIFY_APP_ID \
-              --branch-name main
+              --branch-name main \
+              --framework "React" \
+              --stage "PRODUCTION" || {
+              echo "Warning: Failed to create branch. This might be because the app is not connected to a repository."
+            }
+          fi
+      
+      - name: Connect Repository (if needed)
+        run: |
+          if [ -z "$AMPLIFY_APP_ID" ]; then
+            echo "Error: AMPLIFY_APP_ID is not set"
+            exit 1
+          fi
+          
+          # Check if app has repository connected
+          REPO_INFO=$(aws amplify get-app --app-id $AMPLIFY_APP_ID --query 'app.repository' --output text)
+          
+          if [ "$REPO_INFO" = "None" ] || [ -z "$REPO_INFO" ]; then
+            echo "No repository connected. Attempting to connect..."
+            if [ -n "${{ secrets.GITHUB_PERSONAL_TOKEN }}" ]; then
+              aws amplify update-app \
+                --app-id "$AMPLIFY_APP_ID" \
+                --repository "https://github.com/${{ github.repository }}" \
+                --oauth-token "${{ secrets.GITHUB_PERSONAL_TOKEN }}" \
+                --platform "WEB" || {
+                echo "Failed to connect repository automatically."
+                echo "Please connect your repository manually in the AWS Amplify console:"
+                echo "Repository: https://github.com/${{ github.repository }}"
+              }
+            else
+              echo "No GITHUB_PERSONAL_TOKEN found. Please connect repository manually."
+            fi
+          else
+            echo "Repository already connected: $REPO_INFO"
           fi
       
       - name: Set Amplify Environment Variables
@@ -103,16 +136,51 @@ jobs:
             echo "No custom domain configured, skipping..."
           fi
       
-      - name: Trigger Deployment
+      - name: Deploy to Amplify
         run: |
           if [ -z "$AMPLIFY_APP_ID" ]; then
             echo "Error: AMPLIFY_APP_ID is not set"
             exit 1
           fi
-          aws amplify start-job \
-            --app-id $AMPLIFY_APP_ID \
-            --branch-name main \
-            --job-type RELEASE
+          
+          # Check if app has repository connected
+          REPO_INFO=$(aws amplify get-app --app-id $AMPLIFY_APP_ID --query 'app.repository' --output text)
+          
+          if [ "$REPO_INFO" != "None" ] && [ -n "$REPO_INFO" ]; then
+            echo "Repository connected. Using standard deployment..."
+            aws amplify start-job \
+              --app-id $AMPLIFY_APP_ID \
+              --branch-name main \
+              --job-type RELEASE
+          else
+            echo "No repository connected. Using manual deployment..."
+            
+            # Create a zip file of the current repository
+            echo "Creating deployment package..."
+            zip -r deployment.zip . -x "*.git*" "node_modules/*" ".github/*"
+            
+            # Upload the zip file to S3 (you'll need an S3 bucket)
+            if [ -n "${{ secrets.S3_DEPLOYMENT_BUCKET }}" ]; then
+              aws s3 cp deployment.zip s3://${{ secrets.S3_DEPLOYMENT_BUCKET }}/deployments/$(date +%Y%m%d-%H%M%S).zip
+              
+              # Create deployment
+              DEPLOYMENT_ID=$(aws amplify create-deployment \
+                --app-id $AMPLIFY_APP_ID \
+                --branch-name main \
+                --file-map "deployment.zip=s3://${{ secrets.S3_DEPLOYMENT_BUCKET }}/deployments/$(date +%Y%m%d-%H%M%S).zip" \
+                --query 'deploymentId' --output text)
+              
+              # Start deployment
+              aws amplify start-deployment \
+                --app-id $AMPLIFY_APP_ID \
+                --branch-name main \
+                --deployment-id $DEPLOYMENT_ID
+            else
+              echo "⚠️  Manual deployment requires S3_DEPLOYMENT_BUCKET secret"
+              echo "⚠️  Please connect your repository in the AWS Amplify console for automatic deployments"
+              echo "⚠️  App URL: https://main.${AMPLIFY_APP_ID}.amplifyapp.com"
+            fi
+          fi
       
       - name: Output App URL
         run: |
