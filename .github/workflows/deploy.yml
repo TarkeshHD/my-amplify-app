@@ -1,4 +1,4 @@
-name: Create and Deploy Amplify  GitHUb
+name: Create and Deploy Amplify App
 
 on:
   push:
@@ -95,20 +95,45 @@ jobs:
           if [ "$REPO_INFO" = "None" ] || [ -z "$REPO_INFO" ]; then
             echo "No repository connected. Attempting to connect..."
             if [ -n "${{ secrets.GITHUB_PERSONAL_TOKEN }}" ]; then
+              # First enable auto branch creation
+              aws amplify update-app \
+                --app-id "$AMPLIFY_APP_ID" \
+                --enable-auto-branch-creation \
+                --auto-branch-creation-patterns "main" "master" \
+                --auto-branch-creation-config '{
+                  "stage": "PRODUCTION",
+                  "framework": "React",
+                  "enableAutoBuild": true,
+                  "enablePullRequestPreview": false
+                }' || echo "Warning: Could not enable auto branch creation"
+              
+              # Connect repository
               aws amplify update-app \
                 --app-id "$AMPLIFY_APP_ID" \
                 --repository "https://github.com/${{ github.repository }}" \
                 --oauth-token "${{ secrets.GITHUB_PERSONAL_TOKEN }}" \
-                --platform "WEB" || {
-                echo "Failed to connect repository automatically."
-                echo "Please connect your repository manually in the AWS Amplify console:"
-                echo "Repository: https://github.com/${{ github.repository }}"
+                --platform "WEB" && echo "✅ Repository connected successfully!" || {
+                echo "❌ Failed to connect repository automatically."
+                echo "Please follow these manual steps:"
+                echo "1. Go to AWS Amplify Console: https://console.aws.amazon.com/amplify/home"
+                echo "2. Click on app: tarkesh amplify (ID: $AMPLIFY_APP_ID)"
+                echo "3. Click 'Connect repository'"
+                echo "4. Select GitHub and authorize"
+                echo "5. Choose repository: ${{ github.repository }}"
+                echo "6. Select branch: main"
               }
             else
-              echo "No GITHUB_PERSONAL_TOKEN found. Please connect repository manually."
+              echo "❌ No GITHUB_PERSONAL_TOKEN found."
+              echo "To connect automatically, add a GitHub Personal Access Token:"
+              echo "1. Go to GitHub Settings > Developer settings > Personal access tokens"
+              echo "2. Create token with 'repo' and 'admin:repo_hook' permissions"
+              echo "3. Add as GITHUB_PERSONAL_TOKEN secret in your repository"
+              echo ""
+              echo "Or connect manually in AWS Console:"
+              echo "Repository: https://github.com/${{ github.repository }}"
             fi
           else
-            echo "Repository already connected: $REPO_INFO"
+            echo "✅ Repository already connected: $REPO_INFO"
           fi
       
       - name: Set Amplify Environment Variables
