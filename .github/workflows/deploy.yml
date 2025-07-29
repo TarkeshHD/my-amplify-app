@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -40,7 +43,7 @@ jobs:
           git config --global user.name "GitHub Actions"
           git add package-lock.json
           git commit -m "chore: sync package-lock.json [skip ci]" || echo "No changes to commit"
-          git push
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main
 
       - name: Create or Get Amplify App
         id: create_app
