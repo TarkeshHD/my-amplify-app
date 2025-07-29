@@ -14,6 +14,7 @@ jobs:
     env:
       AWS_REGION: ${{ secrets.AWS_REGION }}
       AMPLIFY_APP_NAME: ${{ secrets.AMPLIFY_APP_NAME }}
+      AMPLIFY_DOMAIN_NAME: ${{ secrets.AMPLIFY_DOMAIN_NAME }}
 
     steps:
       - name: Checkout code
@@ -96,33 +97,47 @@ jobs:
               --enable-auto-build
           fi
 
-      - name: Add or Update Custom Domain (Safe)
+      - name: Add or Update Custom Domain with Verification Wait
         if: env.AMPLIFY_DOMAIN_NAME != ''
-        env:
-          AMPLIFY_DOMAIN_NAME: ${{ secrets.AMPLIFY_DOMAIN_NAME }}
         run: |
-          echo "Adding custom domain: $AMPLIFY_DOMAIN_NAME"
-          DOMAIN_STATUS=$(aws amplify list-domain-associations \
-            --app-id $AMPLIFY_APP_ID \
-            --query "domainAssociations[?domainName=='$AMPLIFY_DOMAIN_NAME'].status" \
-            --output text || echo "")
-
-          if [[ "$DOMAIN_STATUS" == *"PENDING_VERIFICATION"* ]]; then
-            echo "⚠️ Domain is still pending verification. Skipping update."
-            exit 0
-          fi
-
+          echo "Managing custom domain: $AMPLIFY_DOMAIN_NAME"
           EXISTING_DOMAIN=$(aws amplify list-domain-associations \
             --app-id $AMPLIFY_APP_ID \
             --query "domainAssociations[?domainName=='$AMPLIFY_DOMAIN_NAME'].domainName" \
             --output text || echo "")
 
+          STATUS=$(aws amplify list-domain-associations \
+            --app-id $AMPLIFY_APP_ID \
+            --query "domainAssociations[?domainName=='$AMPLIFY_DOMAIN_NAME'].status" \
+            --output text || echo "")
+
           if [ -n "$EXISTING_DOMAIN" ]; then
-            echo "Domain already associated: $EXISTING_DOMAIN"
-            aws amplify update-domain-association \
-              --app-id $AMPLIFY_APP_ID \
-              --domain-name $AMPLIFY_DOMAIN_NAME \
-              --sub-domain-settings '[{"prefix":"main","branchName":"main"}]'
+            if [[ "$STATUS" == *"PENDING_VERIFICATION"* ]]; then
+              echo "⚠️ Domain is pending verification. Checking every 30s..."
+              for i in {1..20}; do
+                STATUS=$(aws amplify list-domain-associations \
+                  --app-id $AMPLIFY_APP_ID \
+                  --query "domainAssociations[?domainName=='$AMPLIFY_DOMAIN_NAME'].status" \
+                  --output text || echo "")
+                if [[ "$STATUS" == *"AVAILABLE"* ]]; then
+                  echo "✅ Domain verified, updating settings..."
+                  aws amplify update-domain-association \
+                    --app-id $AMPLIFY_APP_ID \
+                    --domain-name $AMPLIFY_DOMAIN_NAME \
+                    --sub-domain-settings '[{"prefix":"main","branchName":"main"}]'
+                  exit 0
+                fi
+                echo "Waiting for domain verification... ($i/20)"
+                sleep 30
+              done
+              echo "⏳ Domain still not verified. Skipping update."
+            else
+              echo "Domain already associated and verified. Updating..."
+              aws amplify update-domain-association \
+                --app-id $AMPLIFY_APP_ID \
+                --domain-name $AMPLIFY_DOMAIN_NAME \
+                --sub-domain-settings '[{"prefix":"main","branchName":"main"}]'
+            fi
           else
             echo "Creating new domain association..."
             aws amplify create-domain-association \
