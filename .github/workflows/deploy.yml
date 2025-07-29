@@ -94,7 +94,7 @@ jobs:
           
           if [ "$REPO_INFO" = "None" ] || [ -z "$REPO_INFO" ]; then
             echo "No repository connected. Attempting to connect..."
-            if [ -n "${{ secrets.GITHUB_PERSONAL_TOKEN }}" ]; then
+            if [ -n "${{ secrets.PERSONAL_ACCESS_TOKEN }}" ]; then
               # First enable auto branch creation
               aws amplify update-app \
                 --app-id "$AMPLIFY_APP_ID" \
@@ -111,7 +111,7 @@ jobs:
               aws amplify update-app \
                 --app-id "$AMPLIFY_APP_ID" \
                 --repository "https://github.com/${{ github.repository }}" \
-                --oauth-token "${{ secrets.GITHUB_PERSONAL_TOKEN }}" \
+                --oauth-token "${{ secrets.PERSONAL_ACCESS_TOKEN }}" \
                 --platform "WEB" && echo "✅ Repository connected successfully!" || {
                 echo "❌ Failed to connect repository automatically."
                 echo "Please follow these manual steps:"
@@ -123,11 +123,11 @@ jobs:
                 echo "6. Select branch: main"
               }
             else
-              echo "❌ No GITHUB_PERSONAL_TOKEN found."
+              echo "❌ No PERSONAL_ACCESS_TOKEN found."
               echo "To connect automatically, add a GitHub Personal Access Token:"
               echo "1. Go to GitHub Settings > Developer settings > Personal access tokens"
               echo "2. Create token with 'repo' and 'admin:repo_hook' permissions"
-              echo "3. Add as GITHUB_PERSONAL_TOKEN secret in your repository"
+              echo "3. Add as PERSONAL_ACCESS_TOKEN secret in your repository"
               echo ""
               echo "Or connect manually in AWS Console:"
               echo "Repository: https://github.com/${{ github.repository }}"
