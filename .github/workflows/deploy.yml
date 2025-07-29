@@ -29,11 +29,9 @@ jobs:
       - name: Create or Get Amplify App
         id: create_app
         run: |
-          echo "Checking if Amplify app exists..."
           EXISTING_APP=$(aws amplify list-apps --query "apps[?name=='$AMPLIFY_APP_NAME'].appId" --output text || echo "")
-          
           if [ -n "$EXISTING_APP" ] && [ "$EXISTING_APP" != "None" ]; then
-            echo "App already exists: $EXISTING_APP"
+            echo "App exists: $EXISTING_APP"
             APP_ID="$EXISTING_APP"
           else
             echo "Creating new Amplify app..."
@@ -42,39 +40,32 @@ jobs:
               --platform "WEB" \
               --output json | jq -r '.app.appId')
           fi
-          
           echo "AMPLIFY_APP_ID=$APP_ID" >> $GITHUB_ENV
           echo "App ID: $APP_ID"
 
-      - name: Delete manual branches before connecting repo
+      - name: Cleanup Manual Branches
         run: |
-          BRANCHES=$(aws amplify list-branches --app-id $AMPLIFY_APP_ID --query "branches[].branchName" --output text)
+          BRANCHES=$(aws amplify list-branches --app-id $AMPLIFY_APP_ID --query "branches[].branchName" --output text || echo "")
           for BRANCH in $BRANCHES; do
-            echo "Deleting branch: $BRANCH"
+            echo "Deleting manual branch: $BRANCH"
             aws amplify delete-branch --app-id $AMPLIFY_APP_ID --branch-name $BRANCH
           done
 
-
       - name: Connect GitHub Repository
         run: |
-          if [ -z "$AMPLIFY_APP_ID" ]; then
-            echo "Error: AMPLIFY_APP_ID not set"
-            exit 1
-          fi
-          echo "Connecting repository to Amplify..."
+          echo "Connecting repository..."
           aws amplify update-app \
             --app-id "$AMPLIFY_APP_ID" \
             --repository "https://github.com/${{ github.repository }}" \
             --oauth-token "${{ secrets.PERSONAL_ACCESS_TOKEN }}" \
             --platform "WEB"
 
-      - name: Create Amplify Branch
+      - name: Create or Update Branch
         run: |
           EXISTING_BRANCH=$(aws amplify list-branches \
             --app-id $AMPLIFY_APP_ID \
             --query "branches[?branchName=='main'].branchName" \
             --output text || echo "")
-
           if [ -n "$EXISTING_BRANCH" ]; then
             echo "Branch 'main' already exists"
           else
@@ -86,6 +77,17 @@ jobs:
               --stage "PRODUCTION" \
               --enable-auto-build
           fi
+
+      - name: Add Custom Domain
+        if: env.AMPLIFY_DOMAIN_NAME != ''
+        env:
+          AMPLIFY_DOMAIN_NAME: ${{ secrets.AMPLIFY_DOMAIN_NAME }}
+        run: |
+          echo "Adding custom domain: $AMPLIFY_DOMAIN_NAME"
+          aws amplify associate-domain \
+            --app-id $AMPLIFY_APP_ID \
+            --domain-name $AMPLIFY_DOMAIN_NAME \
+            --sub-domain-settings '[{"prefix":"main","branchName":"main"}]'
 
       - name: Trigger Deployment
         run: |
