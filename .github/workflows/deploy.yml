@@ -7,28 +7,27 @@ on:
 jobs:
   create-deploy-amplify:
     runs-on: ubuntu-latest
-
     env:
       AWS_REGION: ${{ secrets.AWS_REGION }}
       AMPLIFY_APP_NAME: ${{ secrets.AMPLIFY_APP_NAME }}
-
+    
     steps:
       - name: Checkout source code
         uses: actions/checkout@v3
-
+      
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
-
+      
       - name: Install jq
         run: sudo apt-get install -y jq
-
+      
       - name: Check AWS CLI version
         run: aws --version
-
+      
       - name: Create Amplify App
         id: create_app
         run: |
@@ -36,40 +35,39 @@ jobs:
           APP_ID=$(aws amplify create-app \
             --name "$AMPLIFY_APP_NAME" \
             --repository "https://github.com/${{ github.repository }}" \
-            --oauth-token ${{ github.token }} \
+            --oauth-token ${{ secrets.GITHUB_TOKEN }} \
             --output json | jq -r '.app.appId')
           echo "AMPLIFY_APP_ID=$APP_ID" >> $GITHUB_ENV
-
+      
       - name: Debug App ID
-        run: echo "App ID is: $AMPLIFY_APP_ID"
-
-
+        run: echo "App ID is:$AMPLIFY_APP_ID"
+      
       - name: Create Amplify Branch
         run: |
           aws amplify create-branch \
             --app-id $AMPLIFY_APP_ID \
             --branch-name main
-
+      
       - name: Set Amplify Environment Variables
         run: |
           aws amplify update-app \
             --app-id $AMPLIFY_APP_ID \
             --environment-variables "KEY1=value1,KEY2=value2"
-
+      
       - name: Connect Custom Domain
         run: |
           aws amplify associate-domain \
             --app-id $AMPLIFY_APP_ID \
             --domain-name ${{ secrets.AMPLIFY_DOMAIN_NAME }} \
             --sub-domain-settings '[{"prefix":"main","branchName":"main"}]'
-
+      
       - name: Trigger Deployment
         run: |
           aws amplify start-job \
             --app-id $AMPLIFY_APP_ID \
             --branch-name main \
             --job-type RELEASE
-
+      
       - name: Output App URL
         run: |
           URL=$(aws amplify get-app \
