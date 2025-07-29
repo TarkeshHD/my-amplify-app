@@ -68,12 +68,16 @@ jobs:
           zip -r ../deployment.zip .
           cd ..
 
-      - name: Get Amplify App ID
+      - name: Get Amplify App ID and Repo Status
         id: get_app
         run: |
           APP_ID=$(aws amplify list-apps --query "apps[?name=='$AMPLIFY_APP_NAME'].appId" --output text)
           echo "AMPLIFY_APP_ID=$APP_ID" >> $GITHUB_ENV
+
+          REPO_INFO=$(aws amplify get-app --app-id $APP_ID --query 'app.repository' --output text)
+          echo "REPO_INFO=$REPO_INFO" >> $GITHUB_ENV
           echo "App ID: $APP_ID"
+          echo "Repo Info: $REPO_INFO"
 
       - name: Ensure Main Branch Exists or Update
         run: |
@@ -97,30 +101,47 @@ jobs:
               --enable-auto-build
           fi
 
-      - name: Add or Update Custom Domain (Safe)
+      - name: Add or Update Custom Domain with Verification Wait
         if: env.AMPLIFY_DOMAIN_NAME != ''
         run: |
           echo "Managing custom domain: $AMPLIFY_DOMAIN_NAME"
-          DOMAIN_INFO=$(aws amplify list-domain-associations \
+          EXISTING_DOMAIN=$(aws amplify list-domain-associations \
             --app-id $AMPLIFY_APP_ID \
-            --query "domainAssociations[?domainName=='$AMPLIFY_DOMAIN_NAME']" \
-            --output json || echo "[]")
+            --query "domainAssociations[?domainName=='$AMPLIFY_DOMAIN_NAME'].domainName" \
+            --output text || echo "")
 
-          if [ "$(echo $DOMAIN_INFO | jq length)" -gt 0 ]; then
-            echo "Domain already associated. Checking subdomains..."
-            PENDING=$(echo $DOMAIN_INFO | jq -r '.[].subDomains[] | select(.verified != true) | .subDomainSetting.prefix' | xargs || echo "")
+          STATUS=$(aws amplify list-domain-associations \
+            --app-id $AMPLIFY_APP_ID \
+            --query "domainAssociations[?domainName=='$AMPLIFY_DOMAIN_NAME'].status" \
+            --output text || echo "")
 
-            if [ -n "$PENDING" ]; then
-              echo "⚠️ Some subdomains are still pending verification: $PENDING"
-              echo "Skipping update until all subdomains are verified."
-              exit 0
+          if [ -n "$EXISTING_DOMAIN" ]; then
+            if [[ "$STATUS" == *"PENDING_VERIFICATION"* ]]; then
+              echo "⚠️ Domain is pending verification. Checking every 30s..."
+              for i in {1..20}; do
+                STATUS=$(aws amplify list-domain-associations \
+                  --app-id $AMPLIFY_APP_ID \
+                  --query "domainAssociations[?domainName=='$AMPLIFY_DOMAIN_NAME'].status" \
+                  --output text || echo "")
+                if [[ "$STATUS" == *"AVAILABLE"* ]]; then
+                  echo "✅ Domain verified, updating settings..."
+                  aws amplify update-domain-association \
+                    --app-id $AMPLIFY_APP_ID \
+                    --domain-name $AMPLIFY_DOMAIN_NAME \
+                    --sub-domain-settings '[{"prefix":"main","branchName":"main"}]'
+                  exit 0
+                fi
+                echo "Waiting for domain verification... ($i/20)"
+                sleep 30
+              done
+              echo "⏳ Domain still not verified. Skipping update."
+            else
+              echo "Domain already associated and verified. Updating..."
+              aws amplify update-domain-association \
+                --app-id $AMPLIFY_APP_ID \
+                --domain-name $AMPLIFY_DOMAIN_NAME \
+                --sub-domain-settings '[{"prefix":"main","branchName":"main"}]'
             fi
-
-            echo "✅ All subdomains verified. Updating settings..."
-            aws amplify update-domain-association \
-              --app-id $AMPLIFY_APP_ID \
-              --domain-name $AMPLIFY_DOMAIN_NAME \
-              --sub-domain-settings '[{"prefix":"main","branchName":"main"}]'
           else
             echo "Creating new domain association..."
             aws amplify create-domain-association \
@@ -129,43 +150,45 @@ jobs:
               --sub-domain-settings '[{"prefix":"main","branchName":"main"}]'
           fi
 
-      - name: Create Deployment
-        id: create_deployment
+      - name: Deploy (Handles Connected and Manual Mode)
         run: |
-          DEPLOYMENT_ID=$(aws amplify create-deployment \
-            --app-id $AMPLIFY_APP_ID \
-            --branch-name main \
-            --query 'deploymentId' \
-            --output text)
-          echo "DEPLOYMENT_ID=$DEPLOYMENT_ID" >> $GITHUB_ENV
+          if [ "$REPO_INFO" != "None" ] && [ -n "$REPO_INFO" ]; then
+            echo "App is connected to GitHub repo. Using start-job..."
+            RUNNING=$(aws amplify list-jobs \
+              --app-id $AMPLIFY_APP_ID \
+              --branch-name main \
+              --query "jobSummaries[?status=='PENDING' || status=='RUNNING'].jobId" \
+              --output text || echo "")
 
-      - name: Upload Deployment
-        run: |
-          aws amplify upload-files \
-            --app-id $AMPLIFY_APP_ID \
-            --branch-name main \
-            --deployment-id $DEPLOYMENT_ID \
-            --file deployment.zip
+            if [ -n "$RUNNING" ]; then
+              echo "⚠️ A job is already running. Skipping deployment."
+              exit 0
+            fi
 
-      - name: Trigger Deployment (Safe)
-        run: |
-          echo "Checking for running jobs..."
-          RUNNING=$(aws amplify list-jobs \
-            --app-id $AMPLIFY_APP_ID \
-            --branch-name main \
-            --query "jobSummaries[?status=='PENDING' || status=='RUNNING'].jobId" \
-            --output text || echo "")
+            aws amplify start-job \
+              --app-id $AMPLIFY_APP_ID \
+              --branch-name main \
+              --job-type RELEASE
+          else
+            echo "Manual deployment mode..."
+            DEPLOYMENT_ID=$(aws amplify create-deployment \
+              --app-id $AMPLIFY_APP_ID \
+              --branch-name main \
+              --query 'deploymentId' \
+              --output text)
+            echo "DEPLOYMENT_ID=$DEPLOYMENT_ID"
 
-          if [ -n "$RUNNING" ]; then
-            echo "⚠️ A job is already running or pending. Skipping new deployment."
-            exit 0
+            aws amplify upload-files \
+              --app-id $AMPLIFY_APP_ID \
+              --branch-name main \
+              --deployment-id $DEPLOYMENT_ID \
+              --file deployment.zip
+
+            aws amplify start-job \
+              --app-id $AMPLIFY_APP_ID \
+              --branch-name main \
+              --job-type RELEASE
           fi
-
-          echo "Starting deployment..."
-          aws amplify start-job \
-            --app-id $AMPLIFY_APP_ID \
-            --branch-name main \
-            --job-type RELEASE
 
       - name: Output Amplify URL
         run: |
