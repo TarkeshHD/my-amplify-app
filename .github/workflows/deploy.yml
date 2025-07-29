@@ -1,4 +1,4 @@
-name: Create and Deploy Amplify App
+name: Create and Deploy Amplify  GitHUb
 
 on:
   push:
