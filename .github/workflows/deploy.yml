@@ -29,7 +29,7 @@ jobs:
       - name: Check AWS CLI version
         run: aws --version
 
-      - name: Create Amplify App
+            - name: Create Amplify App
         id: create_app
         run: |
           echo "Creating Amplify app: $AMPLIFY_APP_NAME"
@@ -39,40 +39,40 @@ jobs:
             --oauth-token ${{ secrets.GITHUB_TOKEN }} \
             --output json | jq -r '.app.appId')
           echo "AMPLIFY_APP_ID=$APP_ID" >> $GITHUB_ENV
-          echo "app_id=$APP_ID" >> $GITHUB_OUTPUT
 
       - name: Debug App ID
-        run: echo "App ID is: ${{ steps.create_app.outputs.app_id }}"
+        run: echo "App ID is: $AMPLIFY_APP_ID"
 
       - name: Create Amplify Branch
         run: |
           aws amplify create-branch \
-            --app-id ${{ steps.create_app.outputs.app_id }} \
+            --app-id $AMPLIFY_APP_ID \
             --branch-name main
 
       - name: Set Amplify Environment Variables
         run: |
           aws amplify update-app \
-            --app-id ${{ steps.create_app.outputs.app_id }} \
+            --app-id $AMPLIFY_APP_ID \
             --environment-variables "KEY1=value1,KEY2=value2"
 
       - name: Connect Custom Domain
         run: |
           aws amplify associate-domain \
-            --app-id ${{ steps.create_app.outputs.app_id }} \
+            --app-id $AMPLIFY_APP_ID \
             --domain-name ${{ secrets.AMPLIFY_DOMAIN_NAME }} \
             --sub-domain-settings '[{"prefix":"main","branchName":"main"}]'
 
       - name: Trigger Deployment
         run: |
           aws amplify start-job \
-            --app-id ${{ steps.create_app.outputs.app_id }} \
+            --app-id $AMPLIFY_APP_ID \
             --branch-name main \
             --job-type RELEASE
 
       - name: Output App URL
         run: |
           URL=$(aws amplify get-app \
-            --app-id ${{ steps.create_app.outputs.app_id }} \
+            --app-id $AMPLIFY_APP_ID \
             --query 'app.defaultDomain' --output text)
           echo "✨ Deployed at: https://main.$URL"
+
