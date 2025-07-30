@@ -1,9 +1,7 @@
-name: Frontend Build, Push & Deploy to EKS
+name: Create EKS Cluster and Deploy Frontend
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   build-deploy:
@@ -33,11 +31,11 @@ jobs:
           docker push "$IMAGE_NAME:$TAG"
           docker push "$IMAGE_NAME:latest"
 
-      # ✅ Install kubectl
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'latest'
+      # ✅ Install kubectl and eksctl
+      - name: Install tools
+        run: |
+          curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+          sudo mv /tmp/eksctl /usr/local/bin
 
       # ✅ Configure AWS credentials
       - name: Configure AWS credentials
@@ -47,6 +45,28 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      # ✅ Check or create EKS cluster
+      - name: Check or create EKS cluster
+        run: |
+          CLUSTER_NAME="${{ secrets.EKS_CLUSTER_NAME }}"
+          REGION="${{ secrets.AWS_REGION }}"
+
+          echo "Checking if cluster $CLUSTER_NAME exists..."
+          if aws eks describe-cluster --name "$CLUSTER_NAME" --region "$REGION" >/dev/null 2>&1; then
+            echo "✅ Cluster $CLUSTER_NAME already exists."
+          else
+            echo "🚀 Creating EKS cluster $CLUSTER_NAME..."
+            eksctl create cluster \
+              --name "$CLUSTER_NAME" \
+              --region "$REGION" \
+              --nodegroup-name standard-workers \
+              --node-type t3.medium \
+              --nodes 2 \
+              --nodes-min 1 \
+              --nodes-max 3 \
+              --managed
+          fi
+
       # ✅ Generate kubeconfig for EKS
       - name: Generate kubeconfig
         run: |
@@ -54,9 +74,8 @@ jobs:
             --name ${{ secrets.EKS_CLUSTER_NAME }} \
             --region ${{ secrets.AWS_REGION }}
 
-
-      # ✅ Update Deployment with new image and apply
-      - name: Deploy to EKS
+      # ✅ Deploy to EKS
+      - name: Deploy Frontend
         run: |
           IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/frontend"
           TAG="${GITHUB_SHA::7}"
