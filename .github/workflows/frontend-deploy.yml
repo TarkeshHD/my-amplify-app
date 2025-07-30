@@ -6,9 +6,8 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -24,15 +23,38 @@ jobs:
 
       - name: Build and Push Docker image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/frontend:latest .
-          docker push ${{ secrets.DOCKER_USERNAME }}/frontend:latest
+          echo "Building Docker image tarkeshhd/my-amplify-app-frontend:latest..."
+          docker build -t tarkeshhd/my-amplify-app-frontend:latest .
+          docker push tarkeshhd/my-amplify-app-frontend:latest
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
         with:
           version: 'latest'
 
+      - name: Configure kubeconfig
+        run: |
+          echo "${{ secrets.KUBE_CONFIG }}" > kubeconfig.yaml
+          export KUBECONFIG=kubeconfig.yaml
+
       - name: Deploy to Kubernetes
         run: |
+          echo "Updating Kubernetes Deployment..."
+          kubectl set image deployment/frontend-deployment \
+            frontend=tarkeshhd/my-amplify-app-frontend:latest
+          
+          echo "Applying Deployment and Service..."
           kubectl apply -f frontend-deployment.yaml
           kubectl apply -f frontend-service.yaml
+
+      - name: Verify Deployment
+        run: |
+          kubectl rollout status deployment/frontend-deployment
+          kubectl get svc frontend-service
