@@ -16,7 +16,8 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: your-dockerhub-username/frontend:latest
+          image: tarkeshhd/my-amplify-app-frontend:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
           resources:
