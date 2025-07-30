@@ -54,6 +54,7 @@ jobs:
             --name ${{ secrets.EKS_CLUSTER_NAME }} \
             --region ${{ secrets.AWS_REGION }}
 
+
       # ✅ Update Deployment with new image and apply
       - name: Deploy to EKS
         run: |
