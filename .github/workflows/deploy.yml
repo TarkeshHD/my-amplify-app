@@ -1,4 +1,4 @@
-name: Deploy to AWS Amplify final
+name: Deploy to AWS Amplify Final
 
 on:
   push:
@@ -32,16 +32,14 @@ jobs:
         with:
           node-version: 18
 
-      - name: Force Cache Bust
+      - name: Force Cache Bust for Version Control
         run: |
           echo $(date +%s) > cache-bust.txt
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
           git add cache-bust.txt
           git commit -m "chore: cache bust [skip ci]" || echo "No changes"
-          git fetch origin main
-          git reset --soft origin/main
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main --force
+          git push
 
       - name: Install dependencies
         run: npm install
@@ -60,7 +58,6 @@ jobs:
             echo "No build folder found!"
             exit 1
           fi
-          echo "Detected output folder: $OUTPUT_FOLDER"
 
       - name: Zip build output
         run: |
@@ -68,16 +65,26 @@ jobs:
           zip -r ../deployment.zip .
           cd ..
 
+      - name: Debug - List Amplify Apps
+        run: aws amplify list-apps --query "apps[*].name"
+
       - name: Get Amplify App ID and Repo Status
         id: get_app
         run: |
+          echo "Looking for Amplify App: $AMPLIFY_APP_NAME"
           APP_ID=$(aws amplify list-apps --query "apps[?name=='$AMPLIFY_APP_NAME'].appId" --output text)
+
+          if [ -z "$APP_ID" ]; then
+            echo "❌ Amplify App '$AMPLIFY_APP_NAME' not found!"
+            exit 1
+          fi
+
           echo "AMPLIFY_APP_ID=$APP_ID" >> $GITHUB_ENV
 
           REPO_INFO=$(aws amplify get-app --app-id $APP_ID --query 'app.repository' --output text)
           echo "REPO_INFO=$REPO_INFO" >> $GITHUB_ENV
-          echo "App ID: $APP_ID"
-          echo "Repo Info: $REPO_INFO"
+          echo "✅ App ID: $APP_ID"
+          echo "📦 Repo Info: $REPO_INFO"
 
       - name: Ensure Main Branch Exists or Update
         run: |
@@ -101,7 +108,7 @@ jobs:
               --enable-auto-build
           fi
 
-      - name: Add or Update Custom Domain with Skip Logic
+      - name: Add or Update Custom Domain (Optional)
         if: env.AMPLIFY_DOMAIN_NAME != ''
         run: |
           echo "Managing custom domain: $AMPLIFY_DOMAIN_NAME"
@@ -117,27 +124,24 @@ jobs:
 
           if [ -n "$EXISTING_DOMAIN" ]; then
             if [[ "$STATUS" == *"AVAILABLE"* ]]; then
-              echo "✅ Domain already associated and verified. Skipping update."
-              exit 0
+              echo "✅ Domain already verified. Skipping."
             elif [[ "$STATUS" == *"PENDING_VERIFICATION"* ]]; then
-              echo "⚠️ Domain is pending verification. Checking every 30s..."
+              echo "Waiting for domain verification..."
               for i in {1..20}; do
                 STATUS=$(aws amplify list-domain-associations \
                   --app-id $AMPLIFY_APP_ID \
                   --query "domainAssociations[?domainName=='$AMPLIFY_DOMAIN_NAME'].status" \
                   --output text || echo "")
                 if [[ "$STATUS" == *"AVAILABLE"* ]]; then
-                  echo "✅ Domain verified, updating settings..."
                   aws amplify update-domain-association \
                     --app-id $AMPLIFY_APP_ID \
                     --domain-name $AMPLIFY_DOMAIN_NAME \
                     --sub-domain-settings '[{"prefix":"main","branchName":"main"}]'
-                  exit 0
+                  break
                 fi
-                echo "Waiting for domain verification... ($i/20)"
+                echo "Retrying in 30s... ($i/20)"
                 sleep 30
               done
-              echo "⏳ Domain still not verified. Skipping update."
             else
               echo "Updating domain association..."
               aws amplify update-domain-association \
@@ -153,27 +157,25 @@ jobs:
               --sub-domain-settings '[{"prefix":"main","branchName":"main"}]'
           fi
 
-      - name: Deploy (Handles Connected and Manual Mode)
+      - name: Deploy (Connected or Manual)
         run: |
           if [ "$REPO_INFO" != "None" ] && [ -n "$REPO_INFO" ]; then
-            echo "App is connected to GitHub repo. Using start-job..."
+            echo "🔁 Connected mode. Triggering build job..."
             RUNNING=$(aws amplify list-jobs \
               --app-id $AMPLIFY_APP_ID \
               --branch-name main \
               --query "jobSummaries[?status=='PENDING' || status=='RUNNING'].jobId" \
               --output text || echo "")
-
             if [ -n "$RUNNING" ]; then
-              echo "⚠️ A job is already running. Skipping deployment."
+              echo "⚠️ A job is already running. Skipping."
               exit 0
             fi
-
             aws amplify start-job \
               --app-id $AMPLIFY_APP_ID \
               --branch-name main \
               --job-type RELEASE
           else
-            echo "Manual deployment mode..."
+            echo "📦 Manual mode: Uploading build..."
             DEPLOYMENT_ID=$(aws amplify create-deployment \
               --app-id $AMPLIFY_APP_ID \
               --branch-name main \
