@@ -1,67 +1,67 @@
-name: 🚀 Deploy to AWS Amplify
+name: Deploy to AWS Amplify
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   deploy:
+    name: 🚀 Deploy Frontend to Amplify
     runs-on: ubuntu-latest
+
     env:
       AWS_REGION: us-east-1
+      AWS_DEFAULT_REGION: us-east-1
       AMPLIFY_APP_NAME: my-amplify-app
       OUTPUT_FOLDER: dist
 
     steps:
-    - name: ⬇️ Checkout code
-      uses: actions/checkout@v3
+      - name: 📦 Checkout repository
+        uses: actions/checkout@v3
 
-    - name: 🧰 Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
+      - name: 🛠️ Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
 
-    - name: 📦 Install dependencies
-      run: npm install
+      - name: 📦 Install dependencies
+        run: npm install
 
-    - name: 🛠️ Build app
-      run: npm run build
+      - name: 🔧 Build app
+        run: npm run build
 
-    - name: 🔐 Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
+      - name: 📡 Get or create Amplify App
+        id: amplify
+        run: |
+          echo "🔍 Checking for Amplify App..."
+          APP_ID=$(aws amplify list-apps --query "apps[?name=='$AMPLIFY_APP_NAME'].appId" --output text)
+          
+          if [ -z "$APP_ID" ]; then
+            echo "⚠️ Amplify app '$AMPLIFY_APP_NAME' not found."
+            echo "❗ You must first create the app and connect the 'main' branch manually in the AWS Amplify Console."
+            exit 1
+          else
+            echo "✅ Amplify App found."
+          fi
 
-    - name: 🔍 Check or Create Amplify App
-      run: |
-        echo "🔍 Checking for Amplify App..."
-        APP_ID=$(aws amplify list-apps --query "apps[?name=='$AMPLIFY_APP_NAME'].appId" --output text)
+          echo "AMPLIFY_APP_ID=$APP_ID" >> $GITHUB_ENV
+          echo "✅ App ID: $APP_ID"
 
-        if [ -z "$APP_ID" ]; then
-          echo "🚀 Creating Amplify App..."
-          APP_ID=$(aws amplify create-app \
-            --name "$AMPLIFY_APP_NAME" \
-            --repository "https://github.com/${{ github.repository }}" \
-            --oauth-token "${{ secrets.GH_PAT }}" \
-            --query 'app.appId' \
-            --output text)
-        else
-          echo "✅ Amplify App already exists."
-        fi
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-        echo "AMPLIFY_APP_ID=$APP_ID" >> $GITHUB_ENV
-        echo "✅ App ID: $APP_ID"
+      - name: 🚀 Trigger Deploy on Amplify
+        run: |
+          echo "📡 Triggering Amplify deploy..."
+          aws amplify start-job \
+            --app-id $AMPLIFY_APP_ID \
+            --branch-name main \
+            --job-type RELEASE \
+            --job-reason "Triggered by GitHub Action"
 
-    - name: 🔄 Push code to trigger auto-deploy
-      run: |
-        echo "📡 Triggering Amplify deploy..."
-        aws amplify start-job \
-          --app-id $AMPLIFY_APP_ID \
-          --branch-name main \
-          --job-type RELEASE \
-          --job-reason "Triggered by GitHub Action"
-
-    - name: ✅ Done
-      run: echo "🎉 Deploy triggered! Check Amplify console for status."
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AMPLIFY_APP_ID: ${{ env.AMPLIFY_APP_ID }}
