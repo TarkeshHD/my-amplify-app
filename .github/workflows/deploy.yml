@@ -33,9 +33,7 @@ jobs:
           node-version: 18
 
       - name: Install dependencies
-        run: |
-          rm -f package-lock.json
-          npm install
+        run: npm install
 
       - name: Build project
         run: npm run build
@@ -73,6 +71,8 @@ jobs:
 
           REPO_INFO=$(aws amplify get-app --app-id $APP_ID --query 'app.repository' --output text)
           echo "REPO_INFO=$REPO_INFO" >> $GITHUB_ENV
+          echo "✅ App ID: $APP_ID"
+          echo "📦 Repo Info: $REPO_INFO"
 
       - name: Ensure branch 'main' exists in Amplify
         run: |
@@ -90,23 +90,24 @@ jobs:
             echo "✅ Branch 'main' already exists."
           fi
 
-      - name: Manage domain (optional)
+      - name: Add custom domain (optional)
         if: env.AMPLIFY_DOMAIN_NAME != ''
         run: |
-          echo "🌐 Managing domain: $AMPLIFY_DOMAIN_NAME"
-          EXISTS=$(aws amplify list-domain-associations \
+          echo "🌐 Adding domain: $AMPLIFY_DOMAIN_NAME"
+
+          DOMAIN_EXISTS=$(aws amplify list-domain-associations \
             --app-id $AMPLIFY_APP_ID \
             --query "domainAssociations[?domainName=='$AMPLIFY_DOMAIN_NAME'].domainName" \
             --output text || echo "")
 
-          if [ -z "$EXISTS" ]; then
-            echo "🔧 Creating domain association..."
+          if [ -z "$DOMAIN_EXISTS" ]; then
+            echo "📌 Creating domain association..."
             aws amplify create-domain-association \
               --app-id $AMPLIFY_APP_ID \
               --domain-name $AMPLIFY_DOMAIN_NAME \
               --sub-domain-settings '[{"prefix":"main","branchName":"main"}]'
           else
-            echo "✅ Domain already exists. Skipping creation."
+            echo "✅ Domain already associated."
           fi
 
       - name: Deploy to Amplify
