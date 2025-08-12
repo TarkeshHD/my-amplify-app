@@ -8,59 +8,53 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     env:
       AWS_REGION: us-east-1
       AWS_DEFAULT_REGION: us-east-1
-      AMPLIFY_APP_ID: d3tph4ka7rwtei  # ✅ Replace with your actual App ID
+      AMPLIFY_APP_ID: d3tph4ka7rwtei
       BRANCH_NAME: main
       OUTPUT_FOLDER: dist
-      CUSTOM_DOMAIN: www.example.com  # ✅ Replace with your domain (optional)
+      CUSTOM_DOMAIN: www.example.com
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
     steps:
-      - name: Checkout Code
+      - name: 📥 Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Node.js
+      - name: 🧰 Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      - name: Install Dependencies
-        run: npm install
+      - name: 📦 Install dependencies
+        run: npm ci
 
-      - name: Build Project
+      - name: 🏗️ Build project
         run: npm run build
 
-      - name: Zip Build Folder
+      - name: 📁 Zip build output
         run: zip -r deployment.zip $OUTPUT_FOLDER
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Stop Existing Amplify Job (if any)
+      - name: 🛑 Stop any existing pending jobs
         run: |
           LAST_JOB_ID=$(aws amplify list-jobs \
             --app-id $AMPLIFY_APP_ID \
             --branch-name $BRANCH_NAME \
             --query "jobSummaries[?status=='PENDING' || status=='RUNNING'] | [0].jobId" \
-            --output text || echo "None")
+            --output text)
 
           if [ "$LAST_JOB_ID" != "None" ]; then
-            echo "🛑 Stopping existing job $LAST_JOB_ID..."
+            echo "🛑 Stopping job $LAST_JOB_ID..."
             aws amplify stop-job \
               --app-id $AMPLIFY_APP_ID \
               --branch-name $BRANCH_NAME \
               --job-id "$LAST_JOB_ID"
             sleep 10
-          else
-            echo "✅ No running or pending job found"
           fi
 
-      - name: Create Deployment
+      - name: 🚀 Create deployment & upload
         run: |
           DEPLOYMENT_INFO=$(aws amplify create-deployment \
             --app-id $AMPLIFY_APP_ID \
@@ -79,21 +73,19 @@ jobs:
             --job-type RELEASE \
             --job-reason "GitHub Actions Auto Deploy"
 
-      - name: Configure Custom Domain (Optional)
-        if: env.CUSTOM_DOMAIN != ''
+      - name: 🌐 Setup Custom Domain (optional)
         run: |
-          echo "🌐 Configuring custom domain (if not already configured)..."
-          CURRENT_DOMAINS=$(aws amplify list-domain-associations \
+          DOMAIN_STATUS=$(aws amplify list-domains \
             --app-id $AMPLIFY_APP_ID \
-            --query "domainAssociations[].domainName" \
+            --query "domains[?domainName=='$CUSTOM_DOMAIN'].domainName" \
             --output text)
 
-          if [[ "$CURRENT_DOMAINS" != *"$CUSTOM_DOMAIN"* ]]; then
-            echo "🔧 Setting up custom domain: $CUSTOM_DOMAIN"
+          if [ "$DOMAIN_STATUS" != "$CUSTOM_DOMAIN" ]; then
+            echo "🌐 Attaching custom domain $CUSTOM_DOMAIN..."
             aws amplify create-domain-association \
               --app-id $AMPLIFY_APP_ID \
               --domain-name $CUSTOM_DOMAIN \
               --sub-domain-settings prefix=$BRANCH_NAME,branchName=$BRANCH_NAME
           else
-            echo "✅ Custom domain $CUSTOM_DOMAIN already exists"
+            echo "✅ Custom domain $CUSTOM_DOMAIN already configured."
           fi
