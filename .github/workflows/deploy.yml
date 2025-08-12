@@ -13,7 +13,7 @@ jobs:
     env:
       AWS_REGION: us-east-1
       AWS_DEFAULT_REGION: us-east-1
-      AMPLIFY_APP_NAME: my-amplify-app
+      AMPLIFY_APP_NAME: ${{ secrets.AMPLIFY_APP_NAME }}
       BRANCH_NAME: main
       OUTPUT_FOLDER: dist
 
