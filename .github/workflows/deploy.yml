@@ -67,14 +67,30 @@ jobs:
             echo "✅ Branch '$BRANCH_NAME' already exists."
           fi
 
-      - name: Upload build to Amplify
+      - name: Zip and Deploy to Amplify (Manual Deployment)
         run: |
-          echo "🚀 Starting deployment to Amplify..."
-          JOB_ID=$(aws amplify start-job \
+          echo "📦 Creating Amplify deployment..."
+          DEPLOYMENT_INFO=$(aws amplify create-deployment \
             --app-id $AMPLIFY_APP_ID \
             --branch-name $BRANCH_NAME \
-            --job-type RELEASE \
-            --query 'jobSummary.jobId' \
-            --output text)
+            --query '{jobId: jobId, zipUploadUrl: zipUploadUrl}' \
+            --output json)
 
-          echo "✅ Deployment Job ID: $JOB_ID"
+          JOB_ID=$(echo $DEPLOYMENT_INFO | jq -r .jobId)
+          ZIP_URL=$(echo $DEPLOYMENT_INFO | jq -r .zipUploadUrl)
+
+          echo "📦 Zipping build output..."
+          cd $OUTPUT_FOLDER
+          zip -r ../app.zip .
+          cd ..
+
+          echo "📤 Uploading ZIP to Amplify..."
+          curl -T app.zip "$ZIP_URL"
+
+          echo "🚀 Starting deployment job..."
+          aws amplify start-deployment \
+            --app-id $AMPLIFY_APP_ID \
+            --branch-name $BRANCH_NAME \
+            --job-id $JOB_ID
+
+          echo "✅ Deployment started with Job ID: $JOB_ID"
