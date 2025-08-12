@@ -1,14 +1,13 @@
-name: Deploy to AWS Amplify
+name: Deploy to Amplify
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   deploy:
-    name: 🚀 Deploy to Amplify
     runs-on: ubuntu-latest
-
     env:
       AWS_REGION: us-east-1
       AWS_DEFAULT_REGION: us-east-1
@@ -16,60 +15,87 @@ jobs:
       OUTPUT_FOLDER: dist
 
     steps:
-    - name: ⬇️ Checkout Repo
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: ☁️ Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
 
-    - name: 🔍 Check or Create Amplify App
-      id: amplifyapp
-      run: |
-        echo "🔍 Checking for Amplify App..."
-        APP_ID=$(aws amplify list-apps --query "apps[?name=='$AMPLIFY_APP_NAME'].appId" --output text)
+      - name: Install dependencies
+        run: npm ci
 
-        if [ -z "$APP_ID" ]; then
-          echo "🚀 Creating Amplify App..."
-          APP_ID=$(aws amplify create-app \
-            --name "$AMPLIFY_APP_NAME" \
-            --repository "https://github.com/${{ github.repository }}" \
-            --oauth-token "${{ secrets.GH_PAT }}" \
-            --query 'app.appId' \
+      - name: Build project
+        run: npm run build
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Create or get Amplify App
+        run: |
+          echo "🔍 Checking for Amplify App..."
+          APP_ID=$(aws amplify list-apps --query "apps[?name=='$AMPLIFY_APP_NAME'].appId" --output text)
+
+          if [ -z "$APP_ID" ]; then
+            echo "🚀 Creating Amplify App..."
+            APP_ID=$(aws amplify create-app \
+              --name "$AMPLIFY_APP_NAME" \
+              --repository "https://github.com/${{ github.repository }}" \
+              --oauth-token "${{ secrets.GH_PAT }}" \
+              --query 'app.appId' \
+              --output text)
+          else
+            echo "✅ Amplify App already exists."
+          fi
+
+          echo "AMPLIFY_APP_ID=$APP_ID" >> $GITHUB_ENV
+
+      - name: Deploy to Amplify
+        run: |
+          echo "🚀 Deploying to Amplify..."
+          JOB_ID=$(aws amplify start-job \
+            --app-id $AMPLIFY_APP_ID \
+            --branch-name main \
+            --job-type RELEASE \
+            --source-dir $OUTPUT_FOLDER \
+            --query 'jobSummary.jobId' \
             --output text)
 
-          echo "🔧 Connecting 'main' branch..."
-          aws amplify create-branch \
-            --app-id "$APP_ID" \
-            --branch-name "main" \
-            --framework "Web" \
-            --stage "PRODUCTION"
-        else
-          echo "✅ Amplify App already exists."
-        fi
+          echo "AMPLIFY_DEPLOY_JOB_ID=$JOB_ID" >> $GITHUB_ENV
+          echo "✅ Deploy Job ID: $JOB_ID"
 
-        echo "AMPLIFY_APP_ID=$APP_ID" >> $GITHUB_ENV
-        echo "✅ App ID: $APP_ID"
+      - name: Wait for deployment to complete
+        run: |
+          echo "⏳ Waiting for deploy job to complete..."
+          for i in {1..20}; do
+            STATUS=$(aws amplify get-job \
+              --app-id $AMPLIFY_APP_ID \
+              --branch-name main \
+              --job-id $AMPLIFY_DEPLOY_JOB_ID \
+              --query 'job.summary.status' \
+              --output text)
+            echo "📦 Job Status: $STATUS"
 
-    - name: 🌐 Add Custom Domain (optional)
-      if: env.CUSTOM_DOMAIN != ''
-      run: |
-        echo "🌐 Adding custom domain: $CUSTOM_DOMAIN"
-        aws amplify create-domain-association \
-          --app-id $AMPLIFY_APP_ID \
-          --domain-name $CUSTOM_DOMAIN \
-          --sub-domain-settings "[{\"prefix\":\"www\",\"branchName\":\"main\"}]"
-      env:
-        CUSTOM_DOMAIN: ${{ secrets.CUSTOM_DOMAIN }}
+            if [ "$STATUS" = "SUCCEED" ]; then
+              echo "✅ Deployment succeeded!"
+              break
+            elif [ "$STATUS" = "FAILED" ]; then
+              echo "❌ Deployment failed!"
+              exit 1
+            fi
+            sleep 15
+          done
 
-    - name: 📡 Trigger Amplify Deploy
-      run: |
-        echo "📡 Triggering Amplify deploy..."
-        aws amplify start-job \
-          --app-id $AMPLIFY_APP_ID \
-          --branch-name main \
-          --job-type RELEASE \
-          --job-reason "Triggered by GitHub Action"
+      - name: Add custom domain (if set)
+        if: ${{ secrets.CUSTOM_DOMAIN != '' }}
+        run: |
+          echo "🌐 Adding custom domain: ${{ secrets.CUSTOM_DOMAIN }}"
+          aws amplify create-domain-association \
+            --app-id $AMPLIFY_APP_ID \
+            --domain-name "${{ secrets.CUSTOM_DOMAIN }}" \
+            --sub-domain-settings "[{\"prefix\":\"www\",\"branchName\":\"main\"}]"
