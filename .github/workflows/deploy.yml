@@ -1,50 +1,45 @@
-name: Deploy to AWS Amplify App
+name: Deploy to AWS Amplify
 
 on:
   push:
     branches:
       - main
 
-env:
-  AWS_REGION: us-east-1
-  OUTPUT_FOLDER: dist
-
 jobs:
   deploy:
+    name: Amplify Deployment
     runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AMPLIFY_APP_NAME: ${{ secrets.AMPLIFY_APP_NAME }}
+      CUSTOM_DOMAIN: ${{ secrets.CUSTOM_DOMAIN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      OUTPUT_FOLDER: dist
 
     steps:
-      - name: ⬇️ Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: 🧰 Set Up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
-      - name: 📦 Install Dependencies
+      - name: Install dependencies
         run: npm ci
 
-      - name: 🛠️ Build Project
+      - name: Build project
         run: npm run build
 
-      - name: 🔐 Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: 🔍 Check & Create Amplify App
-        id: amplify-app
+      - name: Check or create Amplify app
+        id: amplify_app
         run: |
           echo "🔍 Checking for Amplify App..."
-          APP_ID=$(aws amplify list-apps --query "apps[?name=='${{ secrets.AMPLIFY_APP_NAME }}'].appId" --output text)
+          APP_ID=$(aws amplify list-apps --query "apps[?name=='$AMPLIFY_APP_NAME'].appId" --output text)
 
           if [ -z "$APP_ID" ]; then
             echo "🚀 Creating Amplify App..."
             APP_ID=$(aws amplify create-app \
-              --name "${{ secrets.AMPLIFY_APP_NAME }}" \
+              --name "$AMPLIFY_APP_NAME" \
+              --repository "https://github.com/${{ github.repository }}" \
+              --oauth-token "$GITHUB_TOKEN" \
               --query 'app.appId' \
               --output text)
           else
@@ -52,70 +47,48 @@ jobs:
           fi
 
           echo "AMPLIFY_APP_ID=$APP_ID" >> $GITHUB_ENV
-          echo "::set-output name=app_id::$APP_ID"
+          echo "✅ App ID: $APP_ID"
 
-      - name: 🌿 Check or Create Branch
+      - name: Check for running job
         run: |
-          echo "🔎 Checking for Amplify branch 'main'..."
-          BRANCH_EXISTS=$(aws amplify list-branches \
-            --app-id $AMPLIFY_APP_ID \
-            --query "branches[?branchName=='main'].branchName" --output text)
+          RUNNING=$(aws amplify list-jobs \
+            --app-id "$AMPLIFY_APP_ID" \
+            --branch-name main \
+            --query "jobSummaries[?status=='PENDING' || status=='RUNNING'].jobId" \
+            --output text || echo "")
 
-          if [ -z "$BRANCH_EXISTS" ]; then
-            echo "🌱 Creating Amplify branch 'main'..."
-            aws amplify create-branch \
-              --app-id $AMPLIFY_APP_ID \
-              --branch-name main
-          else
-            echo "✅ Amplify branch 'main' exists."
+          if [ -n "$RUNNING" ]; then
+            echo "⏳ Waiting for existing job to finish..."
+            COUNT=0
+            while [ -n "$RUNNING" ] && [ $COUNT -lt 30 ]; do
+              sleep 10
+              COUNT=$((COUNT+1))
+              RUNNING=$(aws amplify list-jobs \
+                --app-id "$AMPLIFY_APP_ID" \
+                --branch-name main \
+                --query "jobSummaries[?status=='PENDING' || status=='RUNNING'].jobId" \
+                --output text || echo "")
+              echo "⏳ Still waiting ($COUNT)..."
+            done
+
+            if [ -n "$RUNNING" ]; then
+              echo "❌ Timeout waiting for previous job to finish."
+              exit 1
+            fi
           fi
 
-      - name: ⏳ Wait for Running Jobs to Finish
+      - name: Start deployment job
         run: |
-          echo "🔍 Checking for running jobs..."
-          while true; do
-            RUNNING=$(aws amplify list-jobs \
-              --app-id $AMPLIFY_APP_ID \
-              --branch-name main \
-              --query "jobSummaries[?status=='PENDING' || status=='RUNNING'].jobId" \
-              --output text || echo "")
-            if [ -z "$RUNNING" ]; then
-              echo "✅ No running jobs. Proceeding..."
-              break
-            else
-              echo "⏳ Waiting for existing job to finish (PENDING or RUNNING)..."
-              sleep 10
-            fi
-          done
-
-      - name: 📤 Deploy to Amplify (Manual Upload)
-        run: |
-          echo "📦 Zipping build output..."
-          zip -r deployment.zip $OUTPUT_FOLDER
-
-          DEPLOYMENT_ID=$(aws amplify create-deployment \
-            --app-id $AMPLIFY_APP_ID \
-            --branch-name main \
-            --query 'deploymentId' --output text)
-
-          echo "📤 Uploading deployment files..."
-          aws amplify upload-files \
-            --app-id $AMPLIFY_APP_ID \
-            --branch-name main \
-            --deployment-id $DEPLOYMENT_ID \
-            --file deployment.zip
-
-          echo "🚀 Starting release job..."
           aws amplify start-job \
-            --app-id $AMPLIFY_APP_ID \
+            --app-id "$AMPLIFY_APP_ID" \
             --branch-name main \
             --job-type RELEASE
 
-      - name: 🌐 Setup Custom Domain (Optional)
-        if: ${{ secrets.CUSTOM_DOMAIN != '' }}
+      - name: Set custom domain (optional)
+        if: env.CUSTOM_DOMAIN != ''
         run: |
-          echo "🌐 Setting custom domain: ${{ secrets.CUSTOM_DOMAIN }}"
+          echo "🌐 Setting up custom domain: $CUSTOM_DOMAIN"
           aws amplify create-domain-association \
-            --app-id $AMPLIFY_APP_ID \
-            --domain-name "${{ secrets.CUSTOM_DOMAIN }}" \
-            --sub-domain-settings "[{\"prefix\": \"www\", \"branchName\": \"main\"}]"
+            --app-id "$AMPLIFY_APP_ID" \
+            --domain-name "$CUSTOM_DOMAIN" \
+            --sub-domain-settings '[{"prefix": "www", "branchName": "main"}]'
