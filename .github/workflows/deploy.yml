@@ -48,7 +48,6 @@ jobs:
             echo "⚙️ App not found. Creating Amplify app named '$AMPLIFY_APP_NAME'..."
             APP_ID=$(aws amplify create-app \
               --name "$AMPLIFY_APP_NAME" \
-              --repository "https://github.com/${{ github.repository }}" \
               --query 'app.appId' \
               --output text)
             echo "✅ Created new Amplify app with ID: $APP_ID"
