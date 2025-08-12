@@ -1,14 +1,16 @@
 # --- Build step ---
-FROM node:18-alpine AS build
+FROM node:20-alpine AS build
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+# Try npm ci, but fall back to npm install if lock is out of sync
+RUN if [ -f package-lock.json ]; then \
+      npm ci || (echo "npm ci failed, falling back to npm install" && npm install); \
+    else npm install; \
+    fi
 COPY . .
-# If Amplify uses Vite/React: adjust to your build cmd
 RUN npm run build
 
 # --- Serve step ---
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
-# optional: custom nginx.conf if you need SPA fallback
 EXPOSE 80
