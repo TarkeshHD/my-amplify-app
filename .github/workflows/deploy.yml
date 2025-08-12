@@ -90,12 +90,3 @@ jobs:
             fi
             sleep 15
           done
-
-      - name: Add custom domain (if set)
-        if: ${{ secrets.CUSTOM_DOMAIN != '' }}
-        run: |
-          echo "🌐 Adding custom domain: ${{ secrets.CUSTOM_DOMAIN }}"
-          aws amplify create-domain-association \
-            --app-id $AMPLIFY_APP_ID \
-            --domain-name "${{ secrets.CUSTOM_DOMAIN }}" \
-            --sub-domain-settings "[{\"prefix\":\"www\",\"branchName\":\"main\"}]"
