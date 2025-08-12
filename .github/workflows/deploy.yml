@@ -5,151 +5,77 @@ on:
     branches:
       - main
 
-permissions:
-  contents: write
-
 jobs:
   deploy:
+    name: Build and Deploy to Amplify
     runs-on: ubuntu-latest
+
     env:
-      AWS_REGION: ${{ secrets.AWS_REGION }}
-      AMPLIFY_APP_NAME: ${{ secrets.AMPLIFY_APP_NAME }}
+      AWS_REGION: us-east-1
+      AWS_DEFAULT_REGION: us-east-1
+      AMPLIFY_APP_NAME: my-amplify-app
+      BRANCH_NAME: main
+      OUTPUT_FOLDER: dist
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      - name: Force Cache Bust
+      - name: Install dependencies and build
         run: |
-          echo $(date +%s) > cache-bust.txt
-          git config --global user.email "actions@github.com"
-          git config --global user.name "GitHub Actions"
-          git add cache-bust.txt
-          git commit -m "chore: cache bust [skip ci]" || echo "No changes"
-          git fetch origin main
-          git reset --soft origin/main
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main --force
+          npm install
+          npm run build
 
-      - name: Install dependencies
-        run: npm install
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Build project
-        run: npm run build
-
-      - name: Detect build output folder
-        id: detect_folder
+      - name: Ensure Amplify App Exists
+        id: ensure_app
         run: |
-          if [ -d "build" ]; then
-            echo "OUTPUT_FOLDER=build" >> $GITHUB_ENV
-          elif [ -d "dist" ]; then
-            echo "OUTPUT_FOLDER=dist" >> $GITHUB_ENV
-          else
-            echo "❌ No build folder found!"
-            exit 1
-          fi
-
-      - name: Zip build output
-        run: |
-          cd $OUTPUT_FOLDER
-          zip -r ../deployment.zip .
-          cd ..
-
-      - name: Debug - List Amplify apps
-        run: aws amplify list-apps --query "apps[*].{Name:name,Id:appId}" --output table
-
-      - name: Get Amplify App ID and Repo Info
-        id: get_app
-        run: |
+          echo "🔍 Checking for Amplify app named '$AMPLIFY_APP_NAME'..."
           APP_ID=$(aws amplify list-apps --query "apps[?name=='$AMPLIFY_APP_NAME'].appId" --output text)
 
           if [ -z "$APP_ID" ]; then
-            echo "❌ Could not find Amplify App with name: $AMPLIFY_APP_NAME"
-            exit 1
+            echo "⚙️ App not found. Creating Amplify app named '$AMPLIFY_APP_NAME'..."
+            APP_ID=$(aws amplify create-app \
+              --name "$AMPLIFY_APP_NAME" \
+              --repository "https://github.com/${{ github.repository }}" \
+              --query 'app.appId' \
+              --output text)
+            echo "✅ Created new Amplify app with ID: $APP_ID"
+          else
+            echo "✅ Found existing Amplify app with ID: $APP_ID"
           fi
 
           echo "AMPLIFY_APP_ID=$APP_ID" >> $GITHUB_ENV
 
-          REPO_INFO=$(aws amplify get-app --app-id $APP_ID --query 'app.repository' --output text)
-          echo "REPO_INFO=$REPO_INFO" >> $GITHUB_ENV
-          echo "App ID: $APP_ID"
-          echo "Repo Info: $REPO_INFO"
-
-      - name: Ensure Main Branch Exists or Update
-        run: |
-          ALL_BRANCHES=$(aws amplify list-branches --app-id $AMPLIFY_APP_ID --query "branches[].branchName" --output text || echo "")
-
-          if echo "$ALL_BRANCHES" | grep -qw "main"; then
-            echo "Branch 'main' exists. Updating..."
-            aws amplify update-branch \
-              --app-id $AMPLIFY_APP_ID \
-              --branch-name main \
-              --enable-auto-build || echo "Warning: update skipped"
-          else
-            echo "Creating branch 'main'..."
+          BRANCH_EXISTS=$(aws amplify list-branches --app-id $APP_ID --query "branches[?branchName=='$BRANCH_NAME'].branchName" --output text)
+          if [ -z "$BRANCH_EXISTS" ]; then
+            echo "🔧 Creating branch '$BRANCH_NAME'..."
             aws amplify create-branch \
-              --app-id $AMPLIFY_APP_ID \
-              --branch-name main \
-              --framework "React" \
-              --stage "PRODUCTION" \
-              --enable-auto-build
-          fi
-
-      - name: Deploy to Amplify (connected or manual)
-        run: |
-          if [ "$REPO_INFO" != "None" ] && [ -n "$REPO_INFO" ]; then
-            echo "✅ Repo-connected app. Triggering build..."
-            RUNNING=$(aws amplify list-jobs \
-              --app-id $AMPLIFY_APP_ID \
-              --branch-name main \
-              --query "jobSummaries[?status=='PENDING' || status=='RUNNING'].jobId" \
-              --output text || echo "")
-
-            if [ -n "$RUNNING" ]; then
-              echo "⚠️ A job is already running. Skipping deployment."
-              exit 0
-            fi
-
-            aws amplify start-job \
-              --app-id $AMPLIFY_APP_ID \
-              --branch-name main \
-              --job-type RELEASE
+              --app-id $APP_ID \
+              --branch-name $BRANCH_NAME
           else
-            echo "🛠 Manual deployment..."
-            DEPLOYMENT_ID=$(aws amplify create-deployment \
-              --app-id $AMPLIFY_APP_ID \
-              --branch-name main \
-              --query 'deploymentId' \
-              --output text)
-            echo "DEPLOYMENT_ID=$DEPLOYMENT_ID"
-
-            aws amplify upload-files \
-              --app-id $AMPLIFY_APP_ID \
-              --branch-name main \
-              --deployment-id $DEPLOYMENT_ID \
-              --file deployment.zip
-
-            aws amplify start-job \
-              --app-id $AMPLIFY_APP_ID \
-              --branch-name main \
-              --job-type RELEASE
+            echo "✅ Branch '$BRANCH_NAME' already exists."
           fi
 
-      - name: Output Amplify URL
+      - name: Upload build to Amplify
         run: |
-          URL=$(aws amplify get-app \
+          echo "🚀 Starting deployment to Amplify..."
+          JOB_ID=$(aws amplify start-job \
             --app-id $AMPLIFY_APP_ID \
-            --query 'app.defaultDomain' \
+            --branch-name $BRANCH_NAME \
+            --job-type RELEASE \
+            --query 'jobSummary.jobId' \
             --output text)
-          echo "✨ App deployed at: https://main.$URL"
+
+          echo "✅ Deployment Job ID: $JOB_ID"
