@@ -1,4 +1,4 @@
-name: Amplify Full Auto Deploy
+name: Deploy to AWS Amplify
 
 on:
   push:
@@ -7,80 +7,81 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     env:
-      AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
-      AWS_REGION: ${{ secrets.AWS_REGION }}
-      AMPLIFY_APP_NAME: ${{ secrets.AMPLIFY_APP_NAME }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_OAUTH_TOKEN }}
-      CUSTOM_DOMAIN: ${{ secrets.AMPLIFY_DOMAIN_NAME }}
-
+      AMPLIFY_BRANCH: main
+      REPO_URL: https://github.com/${{ github.repository }}
     steps:
-      - name: Checkout Code
+      - name: 📂 Checkout repo
         uses: actions/checkout@v3
 
-      - name: Configure AWS Credentials
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: 📦 Install dependencies
+        run: npm install
+
+      - name: 🛠️ Build
+        run: npm run build
+
+      - name: 🔐 Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Ensure Amplify App Exists and is Repo-Connected
+      - name: 🚀 Create or get Amplify App
+        id: create_amplify_app
         run: |
-          echo "🔍 Checking for Amplify App..."
-          APP_ID=$(aws amplify list-apps --query "apps[?name=='$AMPLIFY_APP_NAME'].appId" --output text)
+          echo "🔍 Checking if Amplify app exists..."
+          APP_ID=$(aws amplify list-apps --query "apps[?name=='${{ secrets.AMPLIFY_APP_NAME }}'].appId" --output text)
 
-          if [ -z "$APP_ID" ]; then
-            echo "🚀 Creating Amplify App..."
+          if [ "$APP_ID" == "None" ] || [ -z "$APP_ID" ]; then
+            echo "🆕 Creating Amplify app..."
             APP_ID=$(aws amplify create-app \
-              --name "$AMPLIFY_APP_NAME" \
-              --repository "https://github.com/${{ github.repository }}" \
-              --oauth-token "$GITHUB_TOKEN" \
+              --name "${{ secrets.AMPLIFY_APP_NAME }}" \
+              --repository "${{ env.REPO_URL }}" \
+              --oauth-token "${{ secrets.GITHUB_PAT }}" \
               --query 'app.appId' \
               --output text)
           else
-            echo "✅ Amplify App already exists."
+            echo "✅ Amplify app already exists."
           fi
 
           echo "AMPLIFY_APP_ID=$APP_ID" >> $GITHUB_ENV
+          echo "✅ App ID: $APP_ID"
 
-      - name: Create Branch in Amplify if Not Exists
+      - name: 🌿 Create Branch if not exists
         run: |
-          BRANCH_EXISTS=$(aws amplify list-branches \
-            --app-id $AMPLIFY_APP_ID \
-            --query "branches[?branchName=='main'].branchName" --output text)
-
-          if [ -z "$BRANCH_EXISTS" ]; then
-            echo "🛠 Creating branch 'main' in Amplify..."
+          BRANCH_EXISTS=$(aws amplify list-branches --app-id $AMPLIFY_APP_ID --query "branches[?branchName=='$AMPLIFY_BRANCH'].branchName" --output text)
+          if [ "$BRANCH_EXISTS" == "$AMPLIFY_BRANCH" ]; then
+            echo "✅ Branch '$AMPLIFY_BRANCH' already exists."
+          else
+            echo "🌿 Creating branch '$AMPLIFY_BRANCH'..."
             aws amplify create-branch \
               --app-id $AMPLIFY_APP_ID \
-              --branch-name main \
-              --enable-auto-build \
-              --framework React \
-              --stage PRODUCTION
-          else
-            echo "✅ Branch already exists in Amplify."
+              --branch-name $AMPLIFY_BRANCH
           fi
 
-      - name: Set Custom Domain (if any)
-        if: env.CUSTOM_DOMAIN != ''
+      - name: 🌐 Setup Custom Domain (if set)
+        if: ${{ secrets.CUSTOM_DOMAIN != '' }}
         run: |
-          echo "🌐 Setting up custom domain: $CUSTOM_DOMAIN"
-          DOMAIN_EXISTS=$(aws amplify list-domain-associations \
+          echo "🌐 Setting up custom domain: ${{ secrets.CUSTOM_DOMAIN }}"
+          EXISTING_DOMAIN=$(aws amplify list-domain-associations \
             --app-id $AMPLIFY_APP_ID \
-            --query "domainAssociations[?domainName=='$CUSTOM_DOMAIN'].domainName" \
-            --output text || echo "")
+            --query "domainAssociations[?domainName=='${{ secrets.CUSTOM_DOMAIN }}'].domainName" \
+            --output text)
 
-          if [ -z "$DOMAIN_EXISTS" ]; then
-            echo "🧷 Creating domain association..."
+          if [ "$EXISTING_DOMAIN" == "${{ secrets.CUSTOM_DOMAIN }}" ]; then
+            echo "✅ Custom domain already linked."
+          else
             aws amplify create-domain-association \
               --app-id $AMPLIFY_APP_ID \
-              --domain-name $CUSTOM_DOMAIN \
-              --sub-domain-settings '[{"prefix":"main","branchName":"main"}]'
-          else
-            echo "✅ Domain already associated."
+              --domain-name ${{ secrets.CUSTOM_DOMAIN }} \
+              --sub-domain-settings "[{\"prefix\":\"www\",\"branchName\":\"$AMPLIFY_BRANCH\"}]" || true
           fi
 
-      - name: Done ✅
-        run: echo "🎉 Fully Automated Amplify Deployment Setup Complete!"
+      - name: ✅ Done
+        run: echo "🎉 Deployment setup complete!"
