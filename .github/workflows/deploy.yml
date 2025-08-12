@@ -33,7 +33,9 @@ jobs:
           node-version: 18
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          rm -f package-lock.json
+          npm install
 
       - name: Build project
         run: npm run build
@@ -64,8 +66,6 @@ jobs:
 
           if [ -z "$APP_ID" ]; then
             echo "❌ Amplify App '$AMPLIFY_APP_NAME' not found!"
-            echo "🧪 Available apps:"
-            aws amplify list-apps --query "apps[*].{Name:name,Id:appId}" --output table
             exit 1
           fi
 
@@ -73,8 +73,6 @@ jobs:
 
           REPO_INFO=$(aws amplify get-app --app-id $APP_ID --query 'app.repository' --output text)
           echo "REPO_INFO=$REPO_INFO" >> $GITHUB_ENV
-          echo "✅ App ID: $APP_ID"
-          echo "📦 Repo Info: $REPO_INFO"
 
       - name: Ensure branch 'main' exists in Amplify
         run: |
