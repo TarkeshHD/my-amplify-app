@@ -1,5 +1,3 @@
-# .github/workflows/deploy-to-amplify.yml
-
 name: Deploy to AWS Amplify
 
 on:
@@ -9,51 +7,47 @@ on:
 
 jobs:
   deploy:
-    name: Deploy Frontend to Amplify with Custom Domain
     runs-on: ubuntu-latest
-
     env:
-      AWS_REGION: ap-south-1
-      AWS_DEFAULT_REGION: ap-south-1
-      AMPLIFY_APP_ID: d3tph4ka7rwtei
+      AWS_REGION: us-east-1
+      AWS_DEFAULT_REGION: us-east-1
+      AMPLIFY_APP_ID: d3tph4ka7rwtei  # ✅ Replace with your actual App ID
       BRANCH_NAME: main
       OUTPUT_FOLDER: dist
-      CUSTOM_DOMAIN: www.example.com
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      CUSTOM_DOMAIN: www.example.com  # ✅ Replace with your domain (optional)
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      - name: Install dependencies
-        run: npm ci || npm install
+      - name: Install Dependencies
+        run: npm install
 
-      - name: Build project
+      - name: Build Project
         run: npm run build
 
-      - name: Zip build
+      - name: Zip Build Folder
         run: zip -r deployment.zip $OUTPUT_FOLDER
 
-      - name: Install AWS CLI
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Stop any existing job if running
+      - name: Stop Existing Amplify Job (if any)
         run: |
           LAST_JOB_ID=$(aws amplify list-jobs \
             --app-id $AMPLIFY_APP_ID \
             --branch-name $BRANCH_NAME \
             --query "jobSummaries[?status=='PENDING' || status=='RUNNING'] | [0].jobId" \
-            --output text)
+            --output text || echo "None")
 
           if [ "$LAST_JOB_ID" != "None" ]; then
             echo "🛑 Stopping existing job $LAST_JOB_ID..."
@@ -62,41 +56,44 @@ jobs:
               --branch-name $BRANCH_NAME \
               --job-id "$LAST_JOB_ID"
             sleep 10
+          else
+            echo "✅ No running or pending job found"
           fi
 
-      - name: Create deployment
+      - name: Create Deployment
         run: |
-          DEPLOYMENT_ID=$(aws amplify create-deployment \
+          DEPLOYMENT_INFO=$(aws amplify create-deployment \
             --app-id $AMPLIFY_APP_ID \
-            --branch-name $BRANCH_NAME \
-            --query 'deploymentId' \
-            --output text)
+            --branch-name $BRANCH_NAME)
 
-          aws amplify upload-files \
-            --app-id $AMPLIFY_APP_ID \
-            --branch-name $BRANCH_NAME \
-            --deployment-id $DEPLOYMENT_ID \
-            --file deployment.zip
+          DEPLOYMENT_ID=$(echo $DEPLOYMENT_INFO | jq -r '.deploymentId')
+          ZIP_URL=$(echo $DEPLOYMENT_INFO | jq -r '.fileUploadUrls."deployment.zip"')
 
+          echo "📦 Uploading deployment.zip..."
+          curl -T deployment.zip "$ZIP_URL"
+
+          echo "🚀 Starting release job..."
           aws amplify start-job \
             --app-id $AMPLIFY_APP_ID \
             --branch-name $BRANCH_NAME \
-            --job-type RELEASE
+            --job-type RELEASE \
+            --job-reason "GitHub Actions Auto Deploy"
 
-      - name: Set up custom domain (once only)
-        if: github.ref == 'refs/heads/main'
+      - name: Configure Custom Domain (Optional)
+        if: env.CUSTOM_DOMAIN != ''
         run: |
-          DOMAIN_EXISTS=$(aws amplify list-domain-associations \
+          echo "🌐 Configuring custom domain (if not already configured)..."
+          CURRENT_DOMAINS=$(aws amplify list-domain-associations \
             --app-id $AMPLIFY_APP_ID \
-            --query "domainAssociations[?domainName=='$CUSTOM_DOMAIN']" \
+            --query "domainAssociations[].domainName" \
             --output text)
 
-          if [ -z "$DOMAIN_EXISTS" ]; then
-            echo "🔗 Creating domain association for $CUSTOM_DOMAIN"
+          if [[ "$CURRENT_DOMAINS" != *"$CUSTOM_DOMAIN"* ]]; then
+            echo "🔧 Setting up custom domain: $CUSTOM_DOMAIN"
             aws amplify create-domain-association \
               --app-id $AMPLIFY_APP_ID \
               --domain-name $CUSTOM_DOMAIN \
-              --sub-domain-settings '[{"prefix": "www", "branchName": "main"}]'
+              --sub-domain-settings prefix=$BRANCH_NAME,branchName=$BRANCH_NAME
           else
-            echo "✅ Domain already configured: $CUSTOM_DOMAIN"
+            echo "✅ Custom domain $CUSTOM_DOMAIN already exists"
           fi
