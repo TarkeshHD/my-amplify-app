@@ -17,37 +17,28 @@ jobs:
       AMPLIFY_DOMAIN_NAME: ${{ secrets.AMPLIFY_DOMAIN_NAME }}
 
     steps:
-      - name: 🧾 Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: 🔐 Configure AWS credentials
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: 🔧 Set up Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      - name: 📦 Install dependencies with auto-fix
-        run: |
-          echo "🧪 Running npm ci..."
-          if npm ci; then
-            echo "✅ npm ci succeeded"
-          else
-            echo "⚠️ npm ci failed. Attempting auto-fix by regenerating lock file..."
-            rm -f package-lock.json
-            npm install
-            echo "✅ package-lock.json regenerated"
-          fi
+      - name: Install dependencies
+        run: npm ci
 
-      - name: 🛠 Build project
+      - name: Build project
         run: npm run build
 
-      - name: 📁 Detect build output folder
+      - name: Detect build output folder
         id: detect_folder
         run: |
           if [ -d "build" ]; then
@@ -59,13 +50,13 @@ jobs:
             exit 1
           fi
 
-      - name: 📦 Zip build output
+      - name: Zip build output
         run: |
           cd $OUTPUT_FOLDER
           zip -r ../deployment.zip .
           cd ..
 
-      - name: 🔍 Fetch Amplify App ID
+      - name: Fetch Amplify App ID
         id: fetch_app
         run: |
           echo "🔍 Looking for Amplify App: $AMPLIFY_APP_NAME"
@@ -85,7 +76,7 @@ jobs:
           echo "✅ App ID: $APP_ID"
           echo "📦 Repo Info: $REPO_INFO"
 
-      - name: 🌿 Ensure branch 'main' exists in Amplify
+      - name: Ensure branch 'main' exists in Amplify
         run: |
           BRANCH_EXISTS=$(aws amplify list-branches --app-id $AMPLIFY_APP_ID --query "branches[?branchName=='main'].branchName" --output text)
 
@@ -101,7 +92,7 @@ jobs:
             echo "✅ Branch 'main' already exists."
           fi
 
-      - name: 🌐 Manage domain (optional)
+      - name: Manage domain (optional)
         if: env.AMPLIFY_DOMAIN_NAME != ''
         run: |
           echo "🌐 Managing domain: $AMPLIFY_DOMAIN_NAME"
@@ -120,21 +111,28 @@ jobs:
             echo "✅ Domain already exists. Skipping creation."
           fi
 
-      - name: 🚀 Deploy to Amplify
+      - name: Deploy to Amplify
         run: |
-          if [ "$REPO_INFO" != "None" ]; then
-            echo "🚀 Connected repo detected. Triggering start-job..."
-            RUNNING=$(aws amplify list-jobs \
+          echo "🚀 Deploying to Amplify"
+
+          # Check for running jobs
+          RUNNING=$(aws amplify list-jobs \
+            --app-id $AMPLIFY_APP_ID \
+            --branch-name main \
+            --query "jobSummaries[?status=='PENDING' || status=='RUNNING'].jobId" \
+            --output text || echo "")
+
+          if [ -n "$RUNNING" ]; then
+            echo "⚠️ A job is already running ($RUNNING). Stopping it..."
+            aws amplify stop-job \
               --app-id $AMPLIFY_APP_ID \
               --branch-name main \
-              --query "jobSummaries[?status=='PENDING' || status=='RUNNING'].jobId" \
-              --output text || echo "")
+              --job-id "$RUNNING"
+            sleep 10
+          fi
 
-            if [ -n "$RUNNING" ]; then
-              echo "⚠️ A job is already running. Skipping deployment."
-              exit 0
-            fi
-
+          if [ "$REPO_INFO" != "None" ]; then
+            echo "🔁 Connected repo: triggering start-job"
             aws amplify start-job \
               --app-id $AMPLIFY_APP_ID \
               --branch-name main \
@@ -159,7 +157,7 @@ jobs:
               --job-type RELEASE
           fi
 
-      - name: 🌍 Output Amplify URL
+      - name: Output Amplify URL
         run: |
           DOMAIN=$(aws amplify get-app \
             --app-id $AMPLIFY_APP_ID \
