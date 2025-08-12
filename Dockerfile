@@ -1,14 +1,14 @@
-# Use Node.js to build the React app
-FROM node:18 AS build
+# --- Build step ---
+FROM node:18-alpine AS build
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 COPY . .
+# If Amplify uses Vite/React: adjust to your build cmd
 RUN npm run build
 
-# Use Nginx to serve the static files
+# --- Serve step ---
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# optional: custom nginx.conf if you need SPA fallback
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
