@@ -32,17 +32,6 @@ jobs:
         with:
           node-version: 18
 
-      - name: Force Cache Bust
-        run: |
-          echo $(date +%s) > cache-bust.txt
-          git config --global user.email "actions@github.com"
-          git config --global user.name "GitHub Actions"
-          git add cache-bust.txt
-          git commit -m "chore: cache bust [skip ci]" || echo "No changes"
-          git fetch origin main
-          git reset --soft origin/main
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main --force
-
       - name: Install dependencies
         run: npm install
 
@@ -50,7 +39,6 @@ jobs:
         run: npm run build
 
       - name: Detect build output folder
-        id: detect_folder
         run: |
           if [ -d "build" ]; then
             echo "OUTPUT_FOLDER=build" >> $GITHUB_ENV
@@ -60,7 +48,6 @@ jobs:
             echo "No build folder found!"
             exit 1
           fi
-          echo "Detected output folder: $OUTPUT_FOLDER"
 
       - name: Zip build output
         run: |
@@ -68,118 +55,58 @@ jobs:
           zip -r ../deployment.zip .
           cd ..
 
-      - name: Get Amplify App ID and Repo Status
-        id: get_app
+      - name: Create Amplify App if not exists
+        id: create_app
         run: |
+          echo "🔍 Checking if Amplify app exists..."
           APP_ID=$(aws amplify list-apps --query "apps[?name=='$AMPLIFY_APP_NAME'].appId" --output text)
+          
+          if [ -z "$APP_ID" ]; then
+            echo "🚀 Creating new Amplify app: $AMPLIFY_APP_NAME"
+            APP_ID=$(aws amplify create-app \
+              --name "$AMPLIFY_APP_NAME" \
+              --repository "https://github.com/${{ github.repository }}" \
+              --oauth-token "${{ secrets.GITHUB_TOKEN }}" \
+              --query 'app.appId' \
+              --output text)
+          else
+            echo "✅ Amplify app already exists."
+          fi
+          
           echo "AMPLIFY_APP_ID=$APP_ID" >> $GITHUB_ENV
+          echo "✅ App ID: $APP_ID"
 
-          REPO_INFO=$(aws amplify get-app --app-id $APP_ID --query 'app.repository' --output text)
-          echo "REPO_INFO=$REPO_INFO" >> $GITHUB_ENV
-          echo "App ID: $APP_ID"
-          echo "Repo Info: $REPO_INFO"
-
-      - name: Ensure Main Branch Exists or Update
+      - name: Create or update main branch
         run: |
-          echo "Checking existing branches..."
-          ALL_BRANCHES=$(aws amplify list-branches --app-id $AMPLIFY_APP_ID --query "branches[].branchName" --output text || echo "")
-          DISPLAY_NAMES=$(aws amplify list-branches --app-id $AMPLIFY_APP_ID --query "branches[].displayName" --output text || echo "")
+          BRANCH_EXISTS=$(aws amplify list-branches --app-id $AMPLIFY_APP_ID \
+            --query "branches[?branchName=='main'].branchName" --output text)
 
-          if echo "$ALL_BRANCHES" | grep -qw "main" || echo "$DISPLAY_NAMES" | grep -qw "main"; then
-            echo "Branch 'main' exists. Updating..."
+          if [ "$BRANCH_EXISTS" == "main" ]; then
+            echo "🔁 Updating existing 'main' branch..."
             aws amplify update-branch \
               --app-id $AMPLIFY_APP_ID \
               --branch-name main \
-              --enable-auto-build || echo "Warning: update skipped"
+              --enable-auto-build
           else
-            echo "Creating branch 'main'..."
+            echo "🌱 Creating 'main' branch..."
             aws amplify create-branch \
               --app-id $AMPLIFY_APP_ID \
               --branch-name main \
-              --framework "React" \
-              --stage "PRODUCTION" \
               --enable-auto-build
           fi
 
-      - name: Add or Update Custom Domain with Skip Logic
-        if: env.AMPLIFY_DOMAIN_NAME != ''
+      - name: Deploy manually if repo not connected
         run: |
-          echo "Managing custom domain: $AMPLIFY_DOMAIN_NAME"
-          EXISTING_DOMAIN=$(aws amplify list-domain-associations \
-            --app-id $AMPLIFY_APP_ID \
-            --query "domainAssociations[?domainName=='$AMPLIFY_DOMAIN_NAME'].domainName" \
-            --output text || echo "")
+          REPO_INFO=$(aws amplify get-app --app-id $AMPLIFY_APP_ID --query 'app.repository' --output text)
+          echo "📦 Repo Info: $REPO_INFO"
 
-          STATUS=$(aws amplify list-domain-associations \
-            --app-id $AMPLIFY_APP_ID \
-            --query "domainAssociations[?domainName=='$AMPLIFY_DOMAIN_NAME'].status" \
-            --output text || echo "")
-
-          if [ -n "$EXISTING_DOMAIN" ]; then
-            if [[ "$STATUS" == *"AVAILABLE"* ]]; then
-              echo "✅ Domain already associated and verified. Skipping update."
-              exit 0
-            elif [[ "$STATUS" == *"PENDING_VERIFICATION"* ]]; then
-              echo "⚠️ Domain is pending verification. Checking every 30s..."
-              for i in {1..20}; do
-                STATUS=$(aws amplify list-domain-associations \
-                  --app-id $AMPLIFY_APP_ID \
-                  --query "domainAssociations[?domainName=='$AMPLIFY_DOMAIN_NAME'].status" \
-                  --output text || echo "")
-                if [[ "$STATUS" == *"AVAILABLE"* ]]; then
-                  echo "✅ Domain verified, updating settings..."
-                  aws amplify update-domain-association \
-                    --app-id $AMPLIFY_APP_ID \
-                    --domain-name $AMPLIFY_DOMAIN_NAME \
-                    --sub-domain-settings '[{"prefix":"main","branchName":"main"}]'
-                  exit 0
-                fi
-                echo "Waiting for domain verification... ($i/20)"
-                sleep 30
-              done
-              echo "⏳ Domain still not verified. Skipping update."
-            else
-              echo "Updating domain association..."
-              aws amplify update-domain-association \
-                --app-id $AMPLIFY_APP_ID \
-                --domain-name $AMPLIFY_DOMAIN_NAME \
-                --sub-domain-settings '[{"prefix":"main","branchName":"main"}]'
-            fi
-          else
-            echo "Creating new domain association..."
-            aws amplify create-domain-association \
-              --app-id $AMPLIFY_APP_ID \
-              --domain-name $AMPLIFY_DOMAIN_NAME \
-              --sub-domain-settings '[{"prefix":"main","branchName":"main"}]'
-          fi
-
-      - name: Deploy (Handles Connected and Manual Mode)
-        run: |
-          if [ "$REPO_INFO" != "None" ] && [ -n "$REPO_INFO" ]; then
-            echo "App is connected to GitHub repo. Using start-job..."
-            RUNNING=$(aws amplify list-jobs \
-              --app-id $AMPLIFY_APP_ID \
-              --branch-name main \
-              --query "jobSummaries[?status=='PENDING' || status=='RUNNING'].jobId" \
-              --output text || echo "")
-
-            if [ -n "$RUNNING" ]; then
-              echo "⚠️ A job is already running. Skipping deployment."
-              exit 0
-            fi
-
-            aws amplify start-job \
-              --app-id $AMPLIFY_APP_ID \
-              --branch-name main \
-              --job-type RELEASE
-          else
-            echo "Manual deployment mode..."
+          if [ "$REPO_INFO" == "None" ]; then
+            echo "📤 Manual upload mode"
             DEPLOYMENT_ID=$(aws amplify create-deployment \
               --app-id $AMPLIFY_APP_ID \
               --branch-name main \
-              --query 'deploymentId' \
-              --output text)
-            echo "DEPLOYMENT_ID=$DEPLOYMENT_ID"
+              --query 'deploymentId' --output text)
+            echo "Deployment ID: $DEPLOYMENT_ID"
 
             aws amplify upload-files \
               --app-id $AMPLIFY_APP_ID \
@@ -191,6 +118,31 @@ jobs:
               --app-id $AMPLIFY_APP_ID \
               --branch-name main \
               --job-type RELEASE
+          else
+            echo "✅ Repo is connected, triggering release"
+            aws amplify start-job \
+              --app-id $AMPLIFY_APP_ID \
+              --branch-name main \
+              --job-type RELEASE
+          fi
+
+      - name: Setup custom domain (if provided)
+        if: env.AMPLIFY_DOMAIN_NAME != ''
+        run: |
+          echo "🌐 Configuring custom domain: $AMPLIFY_DOMAIN_NAME"
+          EXISTS=$(aws amplify list-domain-associations \
+            --app-id $AMPLIFY_APP_ID \
+            --query "domainAssociations[?domainName=='$AMPLIFY_DOMAIN_NAME'].domainName" \
+            --output text || echo "")
+
+          if [ -z "$EXISTS" ]; then
+            aws amplify create-domain-association \
+              --app-id $AMPLIFY_APP_ID \
+              --domain-name $AMPLIFY_DOMAIN_NAME \
+              --sub-domain-settings '[{"prefix":"main","branchName":"main"}]'
+            echo "📝 Domain association created. Please verify DNS manually."
+          else
+            echo "✅ Domain already associated."
           fi
 
       - name: Output Amplify URL
@@ -199,4 +151,4 @@ jobs:
             --app-id $AMPLIFY_APP_ID \
             --query 'app.defaultDomain' \
             --output text)
-          echo "✨ App deployed at: https://main.$URL"
+          echo "🚀 App deployed at: https://main.$URL"
