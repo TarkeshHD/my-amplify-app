@@ -14,13 +14,13 @@ jobs:
       TAG: ${{ github.sha }}
 
     steps:
-      # ✅ Checkout repo
+      # ✅ Checkout code
       - uses: actions/checkout@v3
 
       # ✅ Setup Docker Buildx
       - uses: docker/setup-buildx-action@v2
 
-      # ✅ DockerHub login
+      # ✅ Login to DockerHub
       - uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
@@ -29,23 +29,24 @@ jobs:
       # ✅ Build and push Docker image
       - name: Build and Push Docker image
         run: |
-          echo "🔨 Building Docker image: $IMAGE_NAME:${TAG::7} and latest"
+          echo "Building image: $IMAGE_NAME:${TAG::7} and latest"
           docker build -t "$IMAGE_NAME:${TAG::7}" -t "$IMAGE_NAME:latest" .
           docker push "$IMAGE_NAME:${TAG::7}"
           docker push "$IMAGE_NAME:latest"
 
-      # ✅ Install kubectl and eksctl
-      - name: Install kubectl and eksctl
+      # ✅ Install eksctl and kubectl
+      - name: Install eksctl and kubectl
         run: |
-          set -e
-          # Install eksctl
-          curl -sSL "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+          set -euxo pipefail
+
+          # eksctl
+          curl -sSL "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" \
+            | tar xz -C /tmp
           sudo mv /tmp/eksctl /usr/local/bin/
           eksctl version
 
-          # Install kubectl
-          KUBECTL_VERSION="$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)"
-          curl -LO "https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+          # kubectl
+          curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
           chmod +x kubectl
           sudo mv kubectl /usr/local/bin/
           kubectl version --client
@@ -58,13 +59,20 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # ✅ Create EKS Cluster if it doesn't exist
+      # ✅ Debug: identity and region
+      - name: Show AWS identity and zone
+        run: |
+          aws sts get-caller-identity
+          aws ec2 describe-availability-zones --region "$REGION" --output table
+
+      # ✅ Create EKS cluster if not exists
       - name: Check or Create EKS Cluster
         run: |
-          set -e
+          set -euxo pipefail
+
           echo "Checking if EKS cluster \"$CLUSTER_NAME\" exists in region \"$REGION\"..."
           if aws eks describe-cluster --name "$CLUSTER_NAME" --region "$REGION" >/dev/null 2>&1; then
-            echo "✅ EKS cluster \"$CLUSTER_NAME\" already exists."
+            echo "✅ Cluster \"$CLUSTER_NAME\" already exists."
           else
             echo "🚀 Creating EKS cluster \"$CLUSTER_NAME\"..."
             eksctl create cluster \
@@ -79,22 +87,21 @@ jobs:
               --verbose 4
           fi
 
-      # ✅ Update kubeconfig
-      - name: Update kubeconfig
+      # ✅ Update kubeconfig and test cluster
+      - name: Update kubeconfig and get nodes
         run: |
           aws eks update-kubeconfig --name "$CLUSTER_NAME" --region "$REGION"
           kubectl get nodes
 
-      # ✅ Deploy Frontend to EKS
-      - name: Deploy Frontend
+      # ✅ Deploy Frontend
+      - name: Deploy Frontend to EKS
         run: |
-          echo "📦 Deploying image: $IMAGE_NAME:${TAG::7}"
+          echo "Deploying image: $IMAGE_NAME:${TAG::7}"
           sed -i "s|image: .*|image: $IMAGE_NAME:${TAG::7}|" frontend-deployment.yaml
           kubectl apply -f frontend-deployment.yaml
           kubectl apply -f frontend-service.yaml
 
-      # ✅ Verify Deployment Rollout
-      - name: Verify Deployment
+      # ✅ Verify Deployment
+      - name: Verify Deployment Rollout
         run: |
-          echo "🔍 Verifying rollout of frontend-deployment"
           kubectl rollout status deployment/frontend-deployment
