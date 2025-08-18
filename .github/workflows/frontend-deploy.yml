@@ -7,49 +7,35 @@ jobs:
   build-deploy:
     runs-on: ubuntu-latest
 
-    env:
-      CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
-      REGION: ${{ secrets.AWS_REGION }}
-      IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/frontend
-      TAG: ${{ github.sha }}
-
     steps:
-      # ✅ Checkout code
+      # ✅ Checkout repo
       - uses: actions/checkout@v3
 
       # ✅ Setup Docker Buildx
       - uses: docker/setup-buildx-action@v2
 
-      # ✅ Login to DockerHub
+      # ✅ DockerHub login
       - uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # ✅ Build and push Docker image
+      # ✅ Build and push image
       - name: Build and Push Docker image
         run: |
-          echo "Building image: $IMAGE_NAME:${TAG::7} and latest"
-          docker build -t "$IMAGE_NAME:${TAG::7}" -t "$IMAGE_NAME:latest" .
-          docker push "$IMAGE_NAME:${TAG::7}"
+          IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/frontend"
+          TAG="${GITHUB_SHA::7}"
+          echo "Building image: $IMAGE_NAME:$TAG and latest"
+
+          docker build -t "$IMAGE_NAME:$TAG" -t "$IMAGE_NAME:latest" .
+          docker push "$IMAGE_NAME:$TAG"
           docker push "$IMAGE_NAME:latest"
 
-      # ✅ Install eksctl and kubectl
-      - name: Install eksctl and kubectl
+      # ✅ Install kubectl and eksctl
+      - name: Install tools
         run: |
-          set -euxo pipefail
-
-          # eksctl
-          curl -sSL "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" \
-            | tar xz -C /tmp
-          sudo mv /tmp/eksctl /usr/local/bin/
-          eksctl version
-
-          # kubectl
-          curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
-          chmod +x kubectl
-          sudo mv kubectl /usr/local/bin/
-          kubectl version --client
+          curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+          sudo mv /tmp/eksctl /usr/local/bin
 
       # ✅ Configure AWS credentials
       - name: Configure AWS credentials
@@ -59,22 +45,17 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # ✅ Debug: identity and region
-      - name: Show AWS identity and zone
+      # ✅ Check or create EKS cluster
+      - name: Check or create EKS cluster
         run: |
-          aws sts get-caller-identity
-          aws ec2 describe-availability-zones --region "$REGION" --output table
+          CLUSTER_NAME="${{ secrets.EKS_CLUSTER_NAME }}"
+          REGION="${{ secrets.AWS_REGION }}"
 
-      # ✅ Create EKS cluster if not exists
-      - name: Check or Create EKS Cluster
-        run: |
-          set -euxo pipefail
-
-          echo "Checking if EKS cluster \"$CLUSTER_NAME\" exists in region \"$REGION\"..."
+          echo "Checking if cluster $CLUSTER_NAME exists..."
           if aws eks describe-cluster --name "$CLUSTER_NAME" --region "$REGION" >/dev/null 2>&1; then
-            echo "✅ Cluster \"$CLUSTER_NAME\" already exists."
+            echo "✅ Cluster $CLUSTER_NAME already exists."
           else
-            echo "🚀 Creating EKS cluster \"$CLUSTER_NAME\"..."
+            echo "🚀 Creating EKS cluster $CLUSTER_NAME..."
             eksctl create cluster \
               --name "$CLUSTER_NAME" \
               --region "$REGION" \
@@ -83,25 +64,28 @@ jobs:
               --nodes 2 \
               --nodes-min 1 \
               --nodes-max 3 \
-              --managed \
-              --verbose 4
+              --managed
           fi
 
-      # ✅ Update kubeconfig and test cluster
-      - name: Update kubeconfig and get nodes
+      # ✅ Generate kubeconfig for EKS
+      - name: Generate kubeconfig
         run: |
-          aws eks update-kubeconfig --name "$CLUSTER_NAME" --region "$REGION"
-          kubectl get nodes
+          aws eks update-kubeconfig \
+            --name ${{ secrets.EKS_CLUSTER_NAME }} \
+            --region ${{ secrets.AWS_REGION }}
 
-      # ✅ Deploy Frontend
-      - name: Deploy Frontend to EKS
+      # ✅ Deploy to EKS
+      - name: Deploy Frontend
         run: |
-          echo "Deploying image: $IMAGE_NAME:${TAG::7}"
-          sed -i "s|image: .*|image: $IMAGE_NAME:${TAG::7}|" frontend-deployment.yaml
+          IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/frontend"
+          TAG="${GITHUB_SHA::7}"
+          echo "Deploying image: $IMAGE_NAME:$TAG"
+
+          sed -i "s|image: .*|image: $IMAGE_NAME:$TAG|" frontend-deployment.yaml
           kubectl apply -f frontend-deployment.yaml
           kubectl apply -f frontend-service.yaml
 
-      # ✅ Verify Deployment
-      - name: Verify Deployment Rollout
+      # ✅ Verify rollout
+      - name: Verify Deployment
         run: |
           kubectl rollout status deployment/frontend-deployment
