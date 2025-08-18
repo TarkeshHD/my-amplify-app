@@ -7,6 +7,12 @@ jobs:
   build-deploy:
     runs-on: ubuntu-latest
 
+    env:
+      CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
+      REGION: ${{ secrets.AWS_REGION }}
+      IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/frontend
+      TAG: ${{ github.sha }}
+
     steps:
       # ✅ Checkout repo
       - uses: actions/checkout@v3
@@ -20,22 +26,29 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # ✅ Build and push image
+      # ✅ Build and push Docker image
       - name: Build and Push Docker image
         run: |
-          IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/frontend"
-          TAG="${GITHUB_SHA::7}"
-          echo "Building image: $IMAGE_NAME:$TAG and latest"
-
-          docker build -t "$IMAGE_NAME:$TAG" -t "$IMAGE_NAME:latest" .
-          docker push "$IMAGE_NAME:$TAG"
+          echo "🔨 Building Docker image: $IMAGE_NAME:${TAG::7} and latest"
+          docker build -t "$IMAGE_NAME:${TAG::7}" -t "$IMAGE_NAME:latest" .
+          docker push "$IMAGE_NAME:${TAG::7}"
           docker push "$IMAGE_NAME:latest"
 
       # ✅ Install kubectl and eksctl
-      - name: Install tools
+      - name: Install kubectl and eksctl
         run: |
-          curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
-          sudo mv /tmp/eksctl /usr/local/bin
+          set -e
+          # Install eksctl
+          curl -sSL "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+          sudo mv /tmp/eksctl /usr/local/bin/
+          eksctl version
+
+          # Install kubectl
+          KUBECTL_VERSION="$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)"
+          curl -LO "https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+          kubectl version --client
 
       # ✅ Configure AWS credentials
       - name: Configure AWS credentials
@@ -45,17 +58,15 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # ✅ Check or create EKS cluster
-      - name: Check or create EKS cluster
+      # ✅ Create EKS Cluster if it doesn't exist
+      - name: Check or Create EKS Cluster
         run: |
-          CLUSTER_NAME="${{ secrets.EKS_CLUSTER_NAME }}"
-          REGION="${{ secrets.AWS_REGION }}"
-
-          echo "Checking if cluster $CLUSTER_NAME exists..."
+          set -e
+          echo "Checking if EKS cluster \"$CLUSTER_NAME\" exists in region \"$REGION\"..."
           if aws eks describe-cluster --name "$CLUSTER_NAME" --region "$REGION" >/dev/null 2>&1; then
-            echo "✅ Cluster $CLUSTER_NAME already exists."
+            echo "✅ EKS cluster \"$CLUSTER_NAME\" already exists."
           else
-            echo "🚀 Creating EKS cluster $CLUSTER_NAME..."
+            echo "🚀 Creating EKS cluster \"$CLUSTER_NAME\"..."
             eksctl create cluster \
               --name "$CLUSTER_NAME" \
               --region "$REGION" \
@@ -64,28 +75,26 @@ jobs:
               --nodes 2 \
               --nodes-min 1 \
               --nodes-max 3 \
-              --managed
+              --managed \
+              --verbose 4
           fi
 
-      # ✅ Generate kubeconfig for EKS
-      - name: Generate kubeconfig
+      # ✅ Update kubeconfig
+      - name: Update kubeconfig
         run: |
-          aws eks update-kubeconfig \
-            --name ${{ secrets.EKS_CLUSTER_NAME }} \
-            --region ${{ secrets.AWS_REGION }}
+          aws eks update-kubeconfig --name "$CLUSTER_NAME" --region "$REGION"
+          kubectl get nodes
 
-      # ✅ Deploy to EKS
+      # ✅ Deploy Frontend to EKS
       - name: Deploy Frontend
         run: |
-          IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/frontend"
-          TAG="${GITHUB_SHA::7}"
-          echo "Deploying image: $IMAGE_NAME:$TAG"
-
-          sed -i "s|image: .*|image: $IMAGE_NAME:$TAG|" frontend-deployment.yaml
+          echo "📦 Deploying image: $IMAGE_NAME:${TAG::7}"
+          sed -i "s|image: .*|image: $IMAGE_NAME:${TAG::7}|" frontend-deployment.yaml
           kubectl apply -f frontend-deployment.yaml
           kubectl apply -f frontend-service.yaml
 
-      # ✅ Verify rollout
+      # ✅ Verify Deployment Rollout
       - name: Verify Deployment
         run: |
+          echo "🔍 Verifying rollout of frontend-deployment"
           kubectl rollout status deployment/frontend-deployment
