@@ -57,7 +57,7 @@ jobs:
 
       - name: Apply ClusterIssuer for Let's Encrypt
         run: |
-          echo "
+          cat <<EOF | kubectl apply -f -
           apiVersion: cert-manager.io/v1
           kind: ClusterIssuer
           metadata:
@@ -72,7 +72,7 @@ jobs:
                 - http01:
                     ingress:
                       class: nginx
-          " | kubectl apply -f -
+          EOF
 
       - name: Install NGINX Ingress Controller
         run: |
@@ -95,4 +95,5 @@ jobs:
         run: kubectl rollout status deployment/frontend-deployment
 
       - name: Show Frontend URL
-        run: echo "✅ Frontend is live at: https://poc.autovrse-training.com"
+        run: |
+          echo "✅ Frontend is live at: https://poc.autovrse-training.com"
