@@ -31,13 +31,17 @@ jobs:
           docker push "$IMAGE_NAME:$TAG"
           docker push "$IMAGE_NAME:latest"
 
-      # ✅ Install eksctl and kubectl
+      # ✅ Install eksctl and kubectl (FIXED)
       - name: Install eksctl and kubectl
         run: |
-          curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+          # Install eksctl
+          curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz" -o eksctl.tar.gz
+          tar -xzf eksctl.tar.gz -C /tmp
           sudo mv /tmp/eksctl /usr/local/bin
 
-          curl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          # Install kubectl
+          KUBECTL_VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)
+          curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
           chmod +x kubectl
           sudo mv kubectl /usr/local/bin
 
@@ -78,7 +82,7 @@ jobs:
             --name ${{ secrets.EKS_CLUSTER_NAME }} \
             --region ${{ secrets.AWS_REGION }}
 
-      # ✅ Deploy Kubernetes resources
+      # ✅ Deploy frontend app
       - name: Deploy Frontend to EKS
         run: |
           IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/frontend"
@@ -89,23 +93,23 @@ jobs:
           kubectl apply -f frontend-deployment.yaml
           kubectl apply -f frontend-service.yaml
 
-      # ✅ Apply Ingress
+      # ✅ Apply Ingress for HTTPS access
       - name: Apply Ingress Resource
         run: |
           kubectl apply -f ingress.yaml
 
-      # ✅ Wait for HTTPS Ingress Hostname
-      - name: Get HTTPS URL
+      # ✅ Get HTTPS LoadBalancer URL
+      - name: Print HTTPS URL
         run: |
-          echo "⏳ Waiting for HTTPS Ingress hostname..."
+          echo "⏳ Waiting for Ingress HTTPS URL..."
           for i in {1..20}; do
             HOSTNAME=$(kubectl get ingress frontend-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
             if [ -n "$HOSTNAME" ]; then
-              echo "✅ Frontend is live at: https://$HOSTNAME"
+              echo "✅ Your frontend is live at: https://$HOSTNAME"
               exit 0
             else
-              echo "Still waiting for Ingress to get external IP..."
+              echo "Waiting for HTTPS ingress to be assigned..."
               sleep 15
             fi
           done
-          echo "❌ Timed out waiting for HTTPS URL."
+          echo "❌ Timeout: Ingress LoadBalancer hostname not available."
