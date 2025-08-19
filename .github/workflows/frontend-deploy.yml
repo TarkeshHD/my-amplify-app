@@ -30,15 +30,13 @@ jobs:
 
       - name: Install eksctl and kubectl
         run: |
-          curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz" -o eksctl.tar.gz
-          tar xzf eksctl.tar.gz -C /tmp
+          curl -sL "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz" -o eksctl.tar.gz
+          tar -xzf eksctl.tar.gz -C /tmp
           sudo mv /tmp/eksctl /usr/local/bin
-          eksctl version
 
           curl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           chmod +x kubectl
           sudo mv kubectl /usr/local/bin
-          kubectl version --client
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -56,28 +54,28 @@ jobs:
       - name: Install cert-manager
         run: |
           kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
-          kubectl rollout status deployment/cert-manager -n cert-manager --timeout=120s || true
-          kubectl rollout status deployment/cert-manager-webhook -n cert-manager --timeout=120s || true
-          kubectl rollout status deployment/cert-manager-cainjector -n cert-manager --timeout=120s || true
+          kubectl rollout status deployment/cert-manager -n cert-manager --timeout=120s
+          kubectl rollout status deployment/cert-manager-webhook -n cert-manager --timeout=120s
+          kubectl rollout status deployment/cert-manager-cainjector -n cert-manager --timeout=120s
 
-      - name: Apply ClusterIssuer
+      - name: Apply ClusterIssuer for Let's Encrypt
         run: |
-          echo "
+          cat <<EOF | kubectl apply -f -
           apiVersion: cert-manager.io/v1
           kind: ClusterIssuer
           metadata:
             name: letsencrypt-prod
           spec:
             acme:
-              email: tarkesh@autovrse.com
+              email: your-email@autovrse.com
               server: https://acme-v02.api.letsencrypt.org/directory
               privateKeySecretRef:
                 name: letsencrypt-prod
               solvers:
-              - http01:
-                  ingress:
-                    class: nginx
-          " | kubectl apply -f -
+                - http01:
+                    ingress:
+                      class: nginx
+          EOF
 
       - name: Install NGINX Ingress Controller
         run: |
@@ -87,7 +85,7 @@ jobs:
             --selector=app.kubernetes.io/component=controller \
             --timeout=180s
 
-      - name: Deploy Frontend
+      - name: Deploy Frontend to EKS
         run: |
           IMAGE="${{ secrets.DOCKER_USERNAME }}/frontend"
           TAG="${GITHUB_SHA::7}"
@@ -97,9 +95,9 @@ jobs:
           kubectl apply -f frontend-service.yaml
           kubectl apply -f ingress.yaml
 
-      - name: Confirm Deployment
+      - name: Wait for Deployment
         run: |
           kubectl rollout status deployment/frontend-deployment
 
-      - name: Output Live URL
-        run: echo "✅ Live at: https://poc.autovrse-training.com"
+      - name: Output Deployed URL
+        run: echo "✅ App deployed at https://poc.autovrse-training.com"
