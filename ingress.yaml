@@ -1,16 +1,18 @@
+# frontend-ingress.yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: frontend-ingress
   annotations:
-    alb.ingress.kubernetes.io/scheme: internet-facing
-    alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:region:account:certificate/abc123456789
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
-  ingressClassName: alb
+  tls:
+    - hosts:
+        - frontend.example.com
+      secretName: frontend-tls
   rules:
-    - host: yourdomain.com
+    - host: frontend.example.com
       http:
         paths:
           - path: /
