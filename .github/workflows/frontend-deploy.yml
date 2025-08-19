@@ -1,4 +1,4 @@
-name: Create EKS Cluster and Deploy Frontend with HTTPS
+name: Create EKS Cluster and Deploy Frontend
 
 on:
   workflow_dispatch:
@@ -8,10 +8,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ✅ Checkout code
+      # ✅ Checkout repo
       - uses: actions/checkout@v3
 
-      # ✅ Set up Docker Buildx
+      # ✅ Setup Docker Buildx
       - uses: docker/setup-buildx-action@v2
 
       # ✅ DockerHub login
@@ -20,50 +20,46 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # ✅ Build and push Docker image
-      - name: Build and Push Docker Image
+      # ✅ Build and push image
+      - name: Build and Push Docker image
         run: |
           IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/frontend"
           TAG="${GITHUB_SHA::7}"
           echo "Building image: $IMAGE_NAME:$TAG and latest"
-
           docker build -t "$IMAGE_NAME:$TAG" -t "$IMAGE_NAME:latest" .
           docker push "$IMAGE_NAME:$TAG"
           docker push "$IMAGE_NAME:latest"
 
-      # ✅ Install eksctl and kubectl (FIXED)
+      # ✅ Install eksctl and kubectl (FIXED version)
       - name: Install eksctl and kubectl
         run: |
-          # Install eksctl
           curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz" -o eksctl.tar.gz
           tar -xzf eksctl.tar.gz -C /tmp
           sudo mv /tmp/eksctl /usr/local/bin
 
-          # Install kubectl
           KUBECTL_VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)
           curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
           chmod +x kubectl
           sudo mv kubectl /usr/local/bin
 
       # ✅ Configure AWS credentials
-      - name: Configure AWS Credentials
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # ✅ Create or reuse EKS cluster
-      - name: Create or Reuse EKS Cluster
+      # ✅ Check or create EKS cluster
+      - name: Check or create EKS cluster
         run: |
           CLUSTER_NAME="${{ secrets.EKS_CLUSTER_NAME }}"
           REGION="${{ secrets.AWS_REGION }}"
-
           echo "Checking if cluster $CLUSTER_NAME exists..."
           if aws eks describe-cluster --name "$CLUSTER_NAME" --region "$REGION" >/dev/null 2>&1; then
             echo "✅ Cluster $CLUSTER_NAME already exists."
           else
-            echo "🚀 Creating cluster..."
+            echo "🚀 Creating EKS cluster $CLUSTER_NAME..."
             eksctl create cluster \
               --name "$CLUSTER_NAME" \
               --region "$REGION" \
@@ -76,14 +72,14 @@ jobs:
           fi
 
       # ✅ Generate kubeconfig
-      - name: Generate Kubeconfig
+      - name: Generate kubeconfig
         run: |
           aws eks update-kubeconfig \
             --name ${{ secrets.EKS_CLUSTER_NAME }} \
             --region ${{ secrets.AWS_REGION }}
 
-      # ✅ Deploy frontend app
-      - name: Deploy Frontend to EKS
+      # ✅ Deploy frontend to EKS
+      - name: Deploy Frontend
         run: |
           IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/frontend"
           TAG="${GITHUB_SHA::7}"
@@ -93,23 +89,23 @@ jobs:
           kubectl apply -f frontend-deployment.yaml
           kubectl apply -f frontend-service.yaml
 
-      # ✅ Apply Ingress for HTTPS access
-      - name: Apply Ingress Resource
+      # ✅ Verify rollout
+      - name: Verify Deployment
         run: |
-          kubectl apply -f ingress.yaml
+          kubectl rollout status deployment/frontend-deployment
 
-      # ✅ Get HTTPS LoadBalancer URL
-      - name: Print HTTPS URL
+      # ✅ Print public LoadBalancer URL
+      - name: Get Public Frontend URL
         run: |
-          echo "⏳ Waiting for Ingress HTTPS URL..."
+          echo "⏳ Waiting for LoadBalancer external IP..."
           for i in {1..20}; do
-            HOSTNAME=$(kubectl get ingress frontend-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+            HOSTNAME=$(kubectl get svc frontend-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
             if [ -n "$HOSTNAME" ]; then
-              echo "✅ Your frontend is live at: https://$HOSTNAME"
+              echo "✅ Your frontend is live at: http://$HOSTNAME"
               exit 0
             else
-              echo "Waiting for HTTPS ingress to be assigned..."
+              echo "Waiting for external IP..."
               sleep 15
             fi
           done
-          echo "❌ Timeout: Ingress LoadBalancer hostname not available."
+          echo "❌ Timeout: LoadBalancer external hostname not available."
