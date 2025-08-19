@@ -8,11 +8,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ✅ Checkout code
       - name: Checkout
         uses: actions/checkout@v3
 
-      # ✅ Setup Docker
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -22,7 +20,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # ✅ Build and push Docker image
       - name: Build and Push Docker Image
         run: |
           IMAGE="${{ secrets.DOCKER_USERNAME }}/frontend"
@@ -31,7 +28,6 @@ jobs:
           docker push "$IMAGE:$TAG"
           docker push "$IMAGE:latest"
 
-      # ✅ Install eksctl and kubectl
       - name: Install eksctl and kubectl
         run: |
           curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
@@ -39,7 +35,6 @@ jobs:
           curl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           chmod +x kubectl && sudo mv kubectl /usr/local/bin
 
-      # ✅ Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -47,14 +42,12 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # ✅ Update kubeconfig
       - name: Update kubeconfig
         run: |
           aws eks update-kubeconfig \
             --name ${{ secrets.EKS_CLUSTER_NAME }} \
             --region ${{ secrets.AWS_REGION }}
 
-      # ✅ Install cert-manager
       - name: Install cert-manager
         run: |
           kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
@@ -62,28 +55,26 @@ jobs:
           kubectl rollout status deployment/cert-manager-webhook -n cert-manager --timeout=120s
           kubectl rollout status deployment/cert-manager-cainjector -n cert-manager --timeout=120s
 
-      # ✅ Apply ClusterIssuer (Let's Encrypt)
-      - name: Apply ClusterIssuer
+      - name: Apply ClusterIssuer for Let's Encrypt
         run: |
-          cat <<EOF | kubectl apply -f -
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: letsencrypt-prod
-spec:
-  acme:
-    email: you@autovrse.com
-    server: https://acme-v02.api.letsencrypt.org/directory
-    privateKeySecretRef:
-      name: letsencrypt-prod
-    solvers:
-      - http01:
-          ingress:
-            class: nginx
-EOF
+          echo "
+          apiVersion: cert-manager.io/v1
+          kind: ClusterIssuer
+          metadata:
+            name: letsencrypt-prod
+          spec:
+            acme:
+              email: you@autovrse.com
+              server: https://acme-v02.api.letsencrypt.org/directory
+              privateKeySecretRef:
+                name: letsencrypt-prod
+              solvers:
+                - http01:
+                    ingress:
+                      class: nginx
+          " | kubectl apply -f -
 
-      # ✅ Install NGINX Ingress Controller
-      - name: Install NGINX Ingress
+      - name: Install NGINX Ingress Controller
         run: |
           kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.9.4/deploy/static/provider/aws/deploy.yaml
           kubectl wait --namespace ingress-nginx \
@@ -91,8 +82,7 @@ EOF
             --selector=app.kubernetes.io/component=controller \
             --timeout=180s
 
-      # ✅ Deploy frontend manifests
-      - name: Deploy Frontend
+      - name: Deploy Frontend Resources
         run: |
           IMAGE="${{ secrets.DOCKER_USERNAME }}/frontend"
           TAG="${GITHUB_SHA::7}"
@@ -101,11 +91,8 @@ EOF
           kubectl apply -f frontend-service.yaml
           kubectl apply -f frontend-ingress.yaml
 
-      # ✅ Wait for rollout
       - name: Wait for frontend rollout
-        run: |
-          kubectl rollout status deployment/frontend-deployment
+        run: kubectl rollout status deployment/frontend-deployment
 
-      # ✅ Output final URL
       - name: Show Frontend URL
-        run: echo "✅ Your frontend is live at: https://poc.autovrse-training.com"
+        run: echo "✅ Frontend is live at: https://poc.autovrse-training.com"
