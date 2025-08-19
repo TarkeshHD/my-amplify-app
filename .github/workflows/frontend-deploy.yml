@@ -99,7 +99,7 @@ EOF
           sed -i "s|image: .*|image: $IMAGE:$TAG|" frontend-deployment.yaml
           kubectl apply -f frontend-deployment.yaml
           kubectl apply -f frontend-service.yaml
-          kubectl apply -f frontend-ingress.yaml
+          kubectl apply -f ingress.yaml
 
       # ✅ Wait for frontend rollout
       - name: Wait for Deployment
