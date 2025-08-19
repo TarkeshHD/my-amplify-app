@@ -57,31 +57,30 @@ jobs:
       # ✅ Install cert-manager
       - name: Install cert-manager
         run: |
-          echo "Installing cert-manager..."
           kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
           kubectl rollout status deployment/cert-manager -n cert-manager --timeout=120s
           kubectl rollout status deployment/cert-manager-webhook -n cert-manager --timeout=120s
           kubectl rollout status deployment/cert-manager-cainjector -n cert-manager --timeout=120s
 
-      # ✅ Create ClusterIssuer for Let's Encrypt
+      # ✅ Apply ClusterIssuer (Let's Encrypt)
       - name: Apply ClusterIssuer
         run: |
           cat <<EOF | kubectl apply -f -
-          apiVersion: cert-manager.io/v1
-          kind: ClusterIssuer
-          metadata:
-            name: letsencrypt-prod
-          spec:
-            acme:
-              email: you@autovrse.com
-              server: https://acme-v02.api.letsencrypt.org/directory
-              privateKeySecretRef:
-                name: letsencrypt-prod
-              solvers:
-                - http01:
-                    ingress:
-                      class: nginx
-          EOF
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    email: you@autovrse.com
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+      - http01:
+          ingress:
+            class: nginx
+EOF
 
       # ✅ Install NGINX Ingress Controller
       - name: Install NGINX Ingress
@@ -100,12 +99,13 @@ jobs:
           sed -i "s|image: .*|image: $IMAGE:$TAG|" frontend-deployment.yaml
           kubectl apply -f frontend-deployment.yaml
           kubectl apply -f frontend-service.yaml
-          kubectl apply -f ingress.yaml
+          kubectl apply -f frontend-ingress.yaml
 
-      # ✅ Verify deployment
+      # ✅ Wait for rollout
       - name: Wait for frontend rollout
-        run: kubectl rollout status deployment/frontend-deployment
+        run: |
+          kubectl rollout status deployment/frontend-deployment
 
       # ✅ Output final URL
-      - name: Show URL
-        run: echo "✅ Frontend is live at: https://poc.autovrse-training.com"
+      - name: Show Frontend URL
+        run: echo "✅ Your frontend is live at: https://poc.autovrse-training.com"
