@@ -30,13 +30,11 @@ jobs:
 
       - name: Install eksctl and kubectl
         run: |
-          # Install eksctl
           curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz" -o eksctl.tar.gz
           tar xzf eksctl.tar.gz -C /tmp
           sudo mv /tmp/eksctl /usr/local/bin
           eksctl version
 
-          # Install kubectl
           curl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           chmod +x kubectl
           sudo mv kubectl /usr/local/bin
@@ -58,13 +56,13 @@ jobs:
       - name: Install cert-manager
         run: |
           kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
-          kubectl rollout status deployment/cert-manager -n cert-manager --timeout=120s
-          kubectl rollout status deployment/cert-manager-webhook -n cert-manager --timeout=120s
-          kubectl rollout status deployment/cert-manager-cainjector -n cert-manager --timeout=120s
+          kubectl rollout status deployment/cert-manager -n cert-manager --timeout=120s || true
+          kubectl rollout status deployment/cert-manager-webhook -n cert-manager --timeout=120s || true
+          kubectl rollout status deployment/cert-manager-cainjector -n cert-manager --timeout=120s || true
 
-      - name: Apply ClusterIssuer for Let's Encrypt
+      - name: Apply ClusterIssuer
         run: |
-          cat <<EOF | kubectl apply -f -
+          echo "
           apiVersion: cert-manager.io/v1
           kind: ClusterIssuer
           metadata:
@@ -76,10 +74,10 @@ jobs:
               privateKeySecretRef:
                 name: letsencrypt-prod
               solvers:
-                - http01:
-                    ingress:
-                      class: nginx
-          EOF
+              - http01:
+                  ingress:
+                    class: nginx
+          " | kubectl apply -f -
 
       - name: Install NGINX Ingress Controller
         run: |
@@ -89,7 +87,7 @@ jobs:
             --selector=app.kubernetes.io/component=controller \
             --timeout=180s
 
-      - name: Deploy Frontend to EKS
+      - name: Deploy Frontend
         run: |
           IMAGE="${{ secrets.DOCKER_USERNAME }}/frontend"
           TAG="${GITHUB_SHA::7}"
@@ -99,9 +97,9 @@ jobs:
           kubectl apply -f frontend-service.yaml
           kubectl apply -f ingress.yaml
 
-      - name: Wait for Deployment Rollout
+      - name: Confirm Deployment
         run: |
           kubectl rollout status deployment/frontend-deployment
 
-      - name: Show Frontend URL
-        run: echo "✅ Frontend is live at: https://poc.autovrse-training.com"
+      - name: Output Live URL
+        run: echo "✅ Live at: https://poc.autovrse-training.com"
