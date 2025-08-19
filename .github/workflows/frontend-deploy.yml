@@ -76,6 +76,30 @@ jobs:
           kubectl apply -f frontend-deployment.yaml
           kubectl apply -f frontend-service.yaml
           kubectl apply -f ingress.yaml
+      - name: Install cert-manager
+        run: |
+          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.14.4/cert-manager.yaml
+
+      - name: Apply ClusterIssuer
+        run: kubectl apply -f cluster-issuer.yaml
+
+      - name: Apply Ingress
+        run: kubectl apply -f frontend-ingress.yaml
+
+      - name: Wait for DNS propagation
+        run: |
+          for i in {1..20}; do
+            nslookup poc.autovrse-training.com && break || sleep 15
+          done
+
+      - name: Wait for certificate to be Ready
+        run: |
+          for i in {1..30}; do
+            STATUS=$(kubectl get certificate frontend-tls -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}')
+            if [ "$STATUS" == "True" ]; then echo "✅ Cert Ready"; break; fi
+            echo "⏳ Waiting for cert..."; sleep 10
+          done
+          
 
       - name: Output frontend URL
         run: |
