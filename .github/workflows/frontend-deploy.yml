@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
@@ -50,7 +50,6 @@ jobs:
 
       - name: Install cert-manager
         run: |
-          echo "Installing cert-manager..."
           kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
           kubectl rollout status deployment/cert-manager -n cert-manager --timeout=120s
           kubectl rollout status deployment/cert-manager-webhook -n cert-manager --timeout=120s
@@ -58,8 +57,7 @@ jobs:
 
       - name: Apply ClusterIssuer
         run: |
-          echo "Applying Let's Encrypt ClusterIssuer..."
-          cat <<EOF | kubectl apply -f -
+          echo '
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
@@ -74,7 +72,7 @@ spec:
       - http01:
           ingress:
             class: nginx
-EOF
+' | kubectl apply -f -
 
       - name: Install NGINX Ingress
         run: |
@@ -84,7 +82,7 @@ EOF
             --selector=app.kubernetes.io/component=controller \
             --timeout=180s
 
-      - name: Deploy Frontend
+      - name: Deploy Frontend App
         run: |
           IMAGE="${{ secrets.DOCKER_USERNAME }}/frontend"
           TAG="${GITHUB_SHA::7}"
@@ -97,6 +95,5 @@ EOF
         run: |
           kubectl rollout status deployment/frontend-deployment
 
-      - name: Show Frontend URL
-        run: |
-          echo "✅ Frontend is live at: https://poc.autovrse-training.com"
+      - name: Print Frontend URL
+        run: echo "✅ Deployed to: https://poc.autovrse-training.com"
