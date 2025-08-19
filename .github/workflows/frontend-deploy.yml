@@ -1,36 +1,33 @@
-name: Create EKS Cluster and Deploy Frontend
+name: Deploy Frontend to EKS with HTTPS
 
 on:
   workflow_dispatch:
 
 jobs:
-  build-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # ✅ Checkout code
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
 
-      # ✅ Setup Docker Buildx
-      - uses: docker/setup-buildx-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-      # ✅ Login to DockerHub
-      - uses: docker/login-action@v2
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # ✅ Build and Push Docker image
-      - name: Build and Push Docker image
+      - name: Build and Push Docker Image
         run: |
           IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/frontend"
           TAG="${GITHUB_SHA::7}"
-          echo "🚀 Building image: $IMAGE_NAME:$TAG"
           docker build -t "$IMAGE_NAME:$TAG" -t "$IMAGE_NAME:latest" .
           docker push "$IMAGE_NAME:$TAG"
           docker push "$IMAGE_NAME:latest"
 
-      # ✅ Install eksctl and kubectl
       - name: Install eksctl and kubectl
         run: |
           curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
@@ -38,7 +35,6 @@ jobs:
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           chmod +x kubectl && sudo mv kubectl /usr/local/bin/
 
-      # ✅ Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -46,35 +42,13 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # ✅ Check or create EKS cluster
-      - name: Check or create EKS cluster
-        run: |
-          CLUSTER_NAME="${{ secrets.EKS_CLUSTER_NAME }}"
-          REGION="${{ secrets.AWS_REGION }}"
-          if aws eks describe-cluster --name "$CLUSTER_NAME" --region "$REGION" >/dev/null 2>&1; then
-            echo "✅ EKS Cluster $CLUSTER_NAME exists."
-          else
-            echo "⏳ Creating EKS cluster $CLUSTER_NAME..."
-            eksctl create cluster \
-              --name "$CLUSTER_NAME" \
-              --region "$REGION" \
-              --nodegroup-name standard-workers \
-              --node-type t3.medium \
-              --nodes 2 \
-              --nodes-min 1 \
-              --nodes-max 3 \
-              --managed
-          fi
-
-      # ✅ Generate kubeconfig
       - name: Update kubeconfig
         run: |
           aws eks update-kubeconfig \
             --name ${{ secrets.EKS_CLUSTER_NAME }} \
             --region ${{ secrets.AWS_REGION }}
 
-      # ✅ Install NGINX Ingress
-      - name: Install NGINX Ingress
+      - name: Install NGINX Ingress Controller
         run: |
           kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.9.4/deploy/static/provider/aws/deploy.yaml
           kubectl wait --namespace ingress-nginx \
@@ -82,24 +56,17 @@ jobs:
             --selector=app.kubernetes.io/component=controller \
             --timeout=180s
 
-      # ✅ Deploy Frontend Resources
-      - name: Deploy Frontend to EKS
+      - name: Deploy Frontend Resources
         run: |
           IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/frontend"
           TAG="${GITHUB_SHA::7}"
-          echo "Using image: $IMAGE_NAME:$TAG"
           sed -i "s|image: .*|image: $IMAGE_NAME:$TAG|" frontend-deployment.yaml
           kubectl apply -f frontend-deployment.yaml
           kubectl apply -f frontend-service.yaml
           kubectl apply -f ingress.yaml
 
-      # ✅ Wait for deployment to finish
-      - name: Verify Deployment
-        run: |
-          kubectl rollout status deployment/frontend-deployment
+      - name: Wait for Deployment
+        run: kubectl rollout status deployment/frontend-deployment
 
-      # ✅ Output Final Frontend URL
-      - name: Print Frontend URL
-        run: |
-          echo "✅ Your frontend is live at:"
-          echo "🔗 https://${{ secrets.CUSTOM_DOMAIN }}"
+      - name: Output Final Frontend URL
+        run: echo "✅ Your frontend is live at: https://poc.autovrse-training.com"
