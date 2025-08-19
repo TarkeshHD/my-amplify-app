@@ -14,7 +14,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Login to DockerHub
+      - name: DockerHub Login
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
@@ -30,19 +30,12 @@ jobs:
 
       - name: Install eksctl and kubectl
         run: |
-          # Install eksctl
-          curl -sL "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz" -o eksctl.tar.gz
-          tar -xzf eksctl.tar.gz -C /tmp
+          curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
           sudo mv /tmp/eksctl /usr/local/bin
-          eksctl version
-
-          # Install kubectl
           curl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-          chmod +x kubectl
-          sudo mv kubectl /usr/local/bin
-          kubectl version --client
+          chmod +x kubectl && sudo mv kubectl /usr/local/bin
 
-      - name: Configure AWS credentials
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -57,21 +50,22 @@ jobs:
 
       - name: Install cert-manager
         run: |
+          echo "🔧 Installing cert-manager..."
           kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
-          kubectl rollout status deployment/cert-manager -n cert-manager --timeout=120s || true
-          kubectl rollout status deployment/cert-manager-webhook -n cert-manager --timeout=120s || true
-          kubectl rollout status deployment/cert-manager-cainjector -n cert-manager --timeout=120s || true
+          kubectl rollout status deployment/cert-manager -n cert-manager --timeout=120s
+          kubectl rollout status deployment/cert-manager-webhook -n cert-manager --timeout=120s
+          kubectl rollout status deployment/cert-manager-cainjector -n cert-manager --timeout=120s
 
       - name: Apply ClusterIssuer for Let's Encrypt
         run: |
-          echo "
+          cat <<EOF | kubectl apply -f -
           apiVersion: cert-manager.io/v1
           kind: ClusterIssuer
           metadata:
             name: letsencrypt-prod
           spec:
             acme:
-              email: you@autovrse.com
+              email: tarkesh@autovrse.com
               server: https://acme-v02.api.letsencrypt.org/directory
               privateKeySecretRef:
                 name: letsencrypt-prod
@@ -79,7 +73,7 @@ jobs:
                 - http01:
                     ingress:
                       class: nginx
-          " | kubectl apply -f -
+          EOF
 
       - name: Install NGINX Ingress Controller
         run: |
@@ -89,7 +83,7 @@ jobs:
             --selector=app.kubernetes.io/component=controller \
             --timeout=180s
 
-      - name: Deploy Frontend Resources
+      - name: Deploy Frontend Manifests
         run: |
           IMAGE="${{ secrets.DOCKER_USERNAME }}/frontend"
           TAG="${GITHUB_SHA::7}"
@@ -98,9 +92,8 @@ jobs:
           kubectl apply -f frontend-service.yaml
           kubectl apply -f ingress.yaml
 
-      - name: Wait for frontend rollout
-        run: |
-          kubectl rollout status deployment/frontend-deployment --timeout=180s
+      - name: Wait for Rollout
+        run: kubectl rollout status deployment/frontend-deployment
 
-      - name: Show Frontend URL
-        run: echo "✅ Frontend is live at: https://poc.autovrse-training.com"
+      - name: Output Frontend URL
+        run: echo "✅ Your frontend is live at: https://poc.autovrse-training.com"
