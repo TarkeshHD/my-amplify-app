@@ -30,17 +30,13 @@ jobs:
           docker push "$IMAGE_NAME:$TAG"
           docker push "$IMAGE_NAME:latest"
 
-      # ✅ Install eksctl and kubectl (FIXED version)
+      # ✅ Install tools
       - name: Install eksctl and kubectl
         run: |
-          curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz" -o eksctl.tar.gz
-          tar -xzf eksctl.tar.gz -C /tmp
+          curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
           sudo mv /tmp/eksctl /usr/local/bin
-
-          KUBECTL_VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)
-          curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
-          chmod +x kubectl
-          sudo mv kubectl /usr/local/bin
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl && sudo mv kubectl /usr/local/bin/
 
       # ✅ Configure AWS credentials
       - name: Configure AWS credentials
@@ -78,34 +74,31 @@ jobs:
             --name ${{ secrets.EKS_CLUSTER_NAME }} \
             --region ${{ secrets.AWS_REGION }}
 
-      # ✅ Deploy frontend to EKS
-      - name: Deploy Frontend
+      # ✅ Install NGINX Ingress Controller
+      - name: Install NGINX Ingress
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.9.4/deploy/static/provider/aws/deploy.yaml
+          kubectl wait --namespace ingress-nginx \
+            --for=condition=Ready pod \
+            --selector=app.kubernetes.io/component=controller \
+            --timeout=180s
+
+      # ✅ Deploy Frontend
+      - name: Deploy Frontend Workloads
         run: |
           IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/frontend"
           TAG="${GITHUB_SHA::7}"
           echo "Deploying image: $IMAGE_NAME:$TAG"
-
           sed -i "s|image: .*|image: $IMAGE_NAME:$TAG|" frontend-deployment.yaml
           kubectl apply -f frontend-deployment.yaml
           kubectl apply -f frontend-service.yaml
 
-      # ✅ Verify rollout
+      # ✅ Apply Ingress
+      - name: Deploy Ingress
+        run: |
+          kubectl apply -f ingress.yaml
+
+      # ✅ Verify Rollout
       - name: Verify Deployment
         run: |
           kubectl rollout status deployment/frontend-deployment
-
-      # ✅ Print public LoadBalancer URL
-      - name: Get Public Frontend URL
-        run: |
-          echo "⏳ Waiting for LoadBalancer external IP..."
-          for i in {1..20}; do
-            HOSTNAME=$(kubectl get svc frontend-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-            if [ -n "$HOSTNAME" ]; then
-              echo "✅ Your frontend is live at: http://$HOSTNAME"
-              exit 0
-            else
-              echo "Waiting for external IP..."
-              sleep 15
-            fi
-          done
-          echo "❌ Timeout: LoadBalancer external hostname not available."
