@@ -36,6 +36,9 @@ jobs:
         run: |
           curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
           sudo mv /tmp/eksctl /usr/local/bin
+          curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
 
       # ✅ Configure AWS credentials
       - name: Configure AWS credentials
@@ -88,4 +91,12 @@ jobs:
       # ✅ Verify rollout
       - name: Verify Deployment
         run: |
-          kubectl rollout status deployment/frontend-deployment
+          kubectl rollout status deployment/frontend-deployment --timeout=300s
+
+      # ✅ 🌐 Get frontend public URL (LoadBalancer hostname)
+      - name: Get Frontend Service Public URL
+        run: |
+          echo "🌐 Fetching frontend service EXTERNAL-IP..."
+          kubectl get svc frontend-service -o wide
+          HOSTNAME=$(kubectl get svc frontend-service -o jsonpath="{.status.loadBalancer.ingress[0].hostname}")
+          echo "🚀 Your frontend is hosted at: http://$HOSTNAME"
