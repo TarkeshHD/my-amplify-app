@@ -72,14 +72,14 @@ metadata:
   name: letsencrypt-prod
 spec:
   acme:
-    email: tarkesh@autovrse.com
+    email: you@autovrse.com
     server: https://acme-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
       name: letsencrypt-prod
     solvers:
-      - http01:
-          ingress:
-            class: nginx
+    - http01:
+        ingress:
+          class: nginx
 EOF
 
       # ✅ Install NGINX Ingress Controller
@@ -99,7 +99,7 @@ EOF
           sed -i "s|image: .*|image: $IMAGE:$TAG|" frontend-deployment.yaml
           kubectl apply -f frontend-deployment.yaml
           kubectl apply -f frontend-service.yaml
-          kubectl apply -f ingress.yaml
+          kubectl apply -f frontend-ingress.yaml
 
       # ✅ Wait for frontend rollout
       - name: Wait for Deployment
