@@ -9,10 +9,10 @@ metadata:
 spec:
   tls:
     - hosts:
-        - frontend.example.com
+        - poc.autovrse-training.com
       secretName: frontend-tls
   rules:
-    - host: frontend.example.com
+    - host: poc.autovrse-training.com
       http:
         paths:
           - path: /
