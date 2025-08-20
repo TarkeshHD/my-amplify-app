@@ -1,7 +1,9 @@
 name: Create EKS Cluster and Deploy Frontend
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main-cicd-test
 
 jobs:
   build-deploy:
