@@ -246,7 +246,7 @@ const Page = () => {
               </Box>
             </Typography>
             <Typography align="center" sx={{ mb: 3 }} variant="subtitle1">
-              A one-in-all platform solution for your VR Training modules.
+              A one-in-all platform solution for yourtarkeshhhh VR Training modules.
             </Typography>
             <img alt="vrBoy" src={VRIllustration} />
           </Box>
