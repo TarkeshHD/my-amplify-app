@@ -5,6 +5,7 @@ COPY package*.json ./
 RUN npm install
 COPY . .
 RUN npm run build
+RUN npm run dev
 
 # Stage 2: Serve with NGINX
 FROM nginx:stable-alpine
